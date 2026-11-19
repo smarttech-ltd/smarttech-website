@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - SmartTech LTD</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+body{background:#0a1931;color:#fff;min-height:100vh}
+.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a}
+.header a{color:#4aa3ff;text-decoration:none;font-size:13px;font-weight:700}
+.wrap{max-width:720px;margin:0 auto;padding:14px}
+.card{background:rgba(13,35,90,.92);border:1px solid #2a5ab0;border-radius:18px;padding:14px;margin-bottom:12px}
+.input,.textarea,select{width:100%;padding:12px;border-radius:12px;border:1px solid #1e3a5a;background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;margin-bottom:10px}
+.textarea{min-height:70px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px;background:#00e5ff;color:#0a1931}
+.btn-green{background:#00c853;color:#fff}.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid #2a5ab0}.btn-orange{background:#ff9800;color:#fff}.btn-red{background:#ff5252;color:#fff}
+.btn-small{width:auto;padding:7px 12px;font-size:12px;border-radius:20px;font-weight:700;border:none;cursor:pointer;color:#fff}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{padding:10px 14px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid #2a5ab0;color:#fff;cursor:pointer;font-size:13px;font-weight:700}
+.tab.active{background:#00e5ff;color:#0a1931}
+.item{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin-bottom:10px;font-size:13px;line-height:1.6;position:relative}
+.item.done{border:1px solid #00c853;background:rgba(0,200,83,.08);opacity:.85}
+.item b{color:#5ee1ff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;background:rgba(0,200,83,.2);color:#c8ffd6}
+.badge-done{background:#00c853;color:#fff}
+.badge-pending{background:rgba(255,152,0,.35);color:#fff}
+.done-box{display:none;background:#00c853;color:#fff;padding:8px 12px;border-radius:10px;font-weight:800;font-size:13px;margin-top:8px;text-align:center}
+.done-box.show{display:block}
+.small{font-size:12px;color:#8ec8ff;line-height:1.6}
+.hidden{display:none!important}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{background:rgba(0,0,0,.3);border:1px solid #2a5ab0;border-radius:14px;padding:12px;text-align:center}
+.stat b{font-size:22px;display:block;color:#5ee1ff}.stat span{font-size:11px;color:#8ec8ff}
+.row{display:flex;gap:8px}.row>*{flex:1}
+details{margin-top:8px} summary{cursor:pointer;color:#4aa3ff;font-size:12px;font-weight:700}
+pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-top:8px;max-height:300px;overflow:auto}
+.scorebox{background:rgba(0,200,83,.15);border:1px solid #00c853;border-radius:12px;padding:10px;margin:8px 0;text-align:center}
+.scorebox b{font-size:22px;color:#00e676}
+.section-label{font-size:12px;font-weight:800;color:#facc15;margin:12px 0 8px;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="header"><a href="index.html">← Home</a><b>🔒 SmartTech Admin</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="connStatus">🔄 Loading...</span></div>
+<div class="wrap">
+<div class="stats">
+<div class="stat"><b id="cBookings">0</b><span>Bookings</span></div>
+<div class="stat"><b id="cQuiz">0</b><span>Quiz Results</span></div>
+<div class="stat"><b id="cPosts">0</b><span>Posts</span></div>
+<div class="stat"><b id="cQuestions">0</b><span>Questions</span></div>
+<div class="stat"><b id="cNotify">0</b><span>Notifications</span></div>
+<div class="stat"><b id="cTotal">0</b><span>Total Records</span></div>
+</div>
+<div class="tabs">
+<button class="tab active" onclick="showTab('overview',this)">🏠 Overview</button>
+<button class="tab" onclick="showTab('bookings',this)">📅 Bookings</button>
+<button class="tab" onclick="showTab('quiz',this)">🧠 Quiz</button>
+<button class="tab" onclick="showTab('posts',this)">📢 Posts</button>
+<button class="tab" onclick="showTab('questions',this)">❓ Questions</button>
+<button class="tab" onclick="showTab('notify',this)">🔔 Notify</button>
+<button class="tab" onclick="showTab('recycle',this)">🗑️ Recycle Bin (<span id="recycleCount">0</span>)</button>
+</div>
+<button class="btn btn-ghost" onclick="loadAll(true)" style="margin-bottom:12px">🔄 Refresh All</button>
+<div id="tab-overview">
+<div class="card"><h3 style="color:#5ee1ff">Quick Actions</h3><div class="row" style="margin-top:10px"><a href="admin-notify.html" style="flex:1;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">🔔 Send Notification</a><a href="updates.html" style="flex:1;background:#4aa3ff;color:#0a1931;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">📢 View Updates</a></div></div>
+<div class="card"><h3 style="color:#5ee1ff">Latest Bookings</h3><div id="overviewBookings" style="margin-top:10px"></div></div>
+<div class="card"><h3 style="color:#5ee1ff">Latest Quiz Results + Scores</h3><div id="overviewQuiz" style="margin-top:10px"></div></div>
+</div>
+<div id="tab-bookings" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">📅 All Bookings</h3>
+<input id="searchBooking" class="input" style="margin-top:10px" placeholder="🔍 Search name / phone / service..." oninput="renderBookings()">
+<div class="row"><button class="btn btn-green" onclick="markAllDone()">✅ Mark ALL Done</button><button class="btn btn-red" onclick="deleteAllBookings()">🗑️ Delete ALL</button></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" onclick="loadAll(true)">🔄 Refresh</button><button class="btn btn-ghost" onclick="markAllPending()">↩️ Mark ALL Pending</button></div>
+<p class="small" id="bookingMsg" style="margin-top:8px"></p></div>
+<div id="bookingsList"></div>
+</div>
+<div id="tab-quiz" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">🧠 All Quiz Results + Scores</h3><input id="searchQuiz" class="input" style="margin-top:10px" placeholder="🔍 Search name / topic / phone..." oninput="renderQuiz()"><div class="row"><button class="btn btn-ghost" onclick="loadAll(true)">🔄 Refresh</button><button class="btn btn-red" onclick="clearSheet('Quiz')">🗑️ Delete All Quiz</button></div></div>
+<div id="quizList"></div>
+</div>
+<div id="tab-posts" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">📢 Create New Post</h3>
+<input id="postTitle" class="input" placeholder="Title e.g. New Offer! 🔥">
+<textarea id="postCaption" class="textarea" placeholder="Caption..."></textarea>
+<select id="postType" class="input"><option value="update">📢 Update</option><option value="offer">🔥 Offer</option><option value="announcement">📣 Announcement</option><option value="tip">💡 ICT Tip</option></select>
+<input id="postMedia" class="input" placeholder="Photo/Video Link (Drive link) - optional">
+<input id="postLink" class="input" placeholder="Button Link e.g. booking.html - optional">
+<input id="postLinkText" class="input" placeholder="Button Text e.g. Book Now - optional">
+<button class="btn" onclick="createPost()">📢 Publish Post</button><p class="small" id="postMsg" style="margin-top:8px"></p></div>
+<div class="card"><h3 style="color:#5ee1ff">All Posts</h3><div id="postsList" style="margin-top:10px"></div></div>
+</div>
+<div id="tab-questions" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">❓ Add New Quiz Question</h3>
+<select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option></select>
+<input id="qText" class="input" placeholder="Question e.g. What does CPU stand for?">
+<input id="qA" class="input" placeholder="Option A"><input id="qB" class="input" placeholder="Option B"><input id="qC" class="input" placeholder="Option C"><input id="qD" class="input" placeholder="Option D">
+<select id="qAnswer" class="input"><option value="0">Correct = Option A</option><option value="1">Correct = Option B</option><option value="2">Correct = Option C</option><option value="3">Correct = Option D</option></select>
+<input id="qExplain" class="input" placeholder="Explanation"><input id="qTimer" class="input" type="number" value="30">
+<button class="btn" onclick="createQuestion()">➕ Add Question</button><p class="small" id="qMsg" style="margin-top:8px"></p></div>
+<div class="card"><h3 style="color:#5ee1ff">All Questions</h3><input id="searchQ" class="input" placeholder="🔍 Search question..." oninput="renderQuestions()"><div id="questionsList" style="margin-top:10px"></div></div>
+</div>
+<div id="tab-notify" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">🔔 Notifications History</h3><a href="admin-notify.html" style="display:block;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">🔔 Send New Notification →</a><div id="notifyList" style="margin-top:12px"></div><button class="btn btn-red" style="margin-top:10px" onclick="clearSheet('Notify')">🗑️ Clear All Notifications</button></div>
+</div>
+<div id="tab-recycle" class="hidden">
+<div class="card"><h3 style="color:#5ee1ff">🗑️ Recycle Bin</h3><p class="small">Deleted items stay here. You can Restore them or Delete Forever.</p><div class="row" style="margin-top:10px"><button class="btn btn-green" onclick="restoreAllRecycle()">♻️ Restore All</button><button class="btn btn-red" onclick="emptyRecycle()">🗑️ Empty Bin Forever</button></div></div>
+<div id="recycleList"></div>
+</div>
+<div class="card" style="text-align:center;font-size:12px;color:#8ec8ff">SmartTech LTD Admin • WhatsApp 0183465547<br><a href="admin.html" style="color:#ff5252">Logout</a></div>
+</div>
+<script>
+if(localStorage.getItem('smarttech_admin')!=='true' && localStorage.getItem('isAdmin')!=='true'){ location.href='admin.html'; }
+const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lowerKeys(r){ var o={}; Object.keys(r||{}).forEach(function(k){ o[String(k).toLowerCase().trim()]=r[k]; }); return o; }
+function normalizeRows(data){
+  if(!data) return [];
+  if(Array.isArray(data) && data.length && typeof data[0]==='object' && !Array.isArray(data[0])) return data;
+  if(!Array.isArray(data) || !data.length) return [];
+  var h=data[0].map(function(x){ return String(x||'').toLowerCase().trim(); });
+  return data.slice(1).map(function(row){ var o={}; h.forEach(function(k,i){ o[k]=row[i]; }); return o; });
+}
+function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
+// ✅ FIXED KEY - Name + Last 9 digits ONLY. No timestamp, no ID. Never changes after Refresh.
+function bookingKey(x){
+  var name=String(x.name||x.title||'').toLowerCase().trim();
+  var phone=String(x.phone||'').replace(/\D/g,'').slice(-9);
+  if(x.id) return 'id:'+String(x.id).trim();
+  return name+'|'+phone;
+}
+function getDoneMap(){ try{ return JSON.parse(localStorage.getItem('smarttech_done_map_v2')||'{}'); }catch(e){ return {}; } }
+function saveDoneMap(m){ localStorage.setItem('smarttech_done_map_v2', JSON.stringify(m)); }
+function getPendingMap(){ try{ return JSON.parse(localStorage.getItem('smarttech_pending_map_v2')||'{}'); }catch(e){ return {}; } }
+function savePendingMap(m){ localStorage.setItem('smarttech_pending_map_v2', JSON.stringify(m)); }
+function setDoneRetained(x, done){
+  var m=getDoneMap(); var p=getPendingMap(); var k=bookingKey(x);
+  if(done){ m[k]=true; delete p[k]; } else { delete m[k]; }
+  saveDoneMap(m); savePendingMap(p);
+}
+function setPendingRetained(x){
+  var m=getDoneMap(); var p=getPendingMap(); var k=bookingKey(x);
+  p[k]=true; delete m[k]; saveDoneMap(m); savePendingMap(p);
+}
+function clearPendingRetained(x){
+  var p=getPendingMap(); delete p[bookingKey(x)]; savePendingMap(p);
+}
+function applyRetained(){
+  var doneMap=getDoneMap(); var pendingMap=getPendingMap();
+  // Also migrate old v1 keys if they exist - check by name+phone without timestamp
+  var oldDone={}; try{ oldDone=JSON.parse(localStorage.getItem('smarttech_done_map')||'{}'); }catch(e){}
+  D.bookings.forEach(function(b){
+    var k=bookingKey(b);
+    if(pendingMap[k]===true){ b.status='Pending'; return; }
+    if(doneMap[k]===true){ b.status='Done'; return; }
+    // Fallback: old key had timestamp, try match by name+phone part
+    for(var oldK in oldDone){
+      if(oldDone[oldK]===true){
+        var parts=String(oldK).split('|');
+        var oldName=(parts[0]||'').toLowerCase().trim();
+        var oldPhone=String(parts[1]||'').replace(/\D/g,'').slice(-9);
+        var curName=String(b.name||'').toLowerCase().trim();
+        var curPhone=String(b.phone||'').replace(/\D/g,'').slice(-9);
+        if(oldName && oldName===curName && oldPhone && oldPhone===curPhone){ b.status='Done'; setDoneRetained(b,true); break; }
+      }
+    }
+  });
+}
+// ✅ RECYCLE BIN
+function getRecycle(){ try{ return JSON.parse(localStorage.getItem('smarttech_recycle')||'[]'); }catch(e){ return []; } }
+function saveRecycle(arr){ localStorage.setItem('smarttech_recycle', JSON.stringify(arr)); document.getElementById('recycleCount').textContent=arr.length; }
+function addToRecycle(type, item){
+  var arr=getRecycle();
+  arr.unshift({type:type, item:item, deletedAt:new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'})});
+  saveRecycle(arr);
+}
+function renderRecycle(){
+  var arr=getRecycle();
+  document.getElementById('recycleCount').textContent=arr.length;
+  var el=document.getElementById('recycleList');
+  if(!arr.length){ el.innerHTML='<div class="card">Recycle Bin is empty.</div>'; return; }
+  el.innerHTML=arr.map(function(r,idx){
+    var x=r.item||{};
+    var title = r.type==='Bookings' ? (x.name||'')+' • '+(x.phone||'')+' • '+(x.service||'')
+      : r.type==='Quiz' ? (x.name||'')+' • '+(x.topic||'')+' • '+x.score+'/'+x.total
+      : r.type==='Posts' ? (x.title||'')+' • '+(x.caption||'')
+      : (x.name||x.title||JSON.stringify(x).slice(0,80));
+    return '<div class="item"><b>🗑️ '+esc(r.type)+'</b> <span class="small">Deleted: '+esc(r.deletedAt)+'</span><br>'+esc(title)+'<br><span class="small">'+esc(x.timestamp||'')+'</span><br><div style="display:flex;gap:6px;margin-top:10px"><button class="btn-small" style="background:#00c853" onclick="restoreRecycle('+idx+')">♻️ Restore</button><button class="btn-small" style="background:#ff5252" onclick="deleteForeverRecycle('+idx+')">🗑️ Delete Forever</button></div></div>';
+  }).join('');
+}
+async function restoreRecycle(idx){
+  var arr=getRecycle(); var r=arr[idx]; if(!r) return;
+  var x=r.item;
+  if(r.type==='Bookings'){
+    D.bookings.push(x); await postToSheet({type:'booking',name:x.name,phone:x.phone,email:x.email,service:x.service,message:x.message||x.details,dateWanted:x['date wanted']||x.date});
+    if(String(x.status||'').toLowerCase()==='done') setDoneRetained(x,true);
+  } else if(r.type==='Quiz'){
+    D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,answers:x.answers,detailedAnswers:x.detailedanswers});
+  } else if(r.type==='Posts'){
+    D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext});
+  }
+  arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderOverview();
+}
+function deleteForeverRecycle(idx){
+  if(!confirm('Delete this forever? Cannot be restored.')) return;
+  var arr=getRecycle(); arr.splice(idx,1); saveRecycle(arr); renderRecycle();
+}
+async function restoreAllRecycle(){
+  var arr=getRecycle(); if(!arr.length) return;
+  if(!confirm('Restore ALL '+arr.length+' items?')) return;
+  for(var i=arr.length-1;i>=0;i--){ await restoreRecycle(i); }
+}
+function emptyRecycle(){
+  if(!confirm('Empty Recycle Bin forever? Cannot be restored.')) return;
+  saveRecycle([]); renderRecycle();
+}
+let D={bookings:[],quiz:[],posts:[],questions:[],notify:[]};
+let bookingIndex={}, quizIndex={};
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  if(el) el.classList.add('active');
+  ['overview','bookings','quiz','posts','questions','notify','recycle'].forEach(function(t){ document.getElementById('tab-'+t).classList.toggle('hidden', t!==name); });
+  if(name==='recycle') renderRecycle();
+}
+function calcPerc(score,total,fallback){
+  var s=parseInt(score||0), t=parseInt(total||0);
+  if(t>0) return Math.round((s/t)*100)+"%";
+  return fallback||"0%";
+}
+async function loadAll(force){
+  document.getElementById('connStatus').textContent='🔄 Loading...';
+  try{
+    var url=SHEET_URL+"?type=all&t="+Date.now();
+    var res=await fetch(url,{cache:'no-store'});
+    var data=await res.json();
+    if(Array.isArray(data)){ D.bookings=data; } else {
+      D.bookings=normalizeRows(data.bookings).map(lowerKeys);
+      D.quiz=normalizeRows(data.quiz).map(lowerKeys);
+      D.posts=normalizeRows(data.posts).map(lowerKeys);
+      D.questions=normalizeRows(data.questions).map(lowerKeys);
+      D.notify=normalizeRows(data.notify).map(lowerKeys);
+    }
+    applyRetained();
+    document.getElementById('connStatus').textContent='✅ Connected';
+    document.getElementById('bookingMsg').textContent='';
+    document.getElementById('cBookings').textContent=D.bookings.length;
+    document.getElementById('cQuiz').textContent=D.quiz.length;
+    document.getElementById('cPosts').textContent=D.posts.length;
+    document.getElementById('cQuestions').textContent=D.questions.length;
+    document.getElementById('cNotify').textContent=D.notify.length;
+    document.getElementById('cTotal').textContent=D.bookings.length+D.quiz.length+D.posts.length+D.questions.length+D.notify.length;
+    renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderNotify(); renderOverview(); renderRecycle();
+  }catch(e){ document.getElementById('connStatus').textContent='⚠️ Offline'; }
+}
+function renderOverview(){
+  var b=D.bookings.slice().sort(function(a,b){ return (isDoneStatus(a)?1:0)-(isDoneStatus(b)?1:0); }).reverse().slice(0,3);
+  document.getElementById('overviewBookings').innerHTML=b.length? b.map(function(x){ var done=isDoneStatus(x); return '<div class="item '+(done?'done':'')+'"><b>'+esc(x.name||'')+'</b> • '+esc(x.phone||'')+'<br>📌 '+esc(x.service||'')+'<br><span class="small">'+esc(x.timestamp||'')+' • '+(done?'✅ Done':'Pending')+'</span>'+(done?'<div class="done-box show">✅ Done ✓</div>':'')+'</div>'; }).join('') : '<p class="small">No bookings yet.</p>';
+  var q=D.quiz.slice(-3).reverse();
+  document.getElementById('overviewQuiz').innerHTML=q.length? q.map(function(x){ var p=calcPerc(x.score,x.total,x.percentage); return '<div class="item"><b>'+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<br>🏆 Score: <b style="color:#00e676">'+esc(x.score||'0')+'/'+esc(x.total||'')+' - '+p+'</b><br><span class="small">'+esc(x.phone||'')+' • '+esc(x.email||'')+'</span></div>'; }).join('') : '<p class="small">No quiz results yet.</p>';
+}
+function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return d; if(d.startsWith('0')) return '254'+d.slice(1); if(d.length===9) return '254'+d; return d; }
+function bookingCardHTML(x, key){
+  var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', this is SmartTech LTD. About your booking: '+(x.service||'')+'. We are ready to help you.');
+  var isDone=isDoneStatus(x);
+  return '<div class="item '+(isDone?'done':'')+'" id="card-'+key+'"><b>👤 '+esc(x.name||'')+'</b> <span class="badge '+(isDone?'badge-done':'badge-pending')+'" id="badge-'+key+'">'+(isDone?'✅ Done':'Pending')+'</span><br>📞 '+esc(x.phone||'')+'<br>📧 '+esc(x.email||'Not given')+'<br>📌 Service: <b>'+esc(x.service||'')+'</b><br>📝 Message: '+esc(x.message||x.details||'None')+'<br>🕒 '+esc(x.timestamp||'')+'<br>📅 Date wanted: '+esc(x['date wanted']||x.date||'Not given')+'<div class="done-box '+(isDone?'show':'')+'" id="donebox-'+key+'">✅ Done ✓</div><br><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Client</a><button class="btn-small" style="background:#00c853" onclick="markDoneOne(\''+key+'\')">✅ Mark Done</button><button class="btn-small" style="background:#ff9800" onclick="markPendingOne(\''+key+'\')">↩️ Pending</button><button class="btn-small" style="background:#ff5252" onclick="deleteOneBooking(\''+key+'\')">🗑️ Delete</button></div></div>';
+}
+function renderBookings(){
+  var q=(document.getElementById('searchBooking').value||'').toLowerCase();
+  var filtered=D.bookings.slice().reverse().filter(function(x){ return !q || ((x.name||'')+' '+(x.phone||'')+' '+(x.service||'')).toLowerCase().includes(q); });
+  var pending=filtered.filter(function(x){ return !isDoneStatus(x); });
+  var done=filtered.filter(function(x){ return isDoneStatus(x); });
+  var list=pending.concat(done);
+  bookingIndex={};
+  var el=document.getElementById('bookingsList');
+  if(!list.length){ el.innerHTML='<div class="card">No bookings found. Tap Refresh.</div>'; return; }
+  var html='';
+  if(pending.length) html+='<div class="section-label">🟠 PENDING - NEED ACTION ('+pending.length+')</div>';
+  html+=pending.map(function(x,idx){ var key='p'+idx; bookingIndex[key]=x; return bookingCardHTML(x,key); }).join('');
+  if(done.length) html+='<div class="section-label">✅ DONE ('+done.length+') - AT BOTTOM</div>';
+  html+=done.map(function(x,idx){ var key='d'+idx; bookingIndex[key]=x; return bookingCardHTML(x,key); }).join('');
+  el.innerHTML=html;
+}
+async function postToSheet(payload){
+  try{ await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }catch(e){ return false; }
+}
+function showDoneInstant(key){
+  var badge=document.getElementById('badge-'+key); var box=document.getElementById('donebox-'+key); var card=document.getElementById('card-'+key);
+  if(badge){ badge.textContent='✅ Done'; badge.className='badge badge-done'; }
+  if(box) box.classList.add('show');
+  if(card) card.classList.add('done');
+}
+function showPendingInstant(key){
+  var badge=document.getElementById('badge-'+key); var box=document.getElementById('donebox-'+key); var card=document.getElementById('card-'+key);
+  if(badge){ badge.textContent='Pending'; badge.className='badge badge-pending'; }
+  if(box) box.classList.remove('show');
+  if(card) card.classList.remove('done');
+}
+async function markDoneOne(key){
+  var x=bookingIndex[key]; if(!x) return;
+  x.status='Done'; setDoneRetained(x,true); clearPendingRetained(x); showDoneInstant(key);
+  document.getElementById('bookingMsg').textContent='';
+  await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Done'});
+  setTimeout(function(){ renderBookings(); },400);
+}
+async function markPendingOne(key){
+  var x=bookingIndex[key]; if(!x) return;
+  x.status='Pending'; setPendingRetained(x); showPendingInstant(key);
+  document.getElementById('bookingMsg').textContent='';
+  await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Pending'});
+  setTimeout(function(){ renderBookings(); },400);
+}
+async function deleteOneBooking(key){
+  var x=bookingIndex[key]; if(!x) return;
+  if(!confirm('Move booking for '+x.name+' to Recycle Bin?')) return;
+  addToRecycle('Bookings', x);
+  var card=document.getElementById('card-'+key); if(card) card.style.display='none';
+  document.getElementById('bookingMsg').textContent='';
+  setDoneRetained(x,false); clearPendingRetained(x);
+  await postToSheet({type:'delete',sheet:'Bookings',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''});
+  setTimeout(function(){ loadAll(); },800);
+}
+async function markAllDone(){
+  if(!D.bookings.length) return alert('No bookings');
+  if(!confirm('Mark ALL '+D.bookings.length+' bookings as Done?')) return;
+  D.bookings.forEach(function(b){ b.status='Done'; setDoneRetained(b,true); clearPendingRetained(b); });
+  renderBookings();
+  document.getElementById('bookingMsg').textContent='';
+  await postToSheet({type:'markalldone'});
+}
+async function markAllPending(){
+  if(!D.bookings.length) return alert('No bookings');
+  if(!confirm('Mark ALL bookings as Pending?')) return;
+  D.bookings.forEach(function(b){ b.status='Pending'; setPendingRetained(b); });
+  renderBookings();
+  document.getElementById('bookingMsg').textContent='';
+  await postToSheet({type:'markallpending'});
+}
+async function deleteAllBookings(){
+  if(!D.bookings.length) return alert('No bookings to delete');
+  if(!confirm('Move ALL '+D.bookings.length+' bookings to Recycle Bin?')) return;
+  D.bookings.forEach(function(b){ addToRecycle('Bookings', b); });
+  document.getElementById('bookingsList').innerHTML='<div class="card">Moved to Recycle Bin</div>';
+  localStorage.removeItem('smarttech_done_map_v2'); localStorage.removeItem('smarttech_pending_map_v2');
+  D.bookings=[];
+  await postToSheet({type:'clear',sheet:'Bookings'});
+  setTimeout(function(){ loadAll(); },800);
+}
+function renderQuiz(){
+  var q=(document.getElementById('searchQuiz').value||'').toLowerCase();
+  var list=D.quiz.slice().reverse().filter(function(x){ return !q || ((x.name||'')+' '+(x.topic||'')+' '+(x.phone||'')+' '+(x.email||'')).toLowerCase().includes(q); });
+  quizIndex={};
+  var el=document.getElementById('quizList');
+  if(!list.length){ el.innerHTML='<div class="card">No quiz results found.</div>'; return; }
+  el.innerHTML=list.map(function(x,idx){
+    var key='q'+idx; quizIndex[key]=x;
+    var score=parseInt(x.score||0), total=parseInt(x.total||0);
+    var perc=calcPerc(score,total,x.percentage);
+    var detail='';
+    try{ var d=JSON.parse(x.detailedanswers||x['detailed answers']||'[]'); if(Array.isArray(d)&&d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions)</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>'; else detail='<details><summary>📋 View Answers</summary><pre>'+esc(x.answers||'No detailed answers')+'</pre></details>'; }catch(e){ detail='<details><summary>📋 View Answers</summary><pre>'+esc(x.answers||'')+'</pre></details>'; }
+    var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', SmartTech here. Your Quiz result for '+(x.topic||'')+' is '+score+'/'+total+' ('+perc+'). Well done!');
+    return '<div class="item" id="quizcard-'+key+'"><b>🧠 '+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<div class="scorebox">🏆 SCORE<br><b>'+score+'/'+total+' - '+perc+'</b></div>👤 Name: <b>'+esc(x.name||'')+'</b><br>📞 Phone: '+esc(x.phone||'')+'<br>📧 Email: '+esc(x.email||'')+'<br>📚 Topic: '+esc(x.topic||'')+'<br>🕒 Date: '+esc(x.timestamp||'')+'<br>✅ Correct: '+score+' • Total: '+total+' • Percentage: '+perc+detail+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Result</a><button class="btn-small" style="background:#ff5252" onclick="deleteOneQuiz(\''+key+'\')">🗑️ Delete</button></div></div>';
+  }).join('');
+}
+async function deleteOneQuiz(key){
+  var x=quizIndex[key]; if(!x) return;
+  if(!confirm('Move quiz result for '+x.name+' to Recycle Bin?')) return;
+  addToRecycle('Quiz', x);
+  var card=document.getElementById('quizcard-'+key); if(card) card.style.display='none';
+  await postToSheet({type:'delete',sheet:'Quiz',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''});
+  setTimeout(function(){ loadAll(); },800);
+}
+function renderPosts(){
+  var el=document.getElementById('postsList');
+  if(!D.posts.length){ el.innerHTML='<p class="small">No posts yet.</p>'; return; }
+  el.innerHTML=D.posts.slice().reverse().map(function(x,idx){ return '<div class="item" id="postcard-'+idx+'"><b>'+esc(x.title||'')+'</b><br>'+esc(x.caption||'')+'<br><span class="small">'+esc(x.type||'')+' • '+esc(x.timestamp||'')+'</span><br>'+(x.link?'<a href="'+esc(x.link)+'" target="_blank" style="color:#4aa3ff">'+esc(x.linktext||x.link)+'</a><br>':'')+(x.media?'<a href="'+esc(x.media)+'" target="_blank" style="color:#facc15">🖼️ View Media</a><br>':'')+'<button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteGeneric(\'Posts\','+idx+',\'posts\')">🗑️ Delete Post</button></div>'; }).join('');
+}
+function renderQuestions(){
+  var q=(document.getElementById('searchQ').value||'').toLowerCase();
+  var list=D.questions.slice().reverse().filter(function(x){ return !q || (x.question||x.q||'').toLowerCase().includes(q); });
+  var el=document.getElementById('questionsList');
+  if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above.</p>'; return; }
+  el.innerHTML=list.map(function(x){ var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} return '<div class="item"><b>'+esc(x.topic||'')+'</b> • '+esc(x.question||x.q||'')+'<br>'+(opts.length? opts.map(function(o,i){ return (i===parseInt(x.answer)?'✅ ':'')+esc(o)+'<br>'; }).join('') : '')+'<span class="small">Timer: '+esc(x.timer||30)+'s</span></div>'; }).join('');
+}
+function renderNotify(){
+  var el=document.getElementById('notifyList');
+  if(!D.notify.length){ el.innerHTML='<p class="small">No notifications yet.</p>'; return; }
+  el.innerHTML=D.notify.slice().reverse().map(function(x){ return '<div class="item"><b>'+esc(x.title||'')+'</b><br>'+esc(x.body||'')+'<br><span class="small">'+esc(x.timestamp||'')+'</span></div>'; }).join('');
+}
+async function createPost(){
+  var title=document.getElementById('postTitle').value.trim(); var caption=document.getElementById('postCaption').value.trim();
+  if(!title || !caption){ alert('Enter title + caption'); return; }
+  document.getElementById('postMsg').textContent='⏳ Saving...';
+  await postToSheet({type:'post',title:title,caption:caption,postType:document.getElementById('postType').value,media:document.getElementById('postMedia').value.trim(),link:document.getElementById('postLink').value.trim(),linkText:document.getElementById('postLinkText').value.trim()});
+  document.getElementById('postMsg').textContent=''; document.getElementById('postTitle').value=''; document.getElementById('postCaption').value='';
+  loadAll();
+}
+async function createQuestion(){
+  var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim();
+  if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; }
+  document.getElementById('qMsg').textContent='⏳ Saving...';
+  await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:parseInt(document.getElementById('qTimer').value)||30});
+  document.getElementById('qMsg').textContent=''; ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; });
+  loadAll();
+}
+async function deleteGeneric(sheet,idx,arrName){
+  if(!confirm('Move this to Recycle Bin?')) return;
+  var x=D[arrName][D[arrName].length-1-idx]; if(!x) return;
+  addToRecycle(sheet, x);
+  var card=document.getElementById('postcard-'+idx); if(card) card.style.display='none';
+  await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''});
+  loadAll();
+}
+async function clearSheet(sheet){
+  if(!confirm('Move ALL '+sheet+' to Recycle Bin?')) return;
+  if(sheet==='Quiz'){ D.quiz.forEach(function(b){ addToRecycle('Quiz', b); }); }
+  if(sheet==='Notify'){ D.notify.forEach(function(b){ addToRecycle('Notify', b); }); }
+  await postToSheet({type:'clear',sheet:sheet}); loadAll();
+}
+loadAll();
+</script>
+</body>
+</html>

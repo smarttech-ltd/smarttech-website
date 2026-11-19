@@ -1,0 +1,124 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Updates - SmartTech LTD</title>
+<link rel="icon" href="/logo.png">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui;background:#020d1f;color:#fff;min-height:100vh;position:relative;overflow-x:hidden}
+:root{--bg:#020d1f;--card:#0a2342;--blue:#3da9fc;--border:#1e4a8a}
+.bg-animation{position:fixed;inset:0;z-index:-1;background:var(--bg);overflow:hidden}
+.icon-float{position:absolute;font-size:34px;opacity:0.14;animation:floatDance 12s infinite ease-in-out}
+@keyframes floatDance{0%{transform:translateY(0) translateX(0) rotate(0deg)}25%{transform:translateY(-50px) translateX(25px) rotate(15deg) scale(1.2)}50%{transform:translateY(-20px) translateX(-30px) rotate(-10deg)}75%{transform:translateY(-70px) translateX(15px) rotate(20deg) scale(1.1)}100%{transform:translateY(0) translateX(0) rotate(0deg)}}
+.orb{position:absolute;width:380px;height:380px;border-radius:50%;filter:blur(80px);opacity:0.16;animation:orb 20s infinite}
+@keyframes orb{0%,100%{transform:translate(0,0)}50%{transform:translate(120px,-80px)}}
+.header{position:sticky;top:0;z-index:10;background:rgba(10,35,66,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px}
+.back-btn{background:#081c36;border:1px solid var(--border);color:var(--blue);padding:8px 14px;border-radius:20px;text-decoration:none;font-weight:bold}
+.back-btn:hover{background:var(--blue);color:#fff}
+.container{max-width:800px;margin:auto;padding:16px;position:relative;z-index:1}
+.card{background:rgba(10,35,66,0.88);border:1px solid var(--border);border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.card:hover{border-color:var(--blue);transform:translateY(-2px);transition:0.25s}
+.badge{background:#25D366;color:#fff;font-size:10px;padding:4px 8px;border-radius:10px;font-weight:bold}
+.time{font-size:11px;color:#88aaff}
+.btn{display:inline-block;padding:10px 16px;border-radius:20px;text-decoration:none;font-weight:bold;margin:6px 4px;font-size:13px;border:none;cursor:pointer}
+.blue{background:var(--blue);color:#fff}.green{background:#25D366;color:#fff}.dark{background:#132f5e;color:#fff;border:1px solid var(--border)}
+.empty{text-align:center;padding:50px;color:#88aaff}
+.hidden{display:none!important}
+</style>
+</head><body>
+
+<div class="bg-animation">
+  <div class="orb" style="background:#3da9fc;top:-60px;left:-60px"></div>
+  <div class="orb" style="background:#25D366;bottom:5%;right:-40px"></div>
+  <div class="orb" style="background:#8a5cff;top:45%;left:65%"></div>
+  <div class="icon-float" style="top:10%;left:8%;animation-delay:0s">💻</div>
+  <div class="icon-float" style="top:12%;left:88%;animation-delay:-2s">⚙️</div>
+  <div class="icon-float" style="top:28%;left:18%;animation-delay:-4s">🖥️</div>
+  <div class="icon-float" style="top:25%;left:72%;animation-delay:-1s">💾</div>
+  <div class="icon-float" style="top:50%;left:12%;animation-delay:-3s">🔧</div>
+  <div class="icon-float" style="top:48%;left:82%;animation-delay:-5s">📡</div>
+  <div class="icon-float" style="top:70%;left:10%;animation-delay:-6s">🛠️</div>
+  <div class="icon-float" style="top:68%;left:78%;animation-delay:-2.5s">💿</div>
+  <div class="icon-float" style="top:85%;left:22%;animation-delay:-7s">🔌</div>
+  <div class="icon-float" style="top:82%;left:88%;animation-delay:-3.5s">⌨️</div>
+  <div class="icon-float" style="top:18%;left:52%;animation-delay:-1.5s">🚀</div>
+  <div class="icon-float" style="top:62%;left:50%;animation-delay:-4.5s">🧠</div>
+  <div class="icon-float" style="top:38%;left:42%;animation-delay:-8s">👨‍💻</div>
+</div>
+
+<div class="header">
+  <a href="/" class="back-btn">← Back Home</a>
+  <div style="display:flex;align-items:center;gap:8px;font-weight:bold;color:#3da9fc"><img src="/logo.png" style="width:26px;height:26px;border-radius:6px"> Updates</div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <a href="https://whatsapp.com/channel/0029VbBCl6V2f3ELJ2xiD30V" target="_blank" class="btn green" style="padding:6px 12px">📢 Channel</a>
+    <button id="allowNotifBtn" class="btn blue hidden" onclick="enableNotifs()" style="padding:6px 12px">🔔 Allow</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="posts"><div class="empty">⏳ Loading updates...</div></div>
+</div>
+
+<script>
+async function loadPosts(){
+  try{
+    const res = await fetch('/api/posts');
+    const posts = await res.json();
+    const container = document.getElementById('posts');
+    const allowBtn = document.getElementById('allowNotifBtn');
+
+    // BUTTON DISAPPEARS WHEN NO UPDATE
+    if(!posts || posts.length===0){
+      allowBtn.classList.add('hidden');
+      container.innerHTML = `<div class="empty">📭 No updates yet.<br><small>You're all caught up! Check back later.</small><br><br><a href="/" class="btn blue">← Back Home</a></div>`;
+      return;
+    }
+
+    // HAS UPDATES - SHOW BUTTON
+    allowBtn.classList.remove('hidden');
+    if(Notification.permission==='granted'){ allowBtn.innerText='✅ Notifications ON'; }
+
+    container.innerHTML = posts.map(p=>`
+      <div class="card">
+        <span class="badge">🔥 NEW</span>
+        <div class="time">${new Date(p.time).toLocaleString()}</div>
+        <h3 style="margin:8px 0">${p.title}</h3>
+        <p style="white-space:pre-wrap;line-height:1.5;color:#c8d8ff">${p.body}</p>
+        ${p.media?`<img src="${p.media}" style="width:100%;border-radius:12px;margin-top:8px;max-height:320px;object-fit:cover;border:1px solid #1e4a8a">`:''}
+        <div style="margin-top:12px">
+          <a href="/booking.html" class="btn blue">📅 Book FREE</a>
+          <a href="https://wa.me/254183465547?text=${encodeURIComponent('Hi, update: '+p.title)}" class="btn green">💬 WhatsApp</a>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){
+    document.getElementById('posts').innerHTML=`<div class="empty">⚠️ KV not bound yet.<br><small>Pages → Settings → Functions → KV = SMARTTECH_KV → Retry deployment</small></div>`;
+    document.getElementById('allowNotifBtn').classList.add('hidden');
+  }
+}
+loadPosts();
+
+function enableNotifs(){
+  if(!('Notification' in window)) return alert('Notifications not supported');
+  Notification.requestPermission().then(p=>{
+    const btn = document.getElementById('allowNotifBtn');
+    if(p==='granted'){ btn.innerText='✅ ON'; localStorage.setItem('notifAllowed','yes'); new Notification("SmartTech Updates ✅",{body:"You'll get instant updates!",icon:"/logo.png"}); }
+    else { btn.classList.add('hidden'); }
+  });
+}
+
+// Poll for new notifications
+async function pollNew(){
+  try{
+    const res=await fetch('/api/notify'); const last=await res.json();
+    if(last.id){
+      const lastId=localStorage.getItem('lastSeenId');
+      if(lastId!=last.id && Notification.permission==='granted'){
+        new Notification(last.title,{body:last.body,icon:'/logo.png'});
+        localStorage.setItem('lastSeenId',last.id); loadPosts();
+      }
+    }
+  }catch{}
+}
+setInterval(pollNew,30000);
+</script>
+</body></html>

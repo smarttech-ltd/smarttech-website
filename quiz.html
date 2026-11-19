@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Quiz - SmartTech LTD</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+body{background:#0a1931;color:#fff;min-height:100vh}
+.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a}
+.header a{color:#4aa3ff;text-decoration:none;font-size:13px;font-weight:700}
+.wrap{max-width:520px;margin:0 auto;padding:14px}
+.card{background:rgba(13,35,90,.92);border:1px solid #2a5ab0;border-radius:18px;padding:16px;margin-bottom:12px}
+.input{width:100%;padding:12px;border-radius:12px;border:1px solid #1e3a5a;background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;margin-bottom:10px}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px;background:#00e5ff;color:#0a1931}
+.btn-green{background:#00c853;color:#fff}.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid #2a5ab0}.btn-orange{background:#ff9800;color:#fff}
+.opt{width:100%;padding:13px;border-radius:12px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;text-align:left;cursor:pointer;margin-bottom:8px;font-size:14px}
+.opt:hover{background:#4aa3ff;color:#0a1931}
+.opt.correct{background:#00c853!important;color:#fff}
+.opt.wrong{background:#ff5252!important;color:#fff}
+.small{font-size:12px;color:#8ec8ff;line-height:1.6}
+.hidden{display:none!important}
+.progress{height:8px;background:rgba(255,255,255,.15);border-radius:20px;overflow:hidden;margin:10px 0}
+.progress div{height:100%;background:#00e5ff;width:0%;transition:.3s}
+.scorebox{background:rgba(0,200,83,.15);border:1px solid #00c853;border-radius:14px;padding:14px;text-align:center;margin:10px 0}
+.scorebox b{font-size:32px;color:#00e676}
+</style>
+</head>
+<body>
+<div class="header"><a href="index.html">← Home</a><b>🧠 SmartTech Quiz</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
+<div class="wrap">
+<div class="card" id="startCard">
+<h2 style="color:#5ee1ff;text-align:center">🧠 FREE ICT Quiz</h2>
+<p class="small" style="text-align:center;margin:8px 0">Computer Basics • MS Word • MS Excel • Internet Safety<br>Get your score instantly!</p>
+<label class="small">Your Name *</label><input id="userName" class="input" placeholder="e.g. Gideon">
+<label class="small">Phone *</label><input id="userPhone" class="input" placeholder="e.g. 0712345678">
+<label class="small">Email (optional)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
+<label class="small">Choose Topic</label>
+<select id="topic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>All Topics</option></select>
+<button class="btn" onclick="startQuiz()">▶️ Start Quiz</button>
+<p class="small" id="startMsg" style="margin-top:8px;text-align:center"></p>
+</div>
+
+<div class="card hidden" id="quizCard">
+<div style="display:flex;justify-content:space-between;font-size:13px"><span id="qCount">Q 1/5</span><span id="timer" style="color:#facc15;font-weight:800">⏱️ 30s</span></div>
+<div class="progress"><div id="prog"></div></div>
+<h3 id="qText" style="margin:10px 0;line-height:1.5">Question...</h3>
+<div id="options"></div>
+<button class="btn btn-ghost" onclick="nextQ()">Next →</button>
+</div>
+
+<div class="card hidden" id="resultCard">
+<h2 style="text-align:center;color:#5ee1ff">🎉 Quiz Complete!</h2>
+<div class="scorebox"><div>YOUR SCORE</div><b id="finalScore">0/0</b><div id="finalPerc" style="font-size:20px;font-weight:800;color:#fff;margin-top:4px">0%</div><div id="finalMsg" style="font-size:13px;margin-top:6px;color:#c8d6ff"></div></div>
+<div id="review"></div>
+<button class="btn btn-green" onclick="location.reload()">🔄 Retake Quiz</button>
+<a href="booking.html" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">📅 Book ICT Help</a>
+</div>
+</div>
+<script>
+const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=30, answered=false;
+const DEFAULT_Q=[
+{topic:"Computer Basics",question:"What does CPU stand for?",options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],answer:0,explanation:"CPU = Central Processing Unit"},
+{topic:"Computer Basics",question:"Which device is used to type?",options:["Monitor","Keyboard","Printer","Speaker"],answer:1,explanation:"Keyboard is for typing"},
+{topic:"MS Word",question:"Which shortcut saves a document?",options:["Ctrl+P","Ctrl+S","Ctrl+C","Ctrl+V"],answer:1,explanation:"Ctrl+S = Save"},
+{topic:"MS Excel",question:"What is the intersection of a row and column called?",options:["Table","Cell","Sheet","Range"],answer:1,explanation:"Cell"},
+{topic:"Internet Safety",question:"What is a strong password?",options:["123456","password","G!d30n@2026","name"],answer:2,explanation:"Mix letters, numbers, symbols"}
+];
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function lowerKeys(r){var o={};Object.keys(r||{}).forEach(function(k){o[String(k).toLowerCase().trim()]=r[k];});return o;}
+function normalizeRows(data){
+if(!data) return [];
+if(Array.isArray(data)&&data.length&&typeof data[0]==='object'&&!Array.isArray(data[0])) return data;
+if(!Array.isArray(data)||!data.length) return [];
+var h=data[0].map(function(x){return String(x||'').toLowerCase().trim();});
+return data.slice(1).map(function(row){var o={};h.forEach(function(k,i){o[k]=row[i];});return o;});
+}
+async function loadQuestions(){
+try{
+var res=await fetch(SHEET_URL+"?type=questions");
+var data=await res.json();
+var rows=normalizeRows(data.questions||data).map(lowerKeys);
+allQuestions=rows.map(function(r){var opts=[];try{opts=JSON.parse(r.options||'[]');}catch(e){}return {topic:r.topic||'Computer Basics',question:r.question||r.q||'',options:opts,answer:parseInt(r.answer||0),explanation:r.explanation||''};}).filter(function(q){return q.question&&q.options.length>=2;});
+document.getElementById('conn').textContent='✅ '+allQuestions.length+' Questions Ready';
+}catch(e){document.getElementById('conn').textContent='⚠️ Using offline questions';}
+if(!allQuestions.length) allQuestions=DEFAULT_Q;
+}
+loadQuestions();
+function startQuiz(){
+var name=document.getElementById('userName').value.trim();
+var phone=document.getElementById('userPhone').value.trim();
+if(!name||!phone){alert('Enter Name + Phone');return;}
+var topic=document.getElementById('topic').value;
+quizQuestions = topic==='All Topics' ? [...allQuestions] : allQuestions.filter(function(q){return q.topic===topic;});
+if(!quizQuestions.length) quizQuestions=[...allQuestions];
+quizQuestions=quizQuestions.sort(function(){return Math.random()-0.5;}).slice(0,10);
+current=0;score=0;answers=[];
+document.getElementById('startCard').classList.add('hidden');
+document.getElementById('quizCard').classList.remove('hidden');
+showQ();
+}
+function showQ(){
+answered=false;
+var q=quizQuestions[current];
+document.getElementById('qCount').textContent='Q '+(current+1)+'/'+quizQuestions.length;
+document.getElementById('prog').style.width=((current/quizQuestions.length)*100)+'%';
+document.getElementById('qText').textContent=q.question;
+var opts=document.getElementById('options');
+opts.innerHTML=q.options.map(function(o,i){return '<button class="opt" onclick="pick('+i+',this)">'+esc(o)+'</button>';}).join('');
+timeLeft=q.timer||30;
+document.getElementById('timer').textContent='⏱️ '+timeLeft+'s';
+clearInterval(timerInt);
+timerInt=setInterval(function(){timeLeft--;document.getElementById('timer').textContent='⏱️ '+timeLeft+'s';if(timeLeft<=0){clearInterval(timerInt);pick(-1,null);}},1000);
+}
+function pick(idx,btn){
+if(answered) return; answered=true; clearInterval(timerInt);
+var q=quizQuestions[current];
+var your = idx>=0 ? q.options[idx] : 'No Answer (Time Up)';
+var correct = q.options[q.answer];
+var isCorrect = idx===q.answer;
+if(isCorrect) score++;
+if(btn){btn.classList.add(isCorrect?'correct':'wrong');}
+document.querySelectorAll('.opt').forEach(function(b,i){if(i===q.answer) b.classList.add('correct');});
+answers.push({q:q.question,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
+setTimeout(nextQ,900);
+}
+function nextQ(){
+current++;
+if(current>=quizQuestions.length) finishQuiz();
+else showQ();
+}
+async function finishQuiz(){
+clearInterval(timerInt);
+document.getElementById('quizCard').classList.add('hidden');
+document.getElementById('resultCard').classList.remove('hidden');
+// ✅ PERCENTAGE: 5/5 = 100%, 4/5 = 80%
+var total=quizQuestions.length;
+var perc = total>0 ? Math.round((score/total)*100) : 0;
+var percText = perc + "%";
+document.getElementById('finalScore').textContent=score+'/'+total;
+document.getElementById('finalPerc').textContent=percText+' — '+score+'/'+total;
+document.getElementById('finalMsg').textContent= perc>=80?'Excellent! 🏆':perc>=50?'Good job! Keep practicing':'Keep learning — Book ICT help below';
+document.getElementById('prog').style.width='100%';
+document.getElementById('review').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br>Your: '+esc(a.yourAnswer)+' '+(a.isCorrect?'✅':'❌')+'<br>Correct: '+esc(a.correctAnswer)+'<br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
+// Save to backend
+var topic=document.getElementById('topic').value;
+try{
+await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'quiz',name:document.getElementById('userName').value.trim(),phone:document.getElementById('userPhone').value.trim(),email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers)})});
+}catch(e){}
+}
+</script>
+</body>
+</html>

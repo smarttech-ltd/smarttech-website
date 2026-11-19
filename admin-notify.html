@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Send Notification - SmartTech LTD</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+body{background:#0a1931;color:white;min-height:100vh;position:relative;overflow-x:hidden}
+.dance-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;overflow:hidden;background:#0a1931;pointer-events:none}
+.dance-bg::before{content:'';position:absolute;width:200%;height:200%;background:radial-gradient(circle at 20% 30%, rgba(74,163,255,0.22) 0%, transparent 45%),radial-gradient(circle at 80% 70%, rgba(0,229,255,0.18) 0%, transparent 45%);animation:pulse 7s ease-in-out infinite}
+.tech-float{position:absolute;opacity:0.28;animation:float linear infinite;pointer-events:none}
+@keyframes float{0%{transform:translateY(105vh) rotate(0deg);opacity:0}10%{opacity:0.35}90%{opacity:0.25}100%{transform:translateY(-15vh) rotate(360deg);opacity:0}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.header{background:rgba(10,25,49,0.92);backdrop-filter:blur(14px);padding:14px 16px;border-bottom:1px solid #1e3a5a;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.header a{color:#4aa3ff;text-decoration:none;font-weight:700;font-size:14px}
+.wrap{max-width:480px;margin:0 auto;padding:16px;position:relative;z-index:2}
+.card{background:rgba(13,35,90,0.9);border:1px solid #2a5ab0;border-radius:20px;padding:20px;backdrop-filter:blur(10px)}
+.input, .textarea, select{width:100%;padding:12px;border-radius:10px;border:1px solid #1e3a5a;background:rgba(0,0,0,0.3);color:white;margin-bottom:12px;font-size:14px;outline:none}
+.input:focus,.textarea:focus{border-color:#4aa3ff}
+.textarea{min-height:100px}
+.btn{width:100%;background:#ff9800;color:white;border:none;padding:14px;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px}
+.btn-green{background:#25D366;color:#fff}.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid #2a5ab0}.btn-blue{background:#4aa3ff;color:#0a1931}
+.log{margin-top:14px;background:rgba(0,0,0,0.3);border-radius:12px;padding:12px;font-size:12px;max-height:250px;overflow-y:auto;line-height:1.6}
+.tpl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tpl button{padding:8px 12px;border-radius:20px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font-size:12px;font-weight:700}
+.tpl button:hover{background:#4aa3ff;color:#0a1931}
+.preview{background:rgba(0,0,0,.3);border:1px solid #2a5ab0;border-radius:12px;padding:12px;margin-bottom:12px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="dance-bg" id="danceBg"></div>
+<div class="header"><a href="admin-dashboard.html">← Back to Dashboard</a><span style="margin-left:10px;font-weight:700">🔔 Send Notifications</span><span style="margin-left:auto;font-size:11px;color:#8ec8ff">Online ICT Platform</span></div>
+<div class="wrap">
+  <div class="card">
+    <div style="text-align:center;margin-bottom:12px"><img src="logo.png" alt="SmartTech LTD" style="width:60px;height:60px;border-radius:12px"><div style="margin-top:8px;font-weight:800;color:#4aa3ff">Notify Clients</div><div style="font-size:11px;color:#8ec8ff">Saves to Google Sheet • Shows on all clients' bell</div></div>
+    <label style="font-size:12px;color:#8ec8ff;font-weight:700;display:block;margin-bottom:6px">Quick Templates</label>
+    <div class="tpl">
+      <button onclick="useTemplate('offer')">🔥 New Offer</button>
+      <button onclick="useTemplate('post')">📢 New Post</button>
+      <button onclick="useTemplate('quiz')">🧠 Quiz</button>
+      <button onclick="useTemplate('booking')">📅 Booking Reminder</button>
+      <button onclick="useTemplate('service')">💎 Service</button>
+    </div>
+    <input id="title" class="input" placeholder="Title e.g. New Offer! 💎" value="SmartTech LTD">
+    <textarea id="body" class="textarea" placeholder="Message e.g. Posters & Flyers at 50% OFF Today! Book Free on WhatsApp 0183465547"></textarea>
+    <label style="font-size:12px;color:#8ec8ff;font-weight:700;display:block;margin-bottom:6px">Link when clicked (optional)</label>
+    <select id="linkTarget">
+      <option value="updates.html">📢 Updates Page</option>
+      <option value="booking.html">📅 Booking Page</option>
+      <option value="quiz.html">🧠 Quiz Page</option>
+      <option value="index.html">🏠 Home Page</option>
+      <option value="https://whatsapp.com/channel/0029Vb8g2IyLdQeduLS5MD3z">📢 WhatsApp Channel</option>
+    </select>
+    <div class="preview">
+      <div style="font-size:11px;color:#8ec8ff">PREVIEW</div>
+      <div style="font-weight:800;margin-top:4px" id="previewTitle">SmartTech LTD</div>
+      <div style="font-size:13px;color:#c8d6ff;margin-top:4px;line-height:1.5" id="previewBody">Your message will appear here...</div>
+      <div style="font-size:11px;color:#5a6d94;margin-top:6px" id="previewLink">🔗 Will open: updates.html</div>
+    </div>
+    <button class="btn" id="sendBtn" onclick="sendNotify()">🔔 Send to All Clients — Save to Sheet</button>
+    <button class="btn btn-green" style="margin-top:10px" onclick="sendToChannel()">📢 Also Share to WhatsApp Channel</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="testNotify()">👁️ Test on My Phone</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="clearHistory()">🗑️ Clear History</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost" style="flex:1" onclick="loadHistory()">🔄 Refresh History from Sheet</button></div>
+    <div class="log" id="log">🔄 Loading history from Sheet...</div>
+  </div>
+  <div class="card" style="text-align:center;font-size:12px;color:#8ec8ff;line-height:1.6">
+    💡 How it works: Saved to Sheet → Appears on client's bell (index.html) on any phone.<br>
+    For WhatsApp Channel, tap <b style="color:#fff">Share to Channel</b> and paste message there.<br>
+    💳 Pochi: <b style="color:#facc15">0183465547</b> • WhatsApp: 0183465547
+  </div>
+</div>
+<script>
+if(localStorage.getItem('smarttech_admin')!=='true' && localStorage.getItem('isAdmin')!=='true'){ location.href='admin.html'; }
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+const bg=document.getElementById('danceBg');
+const icons=['💻','🖥️','📲','💳','💸','💰','🚀','🤖','📊','🔔','👨‍💻'];
+for(let i=0;i<24;i++){const el=document.createElement('div');el.className='tech-float';el.textContent=icons[Math.floor(Math.random()*icons.length)];el.style.left=Math.random()*100+'%';el.style.animationDelay=(Math.random()*10)+'s';el.style.animationDuration=(8+Math.random()*10)+'s';el.style.fontSize=(16+Math.random()*20)+'px';bg.appendChild(el);}
+const TEMPLATES={
+  offer:{title:'🔥 New Offer - SmartTech LTD',body:'Posters & Flyers at 50% OFF Today! Windows + Office Bundle also ON OFFER. Prices KES 50-1500 Negotiable. Book Free on WhatsApp 0183465547. Online ICT Platform.',link:'booking.html'},
+  post:{title:'📢 New Update - SmartTech',body:'New update just posted on SmartTech! Check latest offers & services. Open Updates page now.',link:'updates.html'},
+  quiz:{title:'🧠 FREE Quiz - SmartTech Quick Check',body:'Test your ICT skills in few minutes! Computer Basics, MS Word, MS Excel & Internet Safety. Get score instantly + result by email. FREE - Start now!',link:'quiz.html'},
+  booking:{title:'📅 SmartTech - Book Free',body:'Need ICT help? Windows, Office, KRA, HELB, KUCCPS, SHA, Poster Design & more. Book Free now - We reply in few minutes on WhatsApp 0183465547.',link:'booking.html'},
+  service:{title:'💎 SmartTech LTD - All Services',body:'All ICT Services Available - Windows, Office, KRA, KUCCPS, HELB, SHA, Poster Design, Photo Editing & more. Prices KES 50-1500 Negotiable. Book Free!',link:'index.html'}
+};
+function useTemplate(key){
+  var t=TEMPLATES[key]; if(!t) return;
+  document.getElementById('title').value=t.title;
+  document.getElementById('body').value=t.body;
+  document.getElementById('linkTarget').value=t.link;
+  updatePreview();
+}
+function updatePreview(){
+  document.getElementById('previewTitle').textContent=document.getElementById('title').value.trim()||'SmartTech LTD';
+  document.getElementById('previewBody').textContent=document.getElementById('body').value.trim()||'Your message will appear here...';
+  document.getElementById('previewLink').textContent='🔗 Will open: '+document.getElementById('linkTarget').value;
+}
+document.getElementById('title').addEventListener('input',updatePreview);
+document.getElementById('body').addEventListener('input',updatePreview);
+document.getElementById('linkTarget').addEventListener('change',updatePreview);
+// Prefill from Dashboard post -> Send as Notification
+try{
+  var pre=JSON.parse(localStorage.getItem('smarttech_notify_prefill')||'null');
+  if(pre){
+    if(pre.title) document.getElementById('title').value=pre.title;
+    if(pre.body) document.getElementById('body').value=pre.body;
+    if(pre.link){ var sel=document.getElementById('linkTarget'); var found=false; for(var i=0;i<sel.options.length;i++){ if(sel.options[i].value===pre.link){ sel.value=pre.link; found=true; break; } } if(!found && pre.link){ var o=document.createElement('option'); o.value=pre.link; o.textContent='🔗 '+pre.link; sel.appendChild(o); sel.value=pre.link; } }
+    localStorage.removeItem('smarttech_notify_prefill');
+  }
+}catch(e){}
+updatePreview();
+let bc=null, bcFeed=null;
+try{ bc=new BroadcastChannel('smarttech_notify'); }catch(e){}
+try{ bcFeed=new BroadcastChannel('smarttech_feed'); }catch(e){}
+let sheetHistory=[];
+function lowerKeys(r){ var o={}; Object.keys(r||{}).forEach(function(k){ o[String(k).toLowerCase().trim()]=r[k]; }); return o; }
+function normalizeRows(data){
+  if(!data) return [];
+  if(data.notify) data=data.notify;
+  if(data.data) data=data.data;
+  if(Array.isArray(data) && data.length && typeof data[0]==='object' && !Array.isArray(data[0])) return data;
+  if(!Array.isArray(data) || !data.length) return [];
+  var h=data[0].map(function(x){ return String(x||'').toLowerCase().trim(); });
+  return data.slice(1).map(function(row){ var o={}; h.forEach(function(k,i){ o[k]=row[i]; }); return o; });
+}
+async function loadHistory(){
+  var log=document.getElementById('log');
+  log.innerHTML='🔄 Loading from Sheet...';
+  try{
+    var res=await fetch(SHEET_URL+"?type=notify");
+    var data=await res.json();
+    sheetHistory=normalizeRows(data).map(function(r){ var l=lowerKeys(r); return {title:l.title||'',body:l.body||l.message||'',link:l.link||'',time:l.timestamp||''}; }).filter(function(x){ return x.title||x.body; });
+    sheetHistory.reverse();
+  }catch(e){ sheetHistory=[]; }
+  renderHistory();
+}
+function renderHistory(){
+  var log=document.getElementById('log');
+  if(!sheetHistory.length){log.innerHTML='Ready to send... No notifications in Sheet yet.';return;}
+  log.innerHTML=sheetHistory.map(function(x){ return '✅ '+x.time+'<br><b>'+x.title+'</b><br>'+x.body+'<br><span style="color:#5a6d94">🔗 '+(x.link||'')+'</span><hr style="border-color:rgba(255,255,255,.08);margin:8px 0">'; }).join('');
+}
+async function sendNotify(){
+  var title=document.getElementById('title').value.trim()||'SmartTech LTD';
+  var body=document.getElementById('body').value.trim();
+  var link=document.getElementById('linkTarget').value;
+  if(!body){alert('Enter message');document.getElementById('body').focus();return;}
+  var btn=document.getElementById('sendBtn'); btn.disabled=true; btn.textContent='⏳ Saving to Sheet...';
+  var data={title:title,body:body,link:link,time:new Date().toLocaleString(),timestamp:Date.now()};
+  try{ await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'notify',title:title,body:body,link:link})}); }catch(e){ console.log(e); }
+  try{ if(bc) bc.postMessage(data); }catch(e){}
+  try{ if(bcFeed) bcFeed.postMessage({type:'notify',title:title,body:body,link:link,timestamp:Date.now()}); }catch(e){}
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ if('serviceWorker' in navigator){ navigator.serviceWorker.ready.then(function(r){r.showNotification(title,{body:body,icon:'/logo.png',data:{url:link}});}).catch(function(){new Notification(title,{body:body,icon:'/logo.png'});}); } else { new Notification(title,{body:body,icon:'/logo.png'}); } }catch(e){}
+  } else if('Notification' in window && Notification.permission!=='denied'){
+    Notification.requestPermission().then(function(p){ if(p==='granted') new Notification(title,{body:body}); });
+  }
+  btn.disabled=false; btn.textContent='🔔 Send to All Clients — Save to Sheet';
+  document.getElementById('body').value=''; updatePreview();
+  await loadHistory();
+  alert('✅ Saved to Sheet! Clients will see it on their bell (index.html). Also share to Channel for everyone.');
+}
+function testNotify(){
+  var title=document.getElementById('title').value.trim()||'SmartTech LTD';
+  var body=document.getElementById('body').value.trim()||'Test notification - SmartTech works!';
+  if('Notification' in window){
+    if(Notification.permission==='granted'){new Notification(title,{body:body,icon:'/logo.png'});}
+    else{Notification.requestPermission().then(function(p){ if(p==='granted') new Notification(title,{body:body}); else alert('Allow Notifications in browser settings to test.'); });}
+  } else { alert('Notifications not supported on this browser.'); }
+}
+function sendToChannel(){
+  var title=document.getElementById('title').value.trim()||'SmartTech LTD';
+  var body=document.getElementById('body').value.trim();
+  if(!body){alert('Enter message first');return;}
+  var text=title+'\n\n'+body+'\n\nBook Free: https://smarttech-ltd.pages.dev/booking.html\nWhatsApp: 0183465547';
+  window.open('https://whatsapp.com/channel/0029Vb8g2IyLdQeduLS5MD3z','_blank');
+  navigator.clipboard.writeText(text).then(function(){alert('✅ Message copied! Paste it in your WhatsApp Channel.');}).catch(function(){alert('Channel opened. Copy this message:\n\n'+text);});
+}
+async function clearHistory(){
+  if(!confirm('Clear ALL notification history from Sheet?')) return;
+  await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'clear',sheet:'Notify'})});
+  await loadHistory();
+}
+loadHistory();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js').catch(function(){});}
+</script>
+</body>
+</html>
