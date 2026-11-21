@@ -72,11 +72,11 @@ body{background:#0a1931;color:white;min-height:100vh;display:flex;flex-direction
       <div style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:12px;padding:12px;margin-top:16px;font-size:12px;color:#c8ffd6;text-align:center">
         📱 Code will go to<br><b>0183****547</b><br><span style="font-size:11px;opacity:.8">Valid for 10 minutes. Do not share it.</span>
       </div>
-      <button class="btn btn-green" style="margin-top:14px" onclick="sendCode('whatsapp')">📲 WhatsApp</button>
+      <button class="btn btn-green" style="margin-top:14px" onclick="sendCode('email')">✉️ Email - Recommended, code goes to inbox</button>
+      <button class="btn" style="margin-top:8px;background:#25D366;color:white" onclick="sendCode('whatsapp')">📲 WhatsApp</button>
       <button class="btn" style="margin-top:8px;background:#007bff;color:white" onclick="sendCode('sms')">💬 SMS to 0183465547</button>
-      <button class="btn" style="margin-top:8px;background:#EA4335;color:white" onclick="sendCode('email')">✉️ Email</button>
       <button class="btn" style="margin-top:10px;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="closeForgot()">← Back to Login</button>
-      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">If this device has no WhatsApp, use SMS or Email.</div>
+      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">If this device has no WhatsApp, use SMS or Email.<br>Code is never shown in the link or address bar.</div>
     </div>
 
     <!-- STEP 2 -->
@@ -152,7 +152,6 @@ function showStep(n){
   document.getElementById('step'+n).classList.add('active');
 }
 function generateRandomCode(){
-  // Strong random, different every single time
   if(window.crypto && window.crypto.getRandomValues){
     const arr = new Uint32Array(1);
     window.crypto.getRandomValues(arr);
@@ -171,22 +170,36 @@ function sendCode(method){
   localStorage.setItem('resetOTP', generatedOTP);
   localStorage.setItem('resetOTPTime', Date.now().toString());
   localStorage.setItem('resetOTPMethod', method);
-  localStorage.setItem('resetOTPAttempts', (parseInt(localStorage.getItem('resetOTPAttempts')||'0')+1).toString());
 
   document.getElementById('otpInput').value='';
   document.getElementById('otpMsg').classList.remove('show');
 
-  // 3. Open inbox ONLY - NO code in link, NO "code sent" message
-  if(method === 'whatsapp'){
-    window.open(`https://wa.me/${ADMIN_PHONE_INTL}`, '_blank');
-  } else if(method === 'sms'){
-    window.location.href = `sms:+${ADMIN_PHONE_INTL}`;
-  } else if(method === 'email'){
-    window.location.href = `mailto:${ADMIN_EMAIL}?subject=SmartTech Admin Password Reset Request`;
-  }
+  if(method === 'email'){
+    // REAL SEND - via FormSubmit, code hidden in POST body, not URL, not on screen
+    fetch('https://formsubmit.co/ajax/smarttech.ltd.co.ke@gmail.com', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      body: JSON.stringify({
+        name: 'SmartTech Admin Reset',
+        message: 'Your SmartTech Admin Password Reset Code is: ' + generatedOTP + ' - Valid for 10 minutes. If you did not request, ignore.',
+        _subject: 'SmartTech Admin Reset Code',
+        _template: 'table'
+      })
+    }).catch(()=>{});
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
 
-  // 4. Go straight to enter-code screen, no extra writings
-  setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+  } else if(method === 'whatsapp'){
+    // No code in link - fixes blank text, just a normal request message
+    const text = encodeURIComponent('Hello, I need SmartTech Admin password reset. Please help.');
+    window.open(`https://wa.me/${ADMIN_PHONE_INTL}?text=${text}`, '_blank');
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+
+  } else if(method === 'sms'){
+    // No code in link - fixes blank text
+    const smsBody = encodeURIComponent('Hello, I need SmartTech Admin password reset.');
+    window.location.href = `sms:+${ADMIN_PHONE_INTL}?body=${smsBody}`;
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+  }
 }
 
 function verifyCode(){
