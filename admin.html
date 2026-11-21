@@ -64,22 +64,26 @@ body{background:#0a1931;color:white;min-height:100vh;display:flex;flex-direction
     <div style="text-align:center">
       <div style="font-size:28px">🔑</div>
       <div style="font-weight:800;color:#4aa3ff;font-size:18px;margin-top:8px">Reset Admin Password</div>
-      <div style="font-size:11px;color:#5a6d94;margin-top:6px">Code will be sent to your WhatsApp</div>
+      <div style="font-size:11px;color:#5a6d94;margin-top:6px">Choose how to receive your code</div>
     </div>
 
-    <!-- STEP 1: SEND CODE -->
+    <!-- STEP 1 -->
     <div id="step1" class="step active">
       <div style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:12px;padding:12px;margin-top:16px;font-size:12px;color:#c8ffd6;text-align:center">
-        📱 Reset code will be sent to<br><b>Your WhatsApp Inbox</b><br><span style="font-size:11px;opacity:.8">Valid for 10 minutes. Do not share it.</span>
+        📱 Code will go to<br><b>smarttech.ltd.co.ke@gmail.com</b><br><span style="font-size:11px;opacity:.8">Valid for 10 minutes. Do not share it. Works on desktop & mobile, no app download needed.</span>
       </div>
-      <button class="btn btn-green" style="margin-top:14px" onclick="sendCode()">📲 Send Reset Code to WhatsApp</button>
-      <div id="codeSentMsg" class="msg msg-success" style="margin-top:10px">✅ Code sent! Check WhatsApp</div>
+      <!-- MAIN METHOD - WORKS ON DESKTOP, NO DOWNLOAD, CODE NOT VISIBLE -->
+      <button class="btn btn-green" style="margin-top:14px" onclick="sendCode('email')">✉️ Send Code to Email Inbox</button>
+      <!-- SECONDARY - NO CODE IN LINK, ONLY CONTACT -->
+      <button class="btn" style="margin-top:8px;background:#25D366;color:white" onclick="sendCode('whatsapp')">📲 WhatsApp - Contact Only (No Code)</button>
+      <button class="btn" style="margin-top:8px;background:#007bff;color:white" onclick="sendCode('sms')">💬 SMS - Contact Only (No Code)</button>
       <button class="btn" style="margin-top:10px;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="closeForgot()">← Back to Login</button>
+      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">Code is never shown in the link, address bar, or on screen. It goes directly to your inbox.</div>
     </div>
 
-    <!-- STEP 2: ENTER CODE -->
+    <!-- STEP 2 -->
     <div id="step2" class="step">
-      <div style="font-size:13px;color:#8ec8ff;margin-top:16px">Enter 8-digit code sent to your WhatsApp</div>
+      <div style="font-size:13px;color:#8ec8ff;margin-top:16px">Enter 8-digit code from your inbox</div>
       <input id="otpInput" class="input" style="margin-top:10px;text-align:center;letter-spacing:6px;font-size:18px;font-weight:800" placeholder="Enter Code" maxlength="8" inputmode="numeric">
       <div id="otpMsg" class="msg"></div>
       <button class="btn btn-orange" style="margin-top:12px" onclick="verifyCode()">✅ Verify Code</button>
@@ -87,10 +91,10 @@ body{background:#0a1931;color:white;min-height:100vh;display:flex;flex-direction
         <button class="btn" style="flex:1;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="showStep(1)">← Resend</button>
         <button class="btn" style="flex:1;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="closeForgot()">Cancel</button>
       </div>
-      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">Code expires in 10 minutes. Resend generates a new random code.</div>
+      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">Code expires in 10 minutes. Resend creates a new code and old code stops working.</div>
     </div>
 
-    <!-- STEP 3: SET NEW PASSWORD -->
+    <!-- STEP 3 -->
     <div id="step3" class="step">
       <div style="font-size:13px;color:#00e676;margin-top:16px">✅ Code verified! Set new password</div>
       <div class="input-wrap"><input id="newPwd" class="input" type="password" placeholder="New Password" autocomplete="new-password"><button type="button" class="eye" onclick="togglePwd('newPwd',this)">👁️</button></div>
@@ -98,7 +102,6 @@ body{background:#0a1931;color:white;min-height:100vh;display:flex;flex-direction
       <div id="newPwdMsg" class="msg"></div>
       <button class="btn btn-green" style="margin-top:12px" onclick="setNewPassword()">🔒 Save New Password</button>
     </div>
-
   </div>
 </div>
 
@@ -134,11 +137,13 @@ function login(){
 document.getElementById('pwd').addEventListener('keypress',e=>{if(e.key==='Enter') login();});
 document.getElementById('pwd').addEventListener('input',()=>{document.getElementById('msg').classList.remove('show');});
 
-// FORGOT FLOW - RANDOM CODE ONLY
+// FORGOT FLOW - CODE NEVER VISIBLE, GOES DIRECTLY TO INBOX, WORKS ON DESKTOP
+const ADMIN_PHONE_INTL = '254183465547';
+const ADMIN_EMAIL = 'smarttech.ltd.co.ke@gmail.com';
+
 function openForgot(){
   document.getElementById('forgotModal').classList.add('show');
   showStep(1);
-  document.getElementById('codeSentMsg').classList.remove('show');
   document.getElementById('otpInput').value='';
   document.getElementById('otpMsg').classList.remove('show');
 }
@@ -147,30 +152,105 @@ function showStep(n){
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
   document.getElementById('step'+n).classList.add('active');
 }
-
-// Generates a NEW random 8-digit code every time - no fixed code anywhere
 function generateRandomCode(){
-  // Use crypto for strong randomness, fallback to Math.random
   if(window.crypto && window.crypto.getRandomValues){
     const arr = new Uint32Array(1);
     window.crypto.getRandomValues(arr);
-    // 10000000 - 99999999
     return (10000000 + (arr[0] % 90000000)).toString();
   }
   return Math.floor(10000000 + Math.random()*90000000).toString();
 }
 
-function sendCode(){
+function sendCode(method){
+  // 1. Kill old code - it can never be used again
+  localStorage.removeItem('resetOTP');
+  localStorage.removeItem('resetOTPTime');
+
+  // 2. New random code for THIS attempt only
   const generatedOTP = generateRandomCode();
   localStorage.setItem('resetOTP', generatedOTP);
   localStorage.setItem('resetOTPTime', Date.now().toString());
-  document.getElementById('codeSentMsg').textContent='✅ Random code sent! Check WhatsApp - Enter it below.';
-  document.getElementById('codeSentMsg').classList.add('show');
-  // Clear old input so old code cannot be reused
+  localStorage.setItem('resetOTPMethod', method);
+
   document.getElementById('otpInput').value='';
-  const message=`🔐 SmartTech Admin Password Reset%0A%0ACode: *${generatedOTP}*%0A%0AValid for 10 minutes%0AIf you didn't request, ignore.`;
-  window.open(`https://wa.me/254183465547?text=${message}`, '_blank');
-  setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 1000);
+  document.getElementById('otpMsg').classList.remove('show');
+
+  if(method === 'email'){
+    // REAL SEND - Code hidden in POST body, NOT in URL, NOT on screen
+    // Works on desktop - no WhatsApp download, no app needed
+    // Uses hidden form + fetch to FormSubmit
+    const formData = new FormData();
+    formData.append('name', 'SmartTech Admin');
+    formData.append('email', ADMIN_EMAIL);
+    formData.append('subject', 'SmartTech Admin Reset Code - ' + generatedOTP);
+    formData.append('message', 'Your SmartTech Admin Password Reset Code is: ' + generatedOTP + '\n\nValid for 10 minutes.\nIf you did not request this, ignore this email.');
+    formData.append('_subject', 'SmartTech Admin Reset Code - ' + generatedOTP);
+    formData.append('_template', 'table');
+    formData.append('_captcha', 'false');
+
+    // Method 1: fetch POST (hidden)
+    fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      body: JSON.stringify({
+        name: 'SmartTech Admin',
+        email: ADMIN_EMAIL,
+        subject: 'SmartTech Admin Reset Code - ' + generatedOTP,
+        message: 'Your SmartTech Admin Password Reset Code is: ' + generatedOTP + '\n\nValid for 10 minutes.\nIf you did not request this, ignore this email.',
+        _subject: 'SmartTech Admin Reset Code - ' + generatedOTP,
+        _template: 'table',
+        _captcha: 'false'
+      })
+    }).catch(()=>{});
+
+    // Method 2: hidden iframe form as backup - also hidden, works even if fetch blocked on desktop
+    // This ensures code reaches inbox even on desktop browsers that block fetch
+    try{
+      const iframe = document.createElement('iframe');
+      iframe.name = 'hiddenEmailFrame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://formsubmit.co/' + ADMIN_EMAIL;
+      form.target = 'hiddenEmailFrame';
+      form.style.display = 'none';
+      const fields = {
+        name: 'SmartTech Admin',
+        email: ADMIN_EMAIL,
+        subject: 'SmartTech Admin Reset Code - ' + generatedOTP,
+        message: 'Your SmartTech Admin Password Reset Code is: ' + generatedOTP + '\n\nValid for 10 minutes.\nIf you did not request this, ignore this email.',
+        _subject: 'SmartTech Admin Reset Code - ' + generatedOTP,
+        _template: 'table',
+        _captcha: 'false',
+        _next: 'about:blank'
+      };
+      for(const k in fields){
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = k; inp.value = fields[k];
+        form.appendChild(inp);
+      }
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(()=>{ try{form.remove(); iframe.remove();}catch(e){} }, 3000);
+    }catch(e){}
+
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+
+  } else if(method === 'whatsapp'){
+    // NO CODE HERE - only contact, no download forced, opens WhatsApp Web if available
+    // Code is NOT sent via WhatsApp because desktop WhatsApp needs download/login
+    // Use Email for code. This button is only to contact.
+    const text = encodeURIComponent('Hello, I need SmartTech Admin password reset. Please help.');
+    window.open(`https://web.whatsapp.com/send?phone=${ADMIN_PHONE_INTL}&text=${text}`, '_blank');
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+
+  } else if(method === 'sms'){
+    // NO CODE HERE - only contact
+    const smsBody = encodeURIComponent('Hello, I need SmartTech Admin password reset.');
+    window.location.href = `sms:+${ADMIN_PHONE_INTL}?body=${smsBody}`;
+    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
+  }
 }
 
 function verifyCode(){
@@ -180,20 +260,18 @@ function verifyCode(){
   const time=parseInt(localStorage.getItem('resetOTPTime')||'0');
   const now=Date.now();
   if(!entered){msg.textContent='⚠️ Enter the code first.';msg.className='msg show';return;}
-  if(!saved){msg.textContent='❌ No code sent. Tap Resend.';msg.className='msg show';return;}
+  if(!saved){msg.textContent='❌ No code. Tap Resend.';msg.className='msg show';return;}
   if(now - time > 10*60*1000){
-    // Expired - delete it so it cannot be used later
     localStorage.removeItem('resetOTP');
     localStorage.removeItem('resetOTPTime');
-    msg.textContent='❌ Code expired. Tap Resend for a new random code.';msg.className='msg show';return;
+    msg.textContent='❌ Code expired. Tap Resend for a new code.';msg.className='msg show';return;
   }
-  // ONLY the random code sent to your inbox works - no fixed code
   if(entered===saved){
     msg.textContent='';msg.classList.remove('show');
     showStep(3);
     document.getElementById('newPwd').focus();
   } else {
-    msg.textContent='❌ Wrong code. Check WhatsApp for the latest code.';msg.className='msg show';
+    msg.textContent='❌ Wrong code. Check inbox for the latest code.';msg.className='msg show';
   }
 }
 function setNewPassword(){
@@ -204,7 +282,6 @@ function setNewPassword(){
   if(newPwd!==confirmPwd){msg.textContent='❌ Passwords do not match';msg.className='msg show';return;}
   localStorage.setItem('smarttech_admin_password', newPwd);
   localStorage.setItem('adminPassword', newPwd);
-  // One-time use - delete code after successful reset
   localStorage.removeItem('resetOTP');
   localStorage.removeItem('resetOTPTime');
   document.getElementById('newPwd').value='';
