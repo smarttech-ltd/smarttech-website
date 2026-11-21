@@ -67,18 +67,10 @@ body{background:#0a1931;color:white;min-height:100vh;display:flex;flex-direction
       <div style="font-size:11px;color:#5a6d94;margin-top:6px">Choose how to receive your code</div>
     </div>
 
-    <!-- STEP 1 -->
+    <!-- STEP 1 - EMAIL ONLY -->
     <div id="step1" class="step active">
-      <div style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:12px;padding:12px;margin-top:16px;font-size:12px;color:#c8ffd6;text-align:center">
-        📱 Code will go to<br><b>smarttech.ltd.co.ke@gmail.com</b><br><span style="font-size:11px;opacity:.8">Valid for 10 minutes. Do not share it. Works on desktop & mobile, no app download needed.</span>
-      </div>
-      <!-- MAIN METHOD - WORKS ON DESKTOP, NO DOWNLOAD, CODE NOT VISIBLE -->
-      <button class="btn btn-green" style="margin-top:14px" onclick="sendCode('email')">✉️ Send Code to Email Inbox</button>
-      <!-- SECONDARY - NO CODE IN LINK, ONLY CONTACT -->
-      <button class="btn" style="margin-top:8px;background:#25D366;color:white" onclick="sendCode('whatsapp')">📲 WhatsApp - Contact Only (No Code)</button>
-      <button class="btn" style="margin-top:8px;background:#007bff;color:white" onclick="sendCode('sms')">💬 SMS - Contact Only (No Code)</button>
-      <button class="btn" style="margin-top:10px;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="closeForgot()">← Back to Login</button>
-      <div style="margin-top:10px;font-size:10px;color:#5a6d94;text-align:center">Code is never shown in the link, address bar, or on screen. It goes directly to your inbox.</div>
+      <button class="btn btn-green" style="margin-top:18px" onclick="sendCode('email')">✉️ Send Code to Email - smarttech.ltd.co.ke@gmail.com</button>
+      <button class="btn" style="margin-top:14px;background:rgba(255,255,255,0.08);color:#8ec8ff" onclick="closeForgot()">← Back to Login</button>
     </div>
 
     <!-- STEP 2 -->
@@ -137,8 +129,7 @@ function login(){
 document.getElementById('pwd').addEventListener('keypress',e=>{if(e.key==='Enter') login();});
 document.getElementById('pwd').addEventListener('input',()=>{document.getElementById('msg').classList.remove('show');});
 
-// FORGOT FLOW - CODE NEVER VISIBLE, GOES DIRECTLY TO INBOX, WORKS ON DESKTOP
-const ADMIN_PHONE_INTL = '254183465547';
+// FORGOT FLOW - EMAIL ONLY, CODE NEVER VISIBLE, GOES DIRECTLY TO INBOX
 const ADMIN_EMAIL = 'smarttech.ltd.co.ke@gmail.com';
 
 function openForgot(){
@@ -162,33 +153,18 @@ function generateRandomCode(){
 }
 
 function sendCode(method){
-  // 1. Kill old code - it can never be used again
+  // Kill old code
   localStorage.removeItem('resetOTP');
   localStorage.removeItem('resetOTPTime');
-
-  // 2. New random code for THIS attempt only
   const generatedOTP = generateRandomCode();
   localStorage.setItem('resetOTP', generatedOTP);
   localStorage.setItem('resetOTPTime', Date.now().toString());
   localStorage.setItem('resetOTPMethod', method);
-
   document.getElementById('otpInput').value='';
   document.getElementById('otpMsg').classList.remove('show');
 
   if(method === 'email'){
-    // REAL SEND - Code hidden in POST body, NOT in URL, NOT on screen
-    // Works on desktop - no WhatsApp download, no app needed
-    // Uses hidden form + fetch to FormSubmit
-    const formData = new FormData();
-    formData.append('name', 'SmartTech Admin');
-    formData.append('email', ADMIN_EMAIL);
-    formData.append('subject', 'SmartTech Admin Reset Code - ' + generatedOTP);
-    formData.append('message', 'Your SmartTech Admin Password Reset Code is: ' + generatedOTP + '\n\nValid for 10 minutes.\nIf you did not request this, ignore this email.');
-    formData.append('_subject', 'SmartTech Admin Reset Code - ' + generatedOTP);
-    formData.append('_template', 'table');
-    formData.append('_captcha', 'false');
-
-    // Method 1: fetch POST (hidden)
+    // EMAIL ONLY - Code in POST body only, never in URL / screen. Works on desktop, no download.
     fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
@@ -202,9 +178,7 @@ function sendCode(method){
         _captcha: 'false'
       })
     }).catch(()=>{});
-
-    // Method 2: hidden iframe form as backup - also hidden, works even if fetch blocked on desktop
-    // This ensures code reaches inbox even on desktop browsers that block fetch
+    // Hidden iframe backup - also hidden, helps on desktop if fetch is blocked
     try{
       const iframe = document.createElement('iframe');
       iframe.name = 'hiddenEmailFrame';
@@ -234,21 +208,6 @@ function sendCode(method){
       form.submit();
       setTimeout(()=>{ try{form.remove(); iframe.remove();}catch(e){} }, 3000);
     }catch(e){}
-
-    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
-
-  } else if(method === 'whatsapp'){
-    // NO CODE HERE - only contact, no download forced, opens WhatsApp Web if available
-    // Code is NOT sent via WhatsApp because desktop WhatsApp needs download/login
-    // Use Email for code. This button is only to contact.
-    const text = encodeURIComponent('Hello, I need SmartTech Admin password reset. Please help.');
-    window.open(`https://web.whatsapp.com/send?phone=${ADMIN_PHONE_INTL}&text=${text}`, '_blank');
-    setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
-
-  } else if(method === 'sms'){
-    // NO CODE HERE - only contact
-    const smsBody = encodeURIComponent('Hello, I need SmartTech Admin password reset.');
-    window.location.href = `sms:+${ADMIN_PHONE_INTL}?body=${smsBody}`;
     setTimeout(()=>{showStep(2);document.getElementById('otpInput').focus();}, 600);
   }
 }
