@@ -79,17 +79,25 @@ body{background:#0a1931;color:white;min-height:100vh;position:relative;overflow-
 const bg=document.getElementById('danceBg');const icons=['💻','🖥️','⌨️','💾','📡','🛡️','⚙️','🚀','🤖','💳','📲','💰','👨‍💻','📊','🎨','📄'];
 for(let i=0;i<26;i++){const el=document.createElement('div');el.className='tech-float';el.textContent=icons[Math.floor(Math.random()*icons.length)];el.style.left=Math.random()*100+'%';el.style.animationDelay=(Math.random()*10)+'s';el.style.animationDuration=(8+Math.random()*10)+'s';el.style.fontSize=(16+Math.random()*20)+'px';bg.appendChild(el);}
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+// ===== FIXED: text/plain + no-cors, NAMED FIELDS ONLY - matches new Apps Script =====
 async function sendBookingToSheet(b){
+  var payload = {
+    type:"booking",
+    name:b.name,
+    phone:b.phone,
+    email:b.email||"",
+    service:b.service,
+    message:b.message||"",
+    details:b.details||b.message||"",
+    dateWanted:b.dateWanted||"",
+    date:b.dateWanted||"",
+    source:"Website"
+  };
   try{
-    var res=await fetch(SHEET_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      type:"booking",
-      name:b.name, phone:b.phone, email:b.email||"",
-      service:b.service, date:b.time, message:b.message||"",
-      source:"Website", status:"Pending"
-    })});
-    console.log("Booking saved to Sheet", await res.text().catch(function(){return "";}));
-
-  }catch(e){ console.log("Sheet error",e); }
+    await fetch(SHEET_URL,{method:"POST", mode:"no-cors", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(payload)});
+    console.log("Booking sent to Sheet", payload);
+    return true;
+  }catch(e){ console.log("Sheet error",e); return false; }
 }
 const services=[
   {name:'Windows Installation & Activation', icon:'🪟', desc:'Windows 10 / 11 + Activation'},
@@ -145,10 +153,13 @@ async function submitBooking(){
   var v=validate(); if(!v) return;
   var btn=document.getElementById('submitBtn'); btn.disabled=true; btn.textContent='⏳ Saving to Sheet...';
   document.getElementById('sheetMsg').textContent='Saving to Google Sheet...';
-  var b={id:Date.now().toString(),name:v.name,phone:v.phone,email:v.email||'',service:selectedService.name,price:'KES 50 - 1500',message:v.details||'',details:v.details||'',status:'Pending',date:new Date().toLocaleDateString(),time:new Date().toLocaleString(),timestamp:Date.now()};
-  await sendBookingToSheet(b);
-  document.getElementById('sheetMsg').textContent='✅ Saved to Sheet';
+  var nowStr = new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
+  var b={id:Date.now().toString(),name:v.name,phone:v.phone,email:v.email||'',service:selectedService.name,price:'KES 50 - 1500',message:v.details||'',details:v.details||'',status:'Pending',date:new Date().toLocaleDateString(),dateWanted:nowStr,time:nowStr,timestamp:Date.now()};
+  var ok = await sendBookingToSheet(b);
+  if(!ok){ ok = await sendBookingToSheet(b); }
+  document.getElementById('sheetMsg').textContent= ok ? '✅ Saved to Sheet' : '⚠️ Could not save — check internet and try again';
   btn.disabled=false; btn.textContent='✅ Submit';
+  if(!ok) return;
   var msg='*NEW BOOKING - SmartTech*%0A%0A📌 Service: '+encodeURIComponent(b.service)+'%0A👤 Name: '+encodeURIComponent(b.name)+'%0A📞 Phone: '+encodeURIComponent(b.phone)+'%0A📧 Email: '+encodeURIComponent(b.email||'Not given')+'%0A📝 Details: '+encodeURIComponent(b.message||'None')+'%0A🕒 Time: '+encodeURIComponent(b.time);
   window.open('https://wa.me/254183465547?text='+msg,'_blank');
   afterBook(b);
