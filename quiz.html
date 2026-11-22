@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Free Quiz - SmartTech LTD</title>
+<!-- EmailJS - for Send Results via Email ONLY when client taps button -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
 body{background:#0a1931;color:#fff;min-height:100vh}
@@ -14,6 +16,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .input{width:100%;padding:12px;border-radius:12px;border:1px solid #1e3a5a;background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;margin-bottom:10px}
 .btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px;background:#00e5ff;color:#0a1931}
 .btn-green{background:#00c853;color:#fff}.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid #2a5ab0}.btn-orange{background:#ff9800;color:#fff}
+.btn:disabled{opacity:.6;cursor:not-allowed}
 .opt{width:100%;padding:13px;border-radius:12px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;text-align:left;cursor:pointer;margin-bottom:8px;font-size:14px}
 .opt:hover{background:#4aa3ff;color:#0a1931}
 .opt.correct{background:#00c853!important;color:#fff}
@@ -71,7 +74,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <p class="small" style="text-align:center;margin:8px 0">Computer Basics • MS Word • MS Excel • Internet Safety<br>MCQ + Open Questions • Earn Badges!</p>
 <label class="small">Your Name *</label><input id="userName" class="input" placeholder="e.g. Gideon">
 <label class="small">Phone *</label><input id="userPhone" class="input" placeholder="e.g. 0712345678" oninput="checkBadgesLive()">
-<label class="small">Email (optional - for sending results)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
+<label class="small">Email (optional - only if you want results emailed)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
 <div id="myBadgesBox" style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.4);border-radius:14px;padding:12px;margin-bottom:10px">
 <div style="text-align:center;font-weight:800;color:#facc15">🏆 MY BADGES</div>
 <div id="myBadgesStats" class="small" style="text-align:center">Enter phone to see your badges</div>
@@ -110,17 +113,22 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="myStatsAfter" class="small" style="text-align:center;margin-bottom:10px"></div>
 <div id="review"></div>
 <button class="btn no-print" style="background:#facc15;color:#0a1931;margin-top:10px" onclick="downloadMyPDF()">📄 Download My Result as PDF</button>
-<button class="btn no-print" style="background:#4aa3ff;color:#fff;margin-top:10px" onclick="sendResultsEmail()">📧 Send Results via Email</button>
-<p class="small no-print" id="emailMsg" style="text-align:center;margin-top:6px"></p>
+<button class="btn no-print" id="emailBtn" style="background:#4aa3ff;color:#fff;margin-top:10px" onclick="sendResultsEmail()">📧 Send Results via Email</button>
+<p class="small no-print" id="emailMsg" style="text-align:center;margin-top:6px">Email is sent ONLY if you tap this button.</p>
 <button class="btn btn-green no-print" onclick="location.reload()">🔄 Retake Quiz</button>
 <a href="booking.html" class="no-print" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">📅 Book ICT Help</a>
 </div>
 </div>
 <script>
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
+const EMAILJS_SERVICE_ID="service_84v01bj";
+const EMAILJS_TEMPLATE_ID="template_3zncmwh";
+if(window.emailjs && EMAILJS_PUBLIC_KEY!=="YOUR_PUBLIC_KEY"){ emailjs.init(EMAILJS_PUBLIC_KEY); }
 let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=45, answered=false;
 let allQuizResults=[];
 let TIME_SETTINGS={mcq:45, open:90};
+let emailAlreadySent=false;
 const DEFAULT_Q=[
 {topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],answer:0,explanation:"CPU = Central Processing Unit"},
 {topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",options:["Monitor","Keyboard","Printer","Speaker"],answer:1,explanation:"Keyboard is for typing"},
@@ -168,21 +176,54 @@ function downloadMyPDF(){
   document.getElementById('resultCard').classList.remove('hidden');
   setTimeout(function(){ window.print(); }, 300);
 }
+// ===== EMAIL - ONLY WHEN CLIENT TAPS BUTTON, NEVER AUTO =====
 async function sendResultsEmail(){
+  if(emailAlreadySent){ document.getElementById('emailMsg').textContent='✅ Already sent to your email.'; return; }
+  if(EMAILJS_PUBLIC_KEY==="YOUR_PUBLIC_KEY" || EMAILJS_SERVICE_ID==="YOUR_SERVICE_ID" || EMAILJS_TEMPLATE_ID==="YOUR_TEMPLATE_ID"){
+    document.getElementById('emailMsg').textContent='⚠️ Email not set up yet. Ask SmartTech to paste EmailJS keys in quiz.html';
+    return;
+  }
   var email=document.getElementById('userEmail').value.trim();
   if(!email){ email=prompt('Enter your email to receive results:'); if(!email) return; document.getElementById('userEmail').value=email; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email'); return; }
+  var btn=document.getElementById('emailBtn'); btn.disabled=true; btn.textContent='⏳ Sending...';
+  document.getElementById('emailMsg').textContent='⏳ Sending to '+email+'...';
   var name=document.getElementById('userName').value.trim();
   var phone=document.getElementById('userPhone').value.trim();
   var topic=document.getElementById('topic').value;
   var scoreText=document.getElementById('finalScore').textContent;
   var percText=document.getElementById('finalPerc').textContent;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
-  var body='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT ✅':'WRONG ❌')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':'')+'\n'; }).join('\n')+'\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547\nBook ICT Help: booking.html';
-  document.getElementById('emailMsg').textContent='⏳ Preparing email...';
-  try{ await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'sendQuizEmail',name:name,phone:phone,email:email,topic:topic,score:score,total:quizQuestions.length,percentage:percText,answers:JSON.stringify(answers),body:body})}); }catch(e){}
-  var mailto='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('SmartTech Quiz Result - '+topic+' - '+scoreText+' ('+percText+')')+'&body='+encodeURIComponent(body);
-  window.location.href=mailto;
-  document.getElementById('emailMsg').textContent='✅ Email app opened with your results. Tap Send in your email app.';
+  var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
+  var wrongCount=answers.length-correctCount;
+  var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT ✅':'WRONG ❌')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
+  var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      to_name: name,
+      from_name: 'SmartTech LTD',
+      reply_to: email,
+      name: name,
+      phone: phone,
+      email: email,
+      topic: topic,
+      score: scoreText,
+      percentage: percText,
+      correct: correctCount,
+      wrong: wrongCount,
+      date: dateStr,
+      message: message,
+      review: reviewText
+    });
+    emailAlreadySent=true;
+    btn.textContent='✅ Sent to Email';
+    document.getElementById('emailMsg').textContent='✅ Results sent to '+email+'. Check inbox / spam.';
+  }catch(err){
+    console.log(err);
+    btn.disabled=false; btn.textContent='📧 Send Results via Email';
+    document.getElementById('emailMsg').textContent='❌ Failed to send. Check EmailJS keys / template. Try again.';
+  }
 }
 const BADGES=[
 { id:'newcomer', emoji:'🌱', name:'Newcomer', desc:'1 attempt', check:function(s){ return s.attempts>=1; }},
@@ -268,7 +309,6 @@ async function loadQuestions(){
 try{
 var res=await fetch(SHEET_URL+"?type=all&t="+Date.now());
 var data=await res.json();
-// TIME SETTINGS FROM ADMIN (if backend returns settings)
 try{
   var s=data.settings||data.timeSettings||null;
   if(Array.isArray(s)) s=s[0];
@@ -317,7 +357,9 @@ if(!quizQuestions.length) quizQuestions=[...allQuestions];
 quizQuestions=quizQuestions.sort(function(){return Math.random()-0.5;});
 var want=parseInt(document.getElementById('qCountSel').value);
 if(want>0) quizQuestions=quizQuestions.slice(0,want);
-current=0;score=0;answers=[];
+current=0;score=0;answers=[];emailAlreadySent=false;
+document.getElementById('emailMsg').textContent='Email is sent ONLY if you tap this button.';
+var eb=document.getElementById('emailBtn'); if(eb){ eb.disabled=false; eb.textContent='📧 Send Results via Email'; }
 document.getElementById('startCard').classList.add('hidden');
 document.getElementById('quizCard').classList.remove('hidden');
 showQ();
@@ -419,6 +461,7 @@ var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
 try{
 await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'quiz',name:name,phone:phone,email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers),badges:badgeNames})});
 }catch(e){}
+// NOTE: NO EMAIL HERE - Email only on button tap
 allQuizResults.push(newAttempt);
 renderLeaderboard();
 }
