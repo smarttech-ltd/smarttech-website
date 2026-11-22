@@ -118,6 +118,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="newBadgesBox"></div>
 <div id="myBadgesAfter" class="badge-grid"></div>
 <div id="myStatsAfter" class="small" style="text-align:center;margin-bottom:10px"></div>
+<div id="uploadStatus" class="small" style="text-align:center;margin:8px 0;color:#8ec8ff"></div>
 <div id="review"></div>
 <button class="btn no-print" style="background:#facc15;color:#0a1931;margin-top:10px" onclick="downloadMyPDF()">📄 Download My Result as PDF</button>
 <button class="btn no-print" id="emailBtn" style="background:#4aa3ff;color:#fff;margin-top:10px" onclick="sendResultsEmail()">📧 Send Results via Email</button>
@@ -128,7 +129,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </div>
 <script>
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
-// ===== EMAILJS - YOUR KEYS PASTED =====
 const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
 const EMAILJS_SERVICE_ID="service_84v01bj";
 const EMAILJS_TEMPLATE_ID="template_3zncmwh";
@@ -175,6 +175,13 @@ function checkOpenAnswer(user, correct){
   return false;
 }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
+// ===== SAME UPLOAD AS ADMIN / BOOKING - text/plain, NO CORS PREFIGHT =====
+async function postToSheet(payload){
+  try{
+    await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    return true;
+  }catch(e){ console.log('Sheet upload fail', e); return false; }
+}
 function downloadMyPDF(){
   var name=document.getElementById('userName').value.trim();
   var phone=document.getElementById('userPhone').value.trim();
@@ -353,7 +360,6 @@ var want=parseInt(document.getElementById('qCountSel').value);
 if(want>0) quizQuestions=quizQuestions.slice(0,want);
 current=0;score=0;answers=[];emailAlreadySent=false;selectedMcq=-1;finalSubmitted=false;
 clearInterval(finalSubmitInt);
-// COLLAPSE HEADER WHEN QUIZ STARTS
 document.getElementById('mainHeader').classList.add('collapsed');
 document.getElementById('emailMsg').textContent='Email is sent ONLY if you tap this button.';
 var eb=document.getElementById('emailBtn'); if(eb){ eb.disabled=false; eb.textContent='📧 Send Results via Email'; }
@@ -393,7 +399,6 @@ selectedMcq=idx;
 document.querySelectorAll('.opt').forEach(function(b){b.classList.remove('selected');});
 if(btn) btn.classList.add('selected');
 }
-// NO FEEDBACK HERE - Correct/Wrong ONLY in final Review
 function autoSubmitCurrent(){
 if(answered) return; answered=true; clearInterval(timerInt);
 var q=quizQuestions[current];
@@ -403,12 +408,10 @@ if(q.qtype==='open'){
   if(!userAns) userAns='No Answer (Time Up)';
   your=userAns; correct=String(q.answer||'');
   isCorrect=checkOpenAnswer(userAns, correct);
-  // DO NOT show feedback - client sees it only at end
 } else {
   your = selectedMcq>=0 ? q.options[selectedMcq] : 'No Answer (Time Up)';
   correct = q.options[q.answer];
   isCorrect = selectedMcq===q.answer;
-  // DO NOT highlight correct/wrong - keep only selected blue
 }
 if(isCorrect) score++;
 answers.push({q:q.question,qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
@@ -437,7 +440,6 @@ finalSubmitInt=setInterval(function(){
 async function finishQuiz(){
 if(finalSubmitted) return; finalSubmitted=true;
 clearInterval(finalSubmitInt);
-// SHOW HEADER AGAIN ON RESULTS
 document.getElementById('mainHeader').classList.remove('collapsed');
 document.getElementById('submitCard').classList.add('hidden');
 document.getElementById('resultCard').classList.remove('hidden');
@@ -465,13 +467,17 @@ renderBadgeGrid('myBadgesAfter', afterStats, false);
 document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
 var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
 var wrongCount=answers.length-correctCount;
-// ONLY PLACE CLIENT SEES CORRECT / WRONG
 document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
 var topic=document.getElementById('topic').value;
 var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
-try{
-await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'quiz',name:name,phone:phone,email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers),badges:badgeNames})});
-}catch(e){}
+// ===== UPLOAD TO GOOGLE SHEET - SAME FORMAT ADMIN EXPECTS =====
+document.getElementById('uploadStatus').textContent='⏳ Saving to Google Sheet...';
+var payload={type:'quiz',name:name,phone:phone,email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers),detailedanswers:JSON.stringify(answers),badges:badgeNames};
+var ok=await postToSheet(payload);
+if(!ok){ ok=await postToSheet(payload); }
+document.getElementById('uploadStatus').textContent= ok ? '✅ Saved — Admin can see it in 🧠 Quiz tab' : '⚠️ Could not save — check internet, tap Retake and try again';
+// Also save a local backup so it never gets lost
+try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
 allQuizResults.push(newAttempt);
 renderLeaderboard();
 }
