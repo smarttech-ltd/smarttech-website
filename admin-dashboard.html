@@ -123,7 +123,6 @@ th{color:#facc15;font-size:11px}
 </div>
 
 <div id="tab-questions" class="hidden">
-<!-- ===== NEW: QUIZ TIME SETTINGS ===== -->
 <div class="card" style="border:2px solid #00e5ff">
 <h3 style="color:#00e5ff">⏱️ Quiz Time Settings</h3>
 <p class="small">Set time per question. Max 3 mins (180 secs). Applies to ALL new quizzes. Per-question timer (from single / bulk add) still overrides if you set it.</p>
@@ -138,7 +137,6 @@ th{color:#facc15;font-size:11px}
 <p class="small" id="timeSettingMsg" style="margin-top:8px"></p>
 <p class="small">Current: <span id="timeSettingCurrent">MCQ 45s • Open 1 min 30s</span></p>
 </div>
-<!-- ===== END TIME SETTINGS ===== -->
 <div class="card"><h3 style="color:#5ee1ff">❓ Add New Quiz Question</h3>
 <select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
 <input id="qText" class="input" placeholder="Question e.g. What does CPU stand for?">
@@ -194,7 +192,42 @@ function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 function getPerc(x){ var p=parseInt(String(x.percentage||'').replace('%','')); if(!isNaN(p)) return p; var s=parseInt(x.score||0), t=parseInt(x.total||0); return t>0? Math.round((s/t)*100):0; }
 function fmtTimeAdmin(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
-// ===== TIME SETTINGS - ADMIN CONTROLS, QUIZ READS THIS =====
+// ===== FIX: NORMALIZE QUIZ ROW - READS BY NAME, FIXES OLD SHIFTED ROW =====
+function normalizeQuizRow(r){
+  var o=lowerKeys(r);
+  var name=String(o.name||'').trim();
+  var topic=String(o.topic||'').trim();
+  // Detect shifted row: name looks like ID (ID179...) OR topic looks like a phone
+  var topicIsPhone=/^(0\d{9}|254\d{9})$/.test(topic.replace(/\D/g,''));
+  var nameIsId=/^id\d+/i.test(name);
+  if(nameIsId || topicIsPhone){
+    var vals=Object.values(o);
+    var phone=vals.find(function(v){ return /^(0\d{9}|254\d{9})$/.test(String(v||'').replace(/\D/g,'')); })||'';
+    var email=vals.find(function(v){ return String(v||'').includes('@'); })||'';
+    var topics=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
+    var realTopic=vals.find(function(v){ return topics.includes(String(v||'').trim()); })||'';
+    var date=vals.find(function(v){ return /^\d{4}-\d{2}-\d{2}/.test(String(v||'')); })||o.timestamp||o.date||'';
+    var answers=vals.find(function(v){ return String(v||'').trim().startsWith('[{'); })||'';
+    var percRaw=vals.find(function(v){ return String(v||'').includes('%'); })||'';
+    // In shifted row, last numbers are [score, total] - total is the small number 5, etc.
+    // We cannot recover name/score reliably from a shifted row, so keep phone/topic/date
+    // and mark it as shifted so Admin shows phone correctly instead of NaN
+    var nums=vals.map(function(v){ return parseInt(v); }).filter(function(n){ return !isNaN(n); });
+    var total=nums.length? nums[nums.length-1]:0;
+    var score=0;
+    if(percRaw){ var pp=parseInt(percRaw); if(total) score=Math.round((pp/100)*total); }
+    return {id:o.id||'', name:'(Shifted row - see phone)', phone:phone, email:email, topic:realTopic||'Unknown', score:score, total:total, percentage:percRaw|| (total? Math.round((score/total)*100)+'%':''), correct:score, wrong:total-score, badges:'', answers:answers, timestamp:date};
+  }
+  // Normal row - new + old
+  var s=parseInt(o.score||0), t=parseInt(o.total||0);
+  var correct = (o.correct!==undefined && o.correct!=='' ) ? parseInt(o.correct) : s;
+  var wrong = (o.wrong!==undefined && o.wrong!=='' ) ? parseInt(o.wrong) : (t - s);
+  if(isNaN(correct)) correct=s;
+  if(isNaN(wrong)) wrong=Math.max(0, t - correct);
+  var perc = o.percentage || (t? Math.round((s/t)*100)+'%':'0%');
+  var answers = o.answers || o.detailedanswers || o['detailed answers'] || '';
+  return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:o.topic||'', score:s, total:t, percentage:perc, correct:correct, wrong:wrong, badges:o.badges||'', answers:answers, timestamp:o.timestamp||o.date||''};
+}
 function getTimeSettings(){ try{ var s=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); var mcq=(s.mcq>=5&&s.mcq<=180)?s.mcq:45; var open=(s.open>=5&&s.open<=180)?s.open:90; return {mcq:mcq, open:open}; }catch(e){ return {mcq:45, open:90}; } }
 function loadTimeSettingsUI(){
   var s=getTimeSettings();
@@ -283,7 +316,7 @@ function renderRecycle(){
   if(!arr.length){ el.innerHTML='<div class="card">Recycle Bin is empty.</div>'; return; }
   el.innerHTML=arr.map(function(r,idx){ var x=r.item||{}; var title = r.type==='Bookings' ? (x.name||'')+' • '+(x.phone||'')+' • '+(x.service||'') : r.type==='Quiz' ? (x.name||'')+' • '+(x.topic||'')+' • '+x.score+'/'+x.total : r.type==='Posts' ? (x.title||'')+' • '+(x.caption||'') : (x.name||x.title||JSON.stringify(x).slice(0,80)); return '<div class="item"><b>🗑️ '+esc(r.type)+'</b> <span class="small">Deleted: '+esc(r.deletedAt)+'</span><br>'+esc(title)+'<br><span class="small">'+esc(x.timestamp||'')+'</span><br><div style="display:flex;gap:6px;margin-top:10px"><button class="btn-small" style="background:#00c853" onclick="restoreRecycle('+idx+')">♻️ Restore</button><button class="btn-small" style="background:#ff5252" onclick="deleteForeverRecycle('+idx+')">🗑️ Delete Forever</button></div></div>'; }).join('');
 }
-async function restoreRecycle(idx){ var arr=getRecycle(); var r=arr[idx]; if(!r) return; var x=r.item; if(r.type==='Bookings'){ D.bookings.push(x); await postToSheet({type:'booking',name:x.name,phone:x.phone,email:x.email,service:x.service,message:x.message||x.details,dateWanted:x['date wanted']||x.date}); if(String(x.status||'').toLowerCase()==='done') setDoneRetained(x,true); } else if(r.type==='Quiz'){ D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,answers:x.answers,detailedAnswers:x.detailedanswers}); } else if(r.type==='Posts'){ D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext}); } else if(r.type==='Questions'){ D.questions.push(x); await postToSheet({type:'question',topic:x.topic,question:x.question||x.q,qtype:x.qtype||x.type,options:x.options,answer:x.answer,explanation:x.explanation||'',timer:x.timer||30}); } arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderOverview(); renderAnalytics(); }
+async function restoreRecycle(idx){ var arr=getRecycle(); var r=arr[idx]; if(!r) return; var x=r.item; if(r.type==='Bookings'){ D.bookings.push(x); await postToSheet({type:'booking',name:x.name,phone:x.phone,email:x.email,service:x.service,message:x.message||x.details,dateWanted:x['date wanted']||x.date}); if(String(x.status||'').toLowerCase()==='done') setDoneRetained(x,true); } else if(r.type==='Quiz'){ D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,correct:x.correct, wrong:x.wrong, badges:x.badges, answers:x.answers}); } else if(r.type==='Posts'){ D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext}); } else if(r.type==='Questions'){ D.questions.push(x); await postToSheet({type:'question',topic:x.topic,question:x.question||x.q,qtype:x.qtype||x.type,options:x.options,answer:x.answer,explanation:x.explanation||'',timer:x.timer||30}); } arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderOverview(); renderAnalytics(); }
 function deleteForeverRecycle(idx){ if(!confirm('Delete this forever? Cannot be restored.')) return; var arr=getRecycle(); arr.splice(idx,1); saveRecycle(arr); renderRecycle(); }
 async function restoreAllRecycle(){ var arr=getRecycle(); if(!arr.length) return; if(!confirm('Restore ALL '+arr.length+' items?')) return; for(var i=arr.length-1;i>=0;i--){ await restoreRecycle(i); } }
 function emptyRecycle(){ if(!confirm('Empty Recycle Bin forever? Cannot be restored.')) return; saveRecycle([]); renderRecycle(); }
@@ -306,11 +339,10 @@ async function loadAll(force){
     var data=await res.json();
     if(Array.isArray(data)){ D.bookings=data; } else {
       D.bookings=normalizeRows(data.bookings).map(lowerKeys);
-      D.quiz=normalizeRows(data.quiz).map(lowerKeys);
+      D.quiz=normalizeRows(data.quiz).map(lowerKeys).map(normalizeQuizRow);
       D.posts=normalizeRows(data.posts).map(lowerKeys);
       D.questions=normalizeRows(data.questions).map(lowerKeys);
       D.notify=normalizeRows(data.notify).map(lowerKeys);
-      // If Sheet returns settings, sync to localStorage so Quiz on same device uses it
       try{ var s=data.settings||null; if(Array.isArray(s)) s=s[0]; if(s){ var mm=parseInt(s.mcq||s.mcqTime||0), oo=parseInt(s.open||s.openTime||0); if(mm>=5&&mm<=180||oo>=5&&oo<=180){ var cur=getTimeSettings(); localStorage.setItem('smarttech_time_settings', JSON.stringify({mcq:mm>=5&&mm<=180?mm:cur.mcq, open:oo>=5&&oo<=180?oo:cur.open})); } } }catch(e){}
     }
     applyRetained();
@@ -375,11 +407,16 @@ function renderQuiz(){
     var key='q'+idx; quizIndex[key]=x;
     var score=parseInt(x.score||0), total=parseInt(x.total||0);
     var perc=calcPerc(score,total,x.percentage);
+    var correct = (x.correct!==undefined && x.correct!=='' ) ? parseInt(x.correct) : score;
+    var wrong = (x.wrong!==undefined && x.wrong!=='' ) ? parseInt(x.wrong) : Math.max(0, total - score);
+    if(isNaN(correct)) correct=score;
+    if(isNaN(wrong)) wrong=Math.max(0, total-correct);
     var u=map[cleanPhone(x.phone)];
     var detail='';
-    try{ var d=JSON.parse(x.detailedanswers||x['detailed answers']||'[]'); if(Array.isArray(d)&&d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions)</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>'; else detail='<details><summary>📋 View Answers</summary><pre>'+esc(x.answers||'No detailed answers')+'</pre></details>'; }catch(e){ detail='<details><summary>📋 View Answers</summary><pre>'+esc(x.answers||'')+'</pre></details>'; }
+    var rawAns = x.answers || x.detailedanswers || '';
+    try{ var d=JSON.parse(rawAns||'[]'); if(Array.isArray(d)&&d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions)</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>'; else detail='<details><summary>📋 View Answers</summary><pre>'+esc(rawAns||'No detailed answers')+'</pre></details>'; }catch(e){ detail='<details><summary>📋 View Answers</summary><pre>'+esc(rawAns||'')+'</pre></details>'; }
     var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', SmartTech here. Your Quiz result for '+(x.topic||'')+' is '+score+'/'+total+' ('+perc+'). Well done!');
-    return '<div class="item" id="quizcard-'+key+'"><b>🧠 '+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<div class="scorebox">🏆 SCORE<br><b>'+score+'/'+total+' - '+perc+'</b></div>'+(u? '<div style="margin:6px 0"><b>🏆 Badges:</b><br>'+badgeChips(u)+'<br><span class="small">Total Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'</span></div>':'')+'👤 Name: <b>'+esc(x.name||'')+'</b><br>📞 Phone: '+esc(x.phone||'')+'<br>📧 Email: '+esc(x.email||'')+'<br>📚 Topic: '+esc(x.topic||'')+'<br>🕒 Date: '+esc(x.timestamp||'')+'<br>✅ Correct: '+score+' • Total: '+total+' • Percentage: '+perc+detail+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Result</a><button class="btn-small" style="background:#ff5252" onclick="deleteOneQuiz(\''+key+'\')">🗑️ Delete</button></div></div>';
+    return '<div class="item" id="quizcard-'+key+'"><b>🧠 '+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<div class="scorebox">🏆 SCORE<br><b>'+score+'/'+total+' - '+perc+'</b></div>'+(x.badges? '<div style="margin:6px 0"><b>🏆 Badges (this quiz):</b><br><span class="badge-chip">'+esc(x.badges)+'</span></div>':'')+(u? '<div style="margin:6px 0"><b>🏆 Badges (total):</b><br>'+badgeChips(u)+'<br><span class="small">Total Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'</span></div>':'')+'👤 Name: <b>'+esc(x.name||'')+'</b><br>📞 Phone: '+esc(x.phone||'')+'<br>📧 Email: '+esc(x.email||'Not given')+'<br>📚 Topic: '+esc(x.topic||'')+'<br>🕒 Date: '+esc(x.timestamp||'')+'<br>✅ Correct: '+correct+' • ❌ Wrong: '+wrong+' • Total: '+total+' • Percentage: '+perc+detail+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Result</a><button class="btn-small" style="background:#ff5252" onclick="deleteOneQuiz(\''+key+'\')">🗑️ Delete</button></div></div>';
   }).join('');
 }
 async function deleteOneQuiz(key){ var x=quizIndex[key]; if(!x) return; if(!confirm('Move quiz result for '+x.name+' to Recycle Bin?')) return; addToRecycle('Quiz', x); var card=document.getElementById('quizcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Quiz',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''}); setTimeout(function(){ loadAll(); },800); }
