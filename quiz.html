@@ -175,6 +175,15 @@ function checkOpenAnswer(user, correct){
   return false;
 }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
+// ===== SHUFFLE - Fisher-Yates, different every attempt =====
+function shuffleArray(arr){
+  var a = arr.slice();
+  for(var i=a.length-1; i>0; i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var tmp = a[i]; a[i]=a[j]; a[j]=tmp;
+  }
+  return a;
+}
 async function postToSheet(payload){
   try{
     await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
@@ -352,11 +361,23 @@ var name=document.getElementById('userName').value.trim();
 var phone=document.getElementById('userPhone').value.trim();
 if(!name||!phone){alert('Enter Name + Phone');return;}
 var topic=document.getElementById('topic').value;
-quizQuestions = topic==='All Topics' ? [...allQuestions] : allQuestions.filter(function(q){return q.topic===topic;});
-if(!quizQuestions.length) quizQuestions=[...allQuestions];
-quizQuestions=quizQuestions.sort(function(){return Math.random()-0.5;});
+var pool = topic==='All Topics' ? allQuestions.slice() : allQuestions.filter(function(q){return q.topic===topic;});
+if(!pool.length) pool = allQuestions.slice();
+pool = shuffleArray(pool);
 var want=parseInt(document.getElementById('qCountSel').value);
-if(want>0) quizQuestions=quizQuestions.slice(0,want);
+if(want>0) pool=pool.slice(0,want);
+quizQuestions = pool.map(function(orig){
+  if(orig.qtype==='open' || !orig.options || orig.options.length < 2){
+    return {topic:orig.topic, qtype:orig.qtype, question:orig.question, options:[], answer:orig.answer, explanation:orig.explanation||'', timer:orig.timer||0};
+  }
+  var idx = shuffleArray(orig.options.map(function(_,i){ return i; }));
+  var newOptions = idx.map(function(i){ return orig.options[i]; });
+  var oldCorrect = parseInt(orig.answer);
+  if(isNaN(oldCorrect)) oldCorrect = 0;
+  var newCorrect = idx.indexOf(oldCorrect);
+  if(newCorrect < 0) newCorrect = 0;
+  return {topic:orig.topic, qtype:'mcq', question:orig.question, options:newOptions, answer:newCorrect, explanation:orig.explanation||'', timer:orig.timer||0};
+});
 current=0;score=0;answers=[];emailAlreadySent=false;selectedMcq=-1;finalSubmitted=false;
 clearInterval(finalSubmitInt);
 document.getElementById('mainHeader').classList.add('collapsed');
