@@ -99,20 +99,17 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <h3 id="qText" style="margin:10px 0;line-height:1.5">Question...</h3>
 <div id="options"></div>
 <div id="openBox" class="hidden">
-<input id="openAnswer" class="open-input" placeholder="Type your answer here... No submit needed, it auto-saves when time ends" autocomplete="off">
-<p class="small" style="text-align:center">Tip: Include key words from the answer. Marked on key words.</p>
+<input id="openAnswer" class="open-input" placeholder="Type your answer here..." autocomplete="off">
 </div>
 <div id="openFeedback" class="feedback"></div>
-<p class="small" id="autoHint" style="text-align:center;margin-top:8px">⏳ Answer auto-submits when time ends • No Next / Submit button here</p>
 </div>
 
 <div class="card hidden" id="submitCard">
 <h2 style="text-align:center;color:#5ee1ff">✅ All Questions Done!</h2>
 <p class="small" style="text-align:center;margin:10px 0" id="submitSummary">You answered all questions.</p>
-<div style="background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:12px;padding:12px;text-align:center;font-weight:800;color:#facc15;margin:10px 0" id="autoSubmitCountdown">⏳ Auto-submitting in 5...</div>
+<div style="background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:12px;padding:12px;text-align:center;font-weight:800;color:#facc15;margin:10px 0;font-size:16px" id="autoSubmitCountdown">Quiz submits in: 5</div>
 <div id="submitList" style="margin:10px 0"></div>
 <button class="btn btn-green" id="finalSubmitBtn" onclick="finishQuiz()">📤 Submit Quiz & See Results</button>
-<p class="small" style="text-align:center;margin-top:8px">Or wait 5 secs — it will submit automatically.</p>
 </div>
 
 <div class="card hidden" id="resultCard">
@@ -161,7 +158,6 @@ return data.slice(1).map(function(row){var o={};h.forEach(function(k,i){o[k]=row
 }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 function normalizeText(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
-// ===== OPEN-ENDED MARKING: ON KEY WORDS =====
 function getKeywords(text){
   var stop=['a','an','the','is','are','was','were','be','been','of','to','in','on','for','and','or','with','by','as','at','it','its','this','that','what','how','why','when','where','which','who'];
   return normalizeText(text).split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)===-1; });
@@ -171,14 +167,11 @@ function checkOpenAnswer(user, correct){
   if(!u || !c) return false;
   if(u===c) return true;
   if(u.includes(c) || c.includes(u)) return true;
-  // Numbers must match exactly
   if(/^\d+$/.test(c)) return u===c;
-  // KEY WORDS: need 70% of keywords from correct answer
   var kws=getKeywords(correct);
   if(!kws.length) return u===c;
   var matched=kws.filter(function(w){ return u.includes(w); }).length;
   if(matched / kws.length >= 0.7) return true;
-  // Also: if user wrote 2+ keywords and no wrong long words? No - strict 70% above
   return false;
 }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
@@ -393,7 +386,6 @@ if(q.qtype==='open'){
   timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.mcq;
 }
 document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);
-document.getElementById('autoHint').textContent='⏳ Auto-submits in '+fmtTime(timeLeft)+' • '+(q.qtype==='open'?'Just type - no submit button':'Tap an option - no Next button');
 clearInterval(timerInt);
 timerInt=setInterval(function(){timeLeft--;document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);if(timeLeft<=0){clearInterval(timerInt); autoSubmitCurrent();}},1000);
 }
@@ -413,7 +405,7 @@ if(q.qtype==='open'){
   your=userAns; correct=String(q.answer||'');
   isCorrect=checkOpenAnswer(userAns, correct);
   var fb=document.getElementById('openFeedback');
-  fb.textContent = isCorrect ? '✅ Auto-submitted: Correct!' : '❌ Auto-submitted. Correct: '+correct;
+  fb.textContent = isCorrect ? '✅ Correct!' : '❌ Wrong. Correct: '+correct;
   fb.className='feedback show '+(isCorrect?'ok':'bad');
 } else {
   your = selectedMcq>=0 ? q.options[selectedMcq] : 'No Answer (Time Up)';
@@ -432,18 +424,18 @@ setTimeout(function(){
 function showFinalSubmit(){
 document.getElementById('quizCard').classList.add('hidden');
 document.getElementById('submitCard').classList.remove('hidden');
-document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.<br>Tap below or wait 5 secs.';
+document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.';
 document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
 window.scrollTo({top:0,behavior:'smooth'});
-// AUTO-SUBMIT AFTER 5 SECS
+// FINAL COUNTDOWN - Quiz submits in: 5,4,3,2,1
 var left=5;
 var cd=document.getElementById('autoSubmitCountdown');
-cd.textContent='⏳ Auto-submitting in 5...';
+cd.textContent='Quiz submits in: 5';
 clearInterval(finalSubmitInt);
 finalSubmitInt=setInterval(function(){
   left--;
-  if(left>0){ cd.textContent='⏳ Auto-submitting in '+left+'...'; }
-  else { clearInterval(finalSubmitInt); cd.textContent='⏳ Submitting...'; finishQuiz(); }
+  if(left>0){ cd.textContent='Quiz submits in: '+left; }
+  else { clearInterval(finalSubmitInt); cd.textContent='Quiz submits in: 0'; finishQuiz(); }
 },1000);
 }
 async function finishQuiz(){
@@ -475,7 +467,6 @@ renderBadgeGrid('myBadgesAfter', afterStats, false);
 document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
 var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
 var wrongCount=answers.length-correctCount;
-// REVIEW: Always show FULL correct answer, even if marked correct on keywords
 document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
 var topic=document.getElementById('topic').value;
 var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
