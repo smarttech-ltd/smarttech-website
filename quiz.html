@@ -32,7 +32,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .feedback.show{display:block}
 .feedback.ok{background:rgba(0,200,83,.2);border:1px solid #00c853;color:#c8ffd6}
 .feedback.bad{background:rgba(255,82,82,.2);border:1px solid #ff5252;color:#ffd6d6}
-/* BADGES */
 .badge-grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
 .badge-item{background:rgba(0,0,0,.35);border:1px solid #2a5ab0;border-radius:14px;padding:10px 8px;width:92px;text-align:center;font-size:11px;line-height:1.4}
 .badge-item.earned{border:2px solid #facc15;background:rgba(250,204,21,.12);box-shadow:0 0 12px rgba(250,204,21,.25)}
@@ -42,9 +41,45 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .new-badge{background:linear-gradient(135deg,#facc15,#ff9800);color:#0a1931;border-radius:14px;padding:12px;text-align:center;font-weight:800;margin:10px 0;animation:pulseBadge 1.5s infinite}
 @keyframes pulseBadge{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 .leader-row{display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px;margin-bottom:8px;font-size:13px}
+/* ===== WATERMARK - HIDDEN ON SCREEN, VISIBLE IN PDF ===== */
+.pdf-watermark{display:none}
+.pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
+/* ===== PRINT / PDF ===== */
+@media print{
+  @page{margin:14mm}
+  body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .header,.btn,.btn-ghost,.no-print{display:none!important}
+  .wrap{max-width:100%;padding:0;position:relative;z-index:1}
+  #startCard,#quizCard{display:none!important}
+  #resultCard{display:block!important;position:relative;z-index:1}
+  .card{background:transparent!important;color:#000!important;border:1px solid #ccc!important;position:relative;z-index:1}
+  .scorebox{background:#fff!important;border:1px solid #000!important}
+  .scorebox b{color:#000!important}
+  .small{color:#333!important}
+  #review div{background:#fff!important;border:1px solid #ddd!important;color:#000!important}
+  .badge-item{background:#fff!important;color:#000!important;border:1px solid #ccc!important}
+  .badge-item b{color:#000!important}
+  .new-badge{background:#fff!important;color:#000!important;border:2px solid #000!important;animation:none!important}
+  a{color:#000!important;text-decoration:none!important}
+  #pdfHeader{display:block!important}
+  /* WATERMARK ON EVERY PAGE */
+  .pdf-watermark{
+    display:block!important;
+    position:fixed!important;
+    top:50%!important;left:50%!important;
+    transform:translate(-50%,-50%)!important;
+    width:78%!important;max-width:420px!important;
+    opacity:.10!important;
+    z-index:0!important;
+    pointer-events:none!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
+}
 </style>
 </head>
 <body>
+<!-- WATERMARK LOGO - Put logo.png in same folder as quiz.html -->
+<div class="pdf-watermark"><img src="logo.png" alt=""></div>
 <div class="header"><a href="index.html">← Home</a><b>🧠 SmartTech Quiz</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
 <div class="wrap">
 <div class="card" id="startCard">
@@ -53,7 +88,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <label class="small">Your Name *</label><input id="userName" class="input" placeholder="e.g. Gideon">
 <label class="small">Phone *</label><input id="userPhone" class="input" placeholder="e.g. 0712345678" oninput="checkBadgesLive()">
 <label class="small">Email (optional)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
-<!-- MY BADGES PREVIEW -->
 <div id="myBadgesBox" style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.4);border-radius:14px;padding:12px;margin-bottom:10px">
 <div style="text-align:center;font-weight:800;color:#facc15">🏆 MY BADGES</div>
 <div id="myBadgesStats" class="small" style="text-align:center">Enter phone to see your badges</div>
@@ -66,14 +100,11 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <select id="qCountSel" class="input"><option value="10">10 Questions</option><option value="20">20 Questions</option><option value="50">50 Questions</option><option value="0">All Questions</option></select>
 <button class="btn" onclick="startQuiz()">▶️ Start Quiz</button>
 <p class="small" id="startMsg" style="margin-top:8px;text-align:center"></p>
-
-<!-- LEADERBOARD -->
 <div style="margin-top:14px">
 <div style="text-align:center;font-weight:800;color:#facc15;margin-bottom:8px">🏆 TOP CONSISTENT LEARNERS</div>
 <div id="leaderboard"><p class="small" style="text-align:center">Loading leaderboard...</p></div>
 </div>
 </div>
-
 <div class="card hidden" id="quizCard">
 <div style="display:flex;justify-content:space-between;font-size:13px"><span id="qCount">Q 1/5</span><span id="timer" style="color:#facc15;font-weight:800">⏱️ 30s</span></div>
 <div class="progress"><div id="prog"></div></div>
@@ -87,22 +118,23 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="openFeedback" class="feedback"></div>
 <button class="btn btn-ghost" id="nextBtn" onclick="nextQ()">Next →</button>
 </div>
-
 <div class="card hidden" id="resultCard">
 <h2 style="text-align:center;color:#5ee1ff">🎉 Quiz Complete!</h2>
+<div id="pdfHeader" style="display:none;text-align:center;margin-bottom:10px"><b style="font-size:18px">SmartTech LTD — Quiz Result</b><br><span id="pdfMeta" style="font-size:12px;color:#333"></span><br><span style="font-size:11px;color:#666">Your trusted ICT Partner • WhatsApp 0183465547</span></div>
 <div class="scorebox"><div>YOUR SCORE</div><b id="finalScore">0/0</b><div id="finalPerc" style="font-size:20px;font-weight:800;color:#fff;margin-top:4px">0%</div><div id="finalMsg" style="font-size:13px;margin-top:6px;color:#c8d6ff"></div></div>
 <div id="newBadgesBox"></div>
 <div id="myBadgesAfter" class="badge-grid"></div>
 <div id="myStatsAfter" class="small" style="text-align:center;margin-bottom:10px"></div>
 <div id="review"></div>
-<button class="btn btn-green" onclick="location.reload()">🔄 Retake Quiz</button>
-<a href="booking.html" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">📅 Book ICT Help</a>
+<button class="btn no-print" style="background:#facc15;color:#0a1931;margin-top:10px" onclick="downloadMyPDF()">📄 Download My Result as PDF</button>
+<button class="btn btn-green no-print" onclick="location.reload()">🔄 Retake Quiz</button>
+<a href="booking.html" class="no-print" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">📅 Book ICT Help</a>
 </div>
 </div>
 <script>
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
 let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=30, answered=false;
-let allQuizResults=[]; // for badges + leaderboard
+let allQuizResults=[];
 const DEFAULT_Q=[
 {topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],answer:0,explanation:"CPU = Central Processing Unit"},
 {topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",options:["Monitor","Keyboard","Printer","Speaker"],answer:1,explanation:"Keyboard is for typing"},
@@ -134,8 +166,21 @@ function checkOpenAnswer(user, correct){
   if(/^\d+$/.test(c)) return u===c;
   return false;
 }
-
-// ===== BADGE SYSTEM - CONSISTENCY + PERFORMANCE =====
+function downloadMyPDF(){
+  var name=document.getElementById('userName').value.trim();
+  var phone=document.getElementById('userPhone').value.trim();
+  var topic=document.getElementById('topic').value;
+  var scoreText=document.getElementById('finalScore').textContent;
+  var percText=document.getElementById('finalPerc').textContent;
+  var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
+  var hdr=document.getElementById('pdfHeader');
+  hdr.style.display='block';
+  document.getElementById('pdfMeta').textContent='Name: '+name+' • Phone: '+phone+' • Topic: '+topic+' • Score: '+scoreText+' • '+percText+' • Date: '+dateStr+' • SmartTech LTD';
+  document.getElementById('startCard').classList.add('hidden');
+  document.getElementById('quizCard').classList.add('hidden');
+  document.getElementById('resultCard').classList.remove('hidden');
+  setTimeout(function(){ window.print(); }, 300);
+}
 const BADGES=[
 { id:'newcomer', emoji:'🌱', name:'Newcomer', desc:'1 attempt', check:function(s){ return s.attempts>=1; }},
 { id:'regular', emoji:'🔥', name:'Regular', desc:'3 attempts', check:function(s){ return s.attempts>=3; }},
@@ -161,7 +206,6 @@ function getUserStats(phone, extraAttempt){
     totalPerc+=perc; if(perc>best) best=perc;
   });
   var avg=attempts? Math.round(totalPerc/attempts):0;
-  // Days = unique dates
   var daysSet={};
   mine.forEach(function(r){
     var d=String(r.timestamp||'').split(' ')[0].split('T')[0];
@@ -170,22 +214,13 @@ function getUserStats(phone, extraAttempt){
   var days=Object.keys(daysSet).length;
   return {attempts:attempts, avg:avg, best:best, days:days, mine:mine};
 }
-function getEarnedBadges(stats){
-  return BADGES.filter(function(b){ return b.check(stats); });
-}
+function getEarnedBadges(stats){ return BADGES.filter(function(b){ return b.check(stats); }); }
 function renderBadgeGrid(elId, stats, showLocked){
-  var el=document.getElementById(elId);
-  if(!el) return;
-  var earned=getEarnedBadges(stats);
-  var earnedIds=earned.map(function(b){return b.id;});
+  var el=document.getElementById(elId); if(!el) return;
+  var earned=getEarnedBadges(stats); var earnedIds=earned.map(function(b){return b.id;});
   if(!stats.attempts){ el.innerHTML='<p class="small" style="text-align:center">No attempts yet — do your first quiz to earn 🌱 Newcomer!</p>'; return; }
-  var html=BADGES.map(function(b){
-    var has=earnedIds.includes(b.id);
-    if(!showLocked && !has) return '';
-    return '<div class="badge-item '+(has?'earned':'locked')+'"><span class="emoji">'+b.emoji+'</span><b>'+b.name+'</b>'+b.desc+'</div>';
-  }).join('');
-  el.innerHTML=html;
-  return earned;
+  var html=BADGES.map(function(b){ var has=earnedIds.includes(b.id); if(!showLocked && !has) return ''; return '<div class="badge-item '+(has?'earned':'locked')+'"><span class="emoji">'+b.emoji+'</span><b>'+b.name+'</b>'+b.desc+'</div>'; }).join('');
+  el.innerHTML=html; return earned;
 }
 function nextBadgeHint(stats){
   var locked=BADGES.find(function(b){ return !b.check(stats); });
@@ -218,7 +253,6 @@ function renderLeaderboard(){
     var d=String(r.timestamp||'').split(' ')[0]; if(d) byPhone[p].daysSet[d]=true;
   });
   var list=Object.values(byPhone).map(function(u){ u.avg=u.attempts?Math.round(u.total/u.attempts):0; u.days=Object.keys(u.daysSet).length; return u; });
-  // Order: Consistency first (attempts), then Performance (avg)
   list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
   var top=list.slice(0,5);
   var el=document.getElementById('leaderboard');
@@ -246,7 +280,6 @@ allQuestions=rows.map(function(r){
   }
   return {topic:r.topic||'Computer Basics',qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:ans,explanation:r.explanation||'',timer:parseInt(r.timer||0)||0};
 }).filter(function(q){return q.question;});
-// Load quiz results for badges / leaderboard
 var qRows=normalizeRows(data.quiz||[]).map(lowerKeys);
 allQuizResults=qRows.map(function(r){ return {name:r.name, phone:r.phone, score:r.score, total:r.total, percentage:r.percentage, timestamp:r.timestamp||r.date||''}; }).filter(function(r){ return r.phone; });
 var mcq=allQuestions.filter(function(q){return q.qtype==='mcq';}).length;
@@ -352,7 +385,6 @@ document.getElementById('resultCard').classList.remove('hidden');
 var total=quizQuestions.length;
 var perc = total>0 ? Math.round((score/total)*100) : 0;
 var percText = perc + "%";
-// Badges: before vs after
 var phone=document.getElementById('userPhone').value.trim();
 var name=document.getElementById('userName').value.trim();
 var beforeStats=getUserStats(phone);
@@ -365,7 +397,6 @@ document.getElementById('finalScore').textContent=score+'/'+total;
 document.getElementById('finalPerc').textContent=percText+' — '+score+'/'+total;
 document.getElementById('finalMsg').textContent= perc>=80?'Excellent! 🏆':perc>=50?'Good job! Keep practicing':'Keep learning — Book ICT help below';
 document.getElementById('prog').style.width='100%';
-// Show new badges
 if(newBadges.length){
   document.getElementById('newBadgesBox').innerHTML='<div class="new-badge">🎉 NEW BADGE UNLOCKED!<br>'+newBadges.map(function(b){return b.emoji+' '+b.name;}).join(' • ')+'</div>';
 } else {
@@ -379,7 +410,6 @@ var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
 try{
 await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'quiz',name:name,phone:phone,email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers),badges:badgeNames})});
 }catch(e){}
-// Update leaderboard for next retake
 allQuizResults.push(newAttempt);
 renderLeaderboard();
 }
