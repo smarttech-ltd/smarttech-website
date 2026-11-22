@@ -45,20 +45,41 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 th,td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
 th{color:#facc15;font-size:11px}
+/* ===== WATERMARK - HIDDEN ON SCREEN, VISIBLE IN PDF ===== */
+.pdf-watermark{display:none}
+.pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
 @media print{
-  body{background:#fff!important;color:#000!important}
+  @page{margin:14mm}
+  body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .header,.tabs,.btn,.btn-small,.no-print{display:none!important}
-  .wrap{max-width:100%;padding:0}
-  .card{background:#fff!important;border:1px solid #ccc!important;color:#000!important}
+  .wrap{max-width:100%;padding:0;position:relative;z-index:1}
+  .card{background:transparent!important;border:1px solid #ccc!important;color:#000!important;position:relative;z-index:1}
   .item{background:#fff!important;border:1px solid #ddd!important;color:#000!important}
   .item b,.stat b{color:#000!important}
   .small{color:#333!important}
+  th{color:#000!important}
+  td{color:#000!important}
+  .badge-chip{background:#fff!important;color:#000!important;border:1px solid #999!important}
   #tab-analytics{display:block!important}
   #tab-overview,#tab-bookings,#tab-quiz,#tab-posts,#tab-questions,#tab-notify,#tab-recycle{display:none!important}
+  /* WATERMARK ON EVERY PAGE */
+  .pdf-watermark{
+    display:block!important;
+    position:fixed!important;
+    top:50%!important;left:50%!important;
+    transform:translate(-50%,-50%)!important;
+    width:78%!important;max-width:420px!important;
+    opacity:.10!important;
+    z-index:0!important;
+    pointer-events:none!important;
+    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+  }
 }
 </style>
 </head>
 <body>
+<!-- WATERMARK LOGO - Put logo.png in same folder as admin-dashboard.html -->
+<div class="pdf-watermark"><img src="logo.png" alt=""></div>
 <div class="header"><a href="index.html">← Home</a><b>🔒 SmartTech Admin</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="connStatus">🔄 Loading...</span></div>
 <div class="wrap">
 <div class="stats">
@@ -144,7 +165,7 @@ th{color:#facc15;font-size:11px}
 <div id="tab-analytics" class="hidden">
 <div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Computed from all quiz results. Sorted by Consistency (attempts) then Performance (avg).</p>
 <div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
-<p class="small">On phone: Tap Download → Choose Save as PDF. On desktop: Print → Save as PDF.</p></div>
+<p class="small">On phone: Tap Download → Choose Save as PDF. Tick Background graphics ON to see logo watermark.</p></div>
 <div id="analyticsContent"></div>
 </div>
 
@@ -170,7 +191,6 @@ function normalizeRows(data){
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 function getPerc(x){ var p=parseInt(String(x.percentage||'').replace('%','')); if(!isNaN(p)) return p; var s=parseInt(x.score||0), t=parseInt(x.total||0); return t>0? Math.round((s/t)*100):0; }
-// ===== BADGES - SAME LOGIC AS QUIZ PAGE =====
 const BADGES=[
 { id:'newcomer', emoji:'🌱', name:'Newcomer', check:function(s){ return s.attempts>=1; }},
 { id:'regular', emoji:'🔥', name:'Regular', check:function(s){ return s.attempts>=3; }},
@@ -366,15 +386,12 @@ function previewBulk(){ var text=document.getElementById('bulkText').value; if(!
 function useSample(){ document.getElementById('bulkText').value=`1. What does CPU stand for?\nA) Central Processing Unit\nB) Computer Personal Unit\nC) Central Program Unit\nD) Central Printer Unit\nAnswer: A\nExplanation: CPU is the brain of computer\n\n2. What is the full form of RAM?\nAnswer: Random Access Memory\nType: Open\n\n3. Which is an input device?\nA) Monitor\nB) Keyboard\nC) Printer\nD) Speaker\nAnswer: B`; previewBulk(); }
 function clearBulk(){ document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; document.getElementById('bulkMsg').textContent=''; parsedBulk=[]; }
 async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var timer=parseInt(document.getElementById('qTimer').value)||30; if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ?')) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:timer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'!'; document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
-
-// ===== ANALYTICS =====
 function renderAnalytics(){
   var topicFilter=document.getElementById('analyticsTopic') ? document.getElementById('analyticsTopic').value : '';
   var all=D.quiz||[];
   var filtered=topicFilter? all.filter(function(r){ return String(r.topic||'')===topicFilter; }) : all;
   var el=document.getElementById('analyticsContent');
   if(!filtered.length){ el.innerHTML='<div class="card"><p class="small">No quiz results yet for this topic.</p></div>'; return; }
-  // Per-student stats for filtered set
   var byPhone={};
   filtered.forEach(function(r){
     var p=cleanPhone(r.phone||''); if(!p) return;
@@ -386,10 +403,8 @@ function renderAnalytics(){
   var students=Object.values(byPhone).map(function(u){ u.avg=u.attempts? Math.round(u.total/u.attempts):0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); return u; });
   students.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
   var best=students[0];
-  // Least performer: lowest avg among those with 2+ attempts, else lowest overall
   var leastPool=students.filter(function(u){ return u.attempts>=2; });
   var least=leastPool.length? leastPool.slice().sort(function(a,b){ return a.avg-b.avg; })[0] : students.slice().sort(function(a,b){ return a.avg-b.avg; })[0];
-  // Per-topic breakdown (if All Topics)
   var byTopic={};
   filtered.forEach(function(r){ var t=r.topic||'Unknown'; if(!byTopic[t]) byTopic[t]={attempts:0,total:0,best:0}; var p=getPerc(r); byTopic[t].attempts++; byTopic[t].total+=p; if(p>byTopic[t].best) byTopic[t].best=p; });
   var topicRows=Object.keys(byTopic).map(function(t){ return {topic:t, attempts:byTopic[t].attempts, avg:Math.round(byTopic[t].total/byTopic[t].attempts), best:byTopic[t].best}; }).sort(function(a,b){ return b.avg-a.avg; });
@@ -404,7 +419,6 @@ function renderAnalytics(){
   '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(r.topic||'')+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
 }
 function downloadAnalyticsPDF(){
-  // Show analytics tab for print, then print
   showTab('analytics', document.querySelectorAll('.tab')[6]);
   setTimeout(function(){ window.print(); }, 400);
 }
