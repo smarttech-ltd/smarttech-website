@@ -45,7 +45,6 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 th,td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
 th{color:#facc15;font-size:11px}
-/* ===== WATERMARK - HIDDEN ON SCREEN, VISIBLE IN PDF ===== */
 .pdf-watermark{display:none}
 .pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
 @media print{
@@ -62,23 +61,11 @@ th{color:#facc15;font-size:11px}
   .badge-chip{background:#fff!important;color:#000!important;border:1px solid #999!important}
   #tab-analytics{display:block!important}
   #tab-overview,#tab-bookings,#tab-quiz,#tab-posts,#tab-questions,#tab-notify,#tab-recycle{display:none!important}
-  /* WATERMARK ON EVERY PAGE */
-  .pdf-watermark{
-    display:block!important;
-    position:fixed!important;
-    top:50%!important;left:50%!important;
-    transform:translate(-50%,-50%)!important;
-    width:78%!important;max-width:420px!important;
-    opacity:.10!important;
-    z-index:0!important;
-    pointer-events:none!important;
-    -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
-  }
+  .pdf-watermark{display:block!important;position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;width:78%!important;max-width:420px!important;opacity:.10!important;z-index:0!important;pointer-events:none!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }
 </style>
 </head>
 <body>
-<!-- WATERMARK LOGO - Put logo.png in same folder as admin-dashboard.html -->
 <div class="pdf-watermark"><img src="logo.png" alt=""></div>
 <div class="header"><a href="index.html">← Home</a><b>🔒 SmartTech Admin</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="connStatus">🔄 Loading...</span></div>
 <div class="wrap">
@@ -136,16 +123,32 @@ th{color:#facc15;font-size:11px}
 </div>
 
 <div id="tab-questions" class="hidden">
+<!-- ===== NEW: QUIZ TIME SETTINGS ===== -->
+<div class="card" style="border:2px solid #00e5ff">
+<h3 style="color:#00e5ff">⏱️ Quiz Time Settings</h3>
+<p class="small">Set time per question. Max 3 mins (180 secs). Applies to ALL new quizzes. Per-question timer (from single / bulk add) still overrides if you set it.</p>
+<label class="small">Multiple Choice Time (seconds) — Default 45s</label>
+<input id="settingMcqTime" class="input" type="number" min="5" max="180" value="45" placeholder="45">
+<label class="small">Open Ended Time (seconds) — Default 90s = 1 min 30s</label>
+<input id="settingOpenTime" class="input" type="number" min="5" max="180" value="90" placeholder="90">
+<div class="row">
+<button class="btn btn-green" onclick="saveTimeSettings()">💾 Save Time Settings</button>
+<button class="btn btn-ghost" onclick="resetTimeSettings()">↩️ Reset to Default (45s / 90s)</button>
+</div>
+<p class="small" id="timeSettingMsg" style="margin-top:8px"></p>
+<p class="small">Current: <span id="timeSettingCurrent">MCQ 45s • Open 1 min 30s</span></p>
+</div>
+<!-- ===== END TIME SETTINGS ===== -->
 <div class="card"><h3 style="color:#5ee1ff">❓ Add New Quiz Question</h3>
 <select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
 <input id="qText" class="input" placeholder="Question e.g. What does CPU stand for?">
 <input id="qA" class="input" placeholder="Option A"><input id="qB" class="input" placeholder="Option B"><input id="qC" class="input" placeholder="Option C"><input id="qD" class="input" placeholder="Option D">
 <select id="qAnswer" class="input"><option value="0">Correct = Option A</option><option value="1">Correct = Option B</option><option value="2">Correct = Option C</option><option value="3">Correct = Option D</option></select>
-<input id="qExplain" class="input" placeholder="Explanation"><input id="qTimer" class="input" type="number" value="30">
+<input id="qExplain" class="input" placeholder="Explanation"><input id="qTimer" class="input" type="number" min="5" max="180" value="45" placeholder="Timer in seconds (5-180, blank = use Time Settings above)">
 <button class="btn" onclick="createQuestion()">➕ Add Question</button><p class="small" id="qMsg" style="margin-top:8px"></p></div>
 <div class="card" style="border:2px solid #facc15">
 <h3 style="color:#facc15">📋 Paste 50 Questions At Once</h3>
-<p class="small">Mixture of MCQ + Open Ended allowed. Pick Topic above, then paste below.</p>
+<p class="small">Mixture of MCQ + Open Ended allowed. Pick Topic above, then paste below. If you don't set Timer in bulk, it will use Time Settings above (MCQ 45s / Open 90s).</p>
 <select id="bulkTopic" class="input"><option value="__USE_MAIN__">Use Topic Above ↑</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
 <textarea id="bulkText" class="textarea" style="min-height:220px" placeholder="Paste here e.g.&#10;&#10;1. What does CPU stand for?&#10;A) Central Processing Unit&#10;B) Computer Personal Unit&#10;C) Central Program Unit&#10;D) Central Printer Unit&#10;Answer: A&#10;Explanation: CPU is the brain&#10;&#10;2. What is 2+2?&#10;Answer: 4&#10;Type: Open"></textarea>
 <div class="row"><button class="btn btn-ghost" onclick="previewBulk()">👀 Preview Parsed</button><button class="btn" style="background:#facc15;color:#0a1931" onclick="useSample()">📄 Load Sample</button></div>
@@ -161,7 +164,6 @@ th{color:#facc15;font-size:11px}
 <div class="card"><h3 style="color:#5ee1ff">🔔 Notifications History</h3><a href="admin-notify.html" style="display:block;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">🔔 Send New Notification →</a><div id="notifyList" style="margin-top:12px"></div><button class="btn btn-red" style="margin-top:10px" onclick="clearSheet('Notify')">🗑️ Clear All Notifications</button></div>
 </div>
 
-<!-- ANALYTICS TAB -->
 <div id="tab-analytics" class="hidden">
 <div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Computed from all quiz results. Sorted by Consistency (attempts) then Performance (avg).</p>
 <div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
@@ -191,6 +193,34 @@ function normalizeRows(data){
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 function getPerc(x){ var p=parseInt(String(x.percentage||'').replace('%','')); if(!isNaN(p)) return p; var s=parseInt(x.score||0), t=parseInt(x.total||0); return t>0? Math.round((s/t)*100):0; }
+function fmtTimeAdmin(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
+// ===== TIME SETTINGS - ADMIN CONTROLS, QUIZ READS THIS =====
+function getTimeSettings(){ try{ var s=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); var mcq=(s.mcq>=5&&s.mcq<=180)?s.mcq:45; var open=(s.open>=5&&s.open<=180)?s.open:90; return {mcq:mcq, open:open}; }catch(e){ return {mcq:45, open:90}; } }
+function loadTimeSettingsUI(){
+  var s=getTimeSettings();
+  var m=document.getElementById('settingMcqTime'); if(m) m.value=s.mcq;
+  var o=document.getElementById('settingOpenTime'); if(o) o.value=s.open;
+  var c=document.getElementById('timeSettingCurrent'); if(c) c.textContent='MCQ '+s.mcq+'s • Open '+fmtTimeAdmin(s.open);
+  var qt=document.getElementById('qTimer'); if(qt) qt.placeholder='Timer (5-180, blank = MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open)+')';
+}
+async function saveTimeSettings(){
+  var mcq=parseInt(document.getElementById('settingMcqTime').value);
+  var open=parseInt(document.getElementById('settingOpenTime').value);
+  if(isNaN(mcq)||mcq<5||mcq>180){ alert('MCQ time must be 5 to 180 seconds (max 3 mins)'); return; }
+  if(isNaN(open)||open<5||open>180){ alert('Open time must be 5 to 180 seconds (max 3 mins)'); return; }
+  localStorage.setItem('smarttech_time_settings', JSON.stringify({mcq:mcq, open:open}));
+  document.getElementById('timeSettingCurrent').textContent='MCQ '+mcq+'s • Open '+fmtTimeAdmin(open);
+  document.getElementById('timeSettingMsg').textContent='✅ Saved! Quiz will now use MCQ '+mcq+'s / Open '+fmtTimeAdmin(open);
+  try{ await postToSheet({type:'settings', mcqTime:mcq, openTime:open, mcq:mcq, open:open}); }catch(e){}
+  loadTimeSettingsUI();
+}
+async function resetTimeSettings(){
+  if(!confirm('Reset to default? MCQ 45s / Open 90s (1 min 30s)')) return;
+  document.getElementById('settingMcqTime').value=45;
+  document.getElementById('settingOpenTime').value=90;
+  await saveTimeSettings();
+  document.getElementById('timeSettingMsg').textContent='✅ Reset to Default: MCQ 45s • Open 1 min 30s';
+}
 const BADGES=[
 { id:'newcomer', emoji:'🌱', name:'Newcomer', check:function(s){ return s.attempts>=1; }},
 { id:'regular', emoji:'🔥', name:'Regular', check:function(s){ return s.attempts>=3; }},
@@ -265,6 +295,7 @@ function showTab(name,el){
   ['overview','bookings','quiz','posts','questions','notify','analytics','recycle'].forEach(function(t){ document.getElementById('tab-'+t).classList.toggle('hidden', t!==name); });
   if(name==='recycle') renderRecycle();
   if(name==='analytics') renderAnalytics();
+  if(name==='questions') loadTimeSettingsUI();
 }
 function calcPerc(score,total,fallback){ var s=parseInt(score||0), t=parseInt(total||0); if(t>0) return Math.round((s/t)*100)+"%"; return fallback||"0%"; }
 async function loadAll(force){
@@ -279,6 +310,8 @@ async function loadAll(force){
       D.posts=normalizeRows(data.posts).map(lowerKeys);
       D.questions=normalizeRows(data.questions).map(lowerKeys);
       D.notify=normalizeRows(data.notify).map(lowerKeys);
+      // If Sheet returns settings, sync to localStorage so Quiz on same device uses it
+      try{ var s=data.settings||null; if(Array.isArray(s)) s=s[0]; if(s){ var mm=parseInt(s.mcq||s.mcqTime||0), oo=parseInt(s.open||s.openTime||0); if(mm>=5&&mm<=180||oo>=5&&oo<=180){ var cur=getTimeSettings(); localStorage.setItem('smarttech_time_settings', JSON.stringify({mcq:mm>=5&&mm<=180?mm:cur.mcq, open:oo>=5&&oo<=180?oo:cur.open})); } } }catch(e){}
     }
     applyRetained();
     document.getElementById('connStatus').textContent='✅ Connected';
@@ -289,7 +322,7 @@ async function loadAll(force){
     document.getElementById('cQuestions').textContent=D.questions.length;
     document.getElementById('cNotify').textContent=D.notify.length;
     document.getElementById('cTotal').textContent=D.bookings.length+D.quiz.length+D.posts.length+D.questions.length+D.notify.length;
-    renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderNotify(); renderOverview(); renderAnalytics(); renderRecycle();
+    renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderNotify(); renderOverview(); renderAnalytics(); renderRecycle(); loadTimeSettingsUI();
   }catch(e){ document.getElementById('connStatus').textContent='⚠️ Offline'; }
 }
 function renderOverview(){
@@ -365,13 +398,13 @@ function renderQuestions(){
   questionIndex={};
   var el=document.getElementById('questionsList');
   if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; }
-  el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">Timer: '+esc(x.timer||30)+'s</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join('');
+  el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">⏱️ Timer: '+esc(x.timer||'Default (MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open)+')')+'</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join('');
 }
 async function deleteOneQuestion(key){ var x=questionIndex[key]; if(!x) return; if(!confirm('Move this question to Recycle Bin?')) return; addToRecycle('Questions', x); var card=document.getElementById('qcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Questions',id:x.id||'',timestamp:x.timestamp||'',name:x.question||x.q||'',phone:''}); setTimeout(function(){ loadAll(); },800); }
 async function clearQuestionsByTopic(){ var ft=document.getElementById('filterTopic').value; if(!ft) return alert('Select a Topic first to delete it'); var count=D.questions.filter(function(x){ return String(x.topic||'')===ft; }).length; if(!count) return alert('No questions in '+ft); if(!confirm('Delete ALL '+count+' questions in '+ft+' ? They go to Recycle Bin.')) return; D.questions.filter(function(x){ return String(x.topic||'')===ft; }).forEach(function(x){ addToRecycle('Questions', x); }); await postToSheet({type:'clearTopic',sheet:'Questions',topic:ft}); loadAll(); }
 function renderNotify(){ var el=document.getElementById('notifyList'); if(!D.notify.length){ el.innerHTML='<p class="small">No notifications yet.</p>'; return; } el.innerHTML=D.notify.slice().reverse().map(function(x){ return '<div class="item"><b>'+esc(x.title||'')+'</b><br>'+esc(x.body||'')+'<br><span class="small">'+esc(x.timestamp||'')+'</span></div>'; }).join(''); }
 async function createPost(){ var title=document.getElementById('postTitle').value.trim(); var caption=document.getElementById('postCaption').value.trim(); if(!title || !caption){ alert('Enter title + caption'); return; } document.getElementById('postMsg').textContent='⏳ Saving...'; await postToSheet({type:'post',title:title,caption:caption,postType:document.getElementById('postType').value,media:document.getElementById('postMedia').value.trim(),link:document.getElementById('postLink').value.trim(),linkText:document.getElementById('postLinkText').value.trim()}); document.getElementById('postMsg').textContent=''; document.getElementById('postTitle').value=''; document.getElementById('postCaption').value=''; loadAll(); }
-async function createQuestion(){ var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim(); if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; } document.getElementById('qMsg').textContent='⏳ Saving...'; await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:'mcq',options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:parseInt(document.getElementById('qTimer').value)||30}); document.getElementById('qMsg').textContent=''; ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; }); loadAll(); }
+async function createQuestion(){ var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim(); if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; } var tRaw=document.getElementById('qTimer').value.trim(); var timer=tRaw==='' ? 0 : parseInt(tRaw); if(tRaw!=='' && (isNaN(timer)||timer<5||timer>180)){ alert('Timer must be 5 to 180 seconds (max 3 mins) or leave blank for default'); return; } document.getElementById('qMsg').textContent='⏳ Saving...'; await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:'mcq',options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:timer}); document.getElementById('qMsg').textContent='✅ Saved! Timer: '+(timer? timer+'s' : 'Default MCQ '+getTimeSettings().mcq+'s'); ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('qTimer').value=''; loadAll(); }
 function parseBulkQuestions(text){
   var lines=String(text||'').split(/\r?\n/); var blocks=[]; var cur=[];
   function flush(){ if(cur.join(' ').trim()) blocks.push(cur.join('\n')); cur=[]; }
@@ -382,10 +415,10 @@ function parseBulkQuestions(text){
 }
 let parsedBulk=[];
 function getBulkTopic(){ var bt=document.getElementById('bulkTopic').value; if(bt==='__USE_MAIN__') return document.getElementById('qTopic').value; return bt; }
-function previewBulk(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ document.getElementById('bulkMsg').textContent='⚠️ Paste questions first'; return; } parsedBulk=parseBulkQuestions(text); var mcq=parsedBulk.filter(function(x){return x.qtype==='mcq';}).length; var open=parsedBulk.filter(function(x){return x.qtype==='open';}).length; document.getElementById('bulkMsg').textContent='✅ Found '+parsedBulk.length+' questions: '+mcq+' MCQ + '+open+' Open | Topic: '+getBulkTopic(); document.getElementById('bulkPreview').innerHTML=parsedBulk.slice(0,10).map(function(x,i){ return '<div class="item"><b>'+(i+1)+'. '+esc(x.question)+'</b> <span class="pill '+(x.qtype==='open'?'pill-open':'pill-mcq')+'">'+(x.qtype==='open'?'OPEN':'MCQ')+'</span><br>'+(x.qtype==='mcq'? x.options.map(function(o,j){return (j===x.answer?'✅ ':'')+esc(o)+'<br>';}).join('') : 'Answer: <b>'+esc(x.answer)+'</b>')+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'</div>'; }).join('') + (parsedBulk.length>10?'<p class="small">... + '+(parsedBulk.length-10)+' more (will all be added)</p>':''); }
+function previewBulk(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ document.getElementById('bulkMsg').textContent='⚠️ Paste questions first'; return; } parsedBulk=parseBulkQuestions(text); var mcq=parsedBulk.filter(function(x){return x.qtype==='mcq';}).length; var open=parsedBulk.filter(function(x){return x.qtype==='open';}).length; document.getElementById('bulkMsg').textContent='✅ Found '+parsedBulk.length+' questions: '+mcq+' MCQ + '+open+' Open | Topic: '+getBulkTopic()+' | Timer: MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open); document.getElementById('bulkPreview').innerHTML=parsedBulk.slice(0,10).map(function(x,i){ return '<div class="item"><b>'+(i+1)+'. '+esc(x.question)+'</b> <span class="pill '+(x.qtype==='open'?'pill-open':'pill-mcq')+'">'+(x.qtype==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+(x.qtype==='mcq'? x.options.map(function(o,j){return (j===x.answer?'✅ ':'')+esc(o)+'<br>';}).join('') : 'Answer: <b>'+esc(x.answer)+'</b>')+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'</div>'; }).join('') + (parsedBulk.length>10?'<p class="small">... + '+(parsedBulk.length-10)+' more (will all be added)</p>':''); }
 function useSample(){ document.getElementById('bulkText').value=`1. What does CPU stand for?\nA) Central Processing Unit\nB) Computer Personal Unit\nC) Central Program Unit\nD) Central Printer Unit\nAnswer: A\nExplanation: CPU is the brain of computer\n\n2. What is the full form of RAM?\nAnswer: Random Access Memory\nType: Open\n\n3. Which is an input device?\nA) Monitor\nB) Keyboard\nC) Printer\nD) Speaker\nAnswer: B`; previewBulk(); }
 function clearBulk(){ document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; document.getElementById('bulkMsg').textContent=''; parsedBulk=[]; }
-async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var timer=parseInt(document.getElementById('qTimer').value)||30; if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ?')) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:timer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'!'; document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
+async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var s=getTimeSettings(); var timer=0; if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ? Timer will be Default: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open))) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; var qTimer = q.qtype==='mcq' ? s.mcq : s.open; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:qTimer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'! Timer: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open); document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
 function renderAnalytics(){
   var topicFilter=document.getElementById('analyticsTopic') ? document.getElementById('analyticsTopic').value : '';
   var all=D.quiz||[];
@@ -424,6 +457,7 @@ function downloadAnalyticsPDF(){
 }
 async function deleteGeneric(sheet,key){ if(!confirm('Move this to Recycle Bin?')) return; var x=postIndex[key]; if(!x) return; addToRecycle(sheet, x); var card=document.getElementById('postcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''}); loadAll(); }
 async function clearSheet(sheet){ if(!confirm('Move ALL '+sheet+' to Recycle Bin?')) return; if(sheet==='Quiz'){ D.quiz.forEach(function(b){ addToRecycle('Quiz', b); }); } if(sheet==='Notify'){ D.notify.forEach(function(b){ addToRecycle('Notify', b); }); } await postToSheet({type:'clear',sheet:sheet}); loadAll(); }
+loadTimeSettingsUI();
 loadAll();
 </script>
 </body>
