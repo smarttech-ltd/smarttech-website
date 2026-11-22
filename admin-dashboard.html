@@ -163,7 +163,7 @@ th{color:#facc15;font-size:11px}
 </div>
 
 <div id="tab-analytics" class="hidden">
-<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Computed from all quiz results. Sorted by Consistency (attempts) then Performance (avg).</p>
+<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Computed from Score / Total — never trusts Sheet % formatting. Sorted by Consistency (attempts) then Performance (avg).</p>
 <div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
 <p class="small">On phone: Tap Download → Choose Save as PDF. Tick Background graphics ON to see logo watermark.</p></div>
 <div id="analyticsContent"></div>
@@ -190,14 +190,34 @@ function normalizeRows(data){
 }
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
-function getPerc(x){ var p=parseInt(String(x.percentage||'').replace('%','')); if(!isNaN(p)) return p; var s=parseInt(x.score||0), t=parseInt(x.total||0); return t>0? Math.round((s/t)*100):0; }
+// ===== FIXED getPerc: Score/Total is truth. Sheet % may be 0.625 / 1 / "80%" - all handled =====
+function getPerc(x){
+  var s=parseFloat(x.score);
+  var t=parseFloat(x.total);
+  if(!isNaN(s) && !isNaN(t) && t>0){
+    return Math.round((s/t)*100);
+  }
+  // Fallback only if Score/Total missing: fix Sheet fraction
+  var raw=x.percentage;
+  if(raw===undefined || raw===null || raw==='') return 0;
+  var p=parseFloat(String(raw).replace('%','').trim());
+  if(isNaN(p)) return 0;
+  // Sheet % formatting: 1 = 100%, 0.625 = 62.5%, 0.8 = 80%
+  if(p>=0 && p<=1 && String(raw).indexOf('%')===-1){
+    // Ambiguous: 0 or 1 could be real 0%/1% or fraction. If it came from Sheet as number 0-1, treat as fraction.
+    // Distinguish: if raw is number type (not string with %), treat as fraction
+    if(typeof raw==='number') return Math.round(p*100);
+    // String "0.625" without % -> also fraction
+    if(String(raw).indexOf('.')>=0) return Math.round(p*100);
+  }
+  if(p>=0 && p<=1 && typeof raw==='number') return Math.round(p*100);
+  return Math.round(p);
+}
 function fmtTimeAdmin(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
-// ===== FIX: NORMALIZE QUIZ ROW - READS BY NAME, FIXES OLD SHIFTED ROW =====
 function normalizeQuizRow(r){
   var o=lowerKeys(r);
   var name=String(o.name||'').trim();
   var topic=String(o.topic||'').trim();
-  // Detect shifted row: name looks like ID (ID179...) OR topic looks like a phone
   var topicIsPhone=/^(0\d{9}|254\d{9})$/.test(topic.replace(/\D/g,''));
   var nameIsId=/^id\d+/i.test(name);
   if(nameIsId || topicIsPhone){
@@ -209,22 +229,20 @@ function normalizeQuizRow(r){
     var date=vals.find(function(v){ return /^\d{4}-\d{2}-\d{2}/.test(String(v||'')); })||o.timestamp||o.date||'';
     var answers=vals.find(function(v){ return String(v||'').trim().startsWith('[{'); })||'';
     var percRaw=vals.find(function(v){ return String(v||'').includes('%'); })||'';
-    // In shifted row, last numbers are [score, total] - total is the small number 5, etc.
-    // We cannot recover name/score reliably from a shifted row, so keep phone/topic/date
-    // and mark it as shifted so Admin shows phone correctly instead of NaN
     var nums=vals.map(function(v){ return parseInt(v); }).filter(function(n){ return !isNaN(n); });
     var total=nums.length? nums[nums.length-1]:0;
     var score=0;
-    if(percRaw){ var pp=parseInt(percRaw); if(total) score=Math.round((pp/100)*total); }
-    return {id:o.id||'', name:'(Shifted row - see phone)', phone:phone, email:email, topic:realTopic||'Unknown', score:score, total:total, percentage:percRaw|| (total? Math.round((score/total)*100)+'%':''), correct:score, wrong:total-score, badges:'', answers:answers, timestamp:date};
+    if(percRaw){ var pp=parseFloat(String(percRaw).replace('%','')); if(!isNaN(pp)){ if(pp>=0 && pp<=1) pp=pp*100; if(total) score=Math.round((pp/100)*total); } }
+    var perc = total ? Math.round((score/total)*100)+'%' : '';
+    return {id:o.id||'', name:'(Shifted row - see phone)', phone:phone, email:email, topic:realTopic||'Unknown', score:score, total:total, percentage:perc, correct:score, wrong:total-score, badges:'', answers:answers, timestamp:date};
   }
-  // Normal row - new + old
   var s=parseInt(o.score||0), t=parseInt(o.total||0);
   var correct = (o.correct!==undefined && o.correct!=='' ) ? parseInt(o.correct) : s;
   var wrong = (o.wrong!==undefined && o.wrong!=='' ) ? parseInt(o.wrong) : (t - s);
   if(isNaN(correct)) correct=s;
   if(isNaN(wrong)) wrong=Math.max(0, t - correct);
-  var perc = o.percentage || (t? Math.round((s/t)*100)+'%':'0%');
+  // FIXED: Always recalculate % from Score/Total, never trust Sheet % (0.625 / 1)
+  var perc = t ? Math.round((s/t)*100)+'%' : '0%';
   var answers = o.answers || o.detailedanswers || o['detailed answers'] || '';
   return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:o.topic||'', score:s, total:t, percentage:perc, correct:correct, wrong:wrong, badges:o.badges||'', answers:answers, timestamp:o.timestamp||o.date||''};
 }
