@@ -8,8 +8,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
 body{background:#0a1931;color:#fff;min-height:100vh}
-.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a}
+.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;gap:10px;align-items:center;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a;transition:all .3s;overflow:hidden;max-height:60px}
 .header a{color:#4aa3ff;text-decoration:none;font-size:13px;font-weight:700}
+.header.collapsed{max-height:0!important;padding-top:0!important;padding-bottom:0!important;border-bottom:none!important;opacity:0;pointer-events:none}
 .wrap{max-width:520px;margin:0 auto;padding:14px}
 .card{background:rgba(13,35,90,.92);border:1px solid #2a5ab0;border-radius:18px;padding:16px;margin-bottom:12px}
 .input{width:100%;padding:12px;border-radius:12px;border:1px solid #1e3a5a;background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;margin-bottom:10px}
@@ -19,8 +20,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .opt{width:100%;padding:13px;border-radius:12px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;text-align:left;cursor:pointer;margin-bottom:8px;font-size:14px}
 .opt:hover{background:#4aa3ff;color:#0a1931}
 .opt.selected{background:#4aa3ff!important;color:#0a1931;border:2px solid #00e5ff;font-weight:800}
-.opt.correct{background:#00c853!important;color:#fff}
-.opt.wrong{background:#ff5252!important;color:#fff}
 .small{font-size:12px;color:#8ec8ff;line-height:1.6}
 .hidden{display:none!important}
 .progress{height:8px;background:rgba(255,255,255,.15);border-radius:20px;overflow:hidden;margin:10px 0}
@@ -67,7 +66,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </head>
 <body>
 <div class="pdf-watermark"><img src="logo.png" alt=""></div>
-<div class="header"><a href="index.html">← Home</a><b>🧠 SmartTech Quiz</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
+<div class="header" id="mainHeader"><a href="index.html">← Home</a><b>🧠 SmartTech Quiz</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
 <div class="wrap">
 <div class="card" id="startCard">
 <h2 style="color:#5ee1ff;text-align:center">🧠 FREE ICT Quiz</h2>
@@ -129,10 +128,11 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </div>
 <script>
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
-const EMAILJS_PUBLIC_KEY="YOUR_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID="YOUR_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID="YOUR_TEMPLATE_ID";
-if(window.emailjs && EMAILJS_PUBLIC_KEY!=="YOUR_PUBLIC_KEY"){ emailjs.init(EMAILJS_PUBLIC_KEY); }
+// ===== EMAILJS - YOUR KEYS PASTED =====
+const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
+const EMAILJS_SERVICE_ID="service_84v01bj";
+const EMAILJS_TEMPLATE_ID="template_3zncmwh";
+if(window.emailjs){ emailjs.init(EMAILJS_PUBLIC_KEY); }
 let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=45, answered=false;
 let allQuizResults=[];
 let TIME_SETTINGS={mcq:45, open:90};
@@ -193,10 +193,6 @@ function downloadMyPDF(){
 }
 async function sendResultsEmail(){
   if(emailAlreadySent){ document.getElementById('emailMsg').textContent='✅ Already sent to your email.'; return; }
-  if(EMAILJS_PUBLIC_KEY==="YOUR_PUBLIC_KEY" || EMAILJS_SERVICE_ID==="YOUR_SERVICE_ID" || EMAILJS_TEMPLATE_ID==="YOUR_TEMPLATE_ID"){
-    document.getElementById('emailMsg').textContent='⚠️ Email not set up yet. Ask SmartTech to paste EmailJS keys in quiz.html';
-    return;
-  }
   var email=document.getElementById('userEmail').value.trim();
   if(!email){ email=prompt('Enter your email to receive results:'); if(!email) return; document.getElementById('userEmail').value=email; }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email'); return; }
@@ -357,6 +353,8 @@ var want=parseInt(document.getElementById('qCountSel').value);
 if(want>0) quizQuestions=quizQuestions.slice(0,want);
 current=0;score=0;answers=[];emailAlreadySent=false;selectedMcq=-1;finalSubmitted=false;
 clearInterval(finalSubmitInt);
+// COLLAPSE HEADER WHEN QUIZ STARTS
+document.getElementById('mainHeader').classList.add('collapsed');
 document.getElementById('emailMsg').textContent='Email is sent ONLY if you tap this button.';
 var eb=document.getElementById('emailBtn'); if(eb){ eb.disabled=false; eb.textContent='📧 Send Results via Email'; }
 document.getElementById('startCard').classList.add('hidden');
@@ -395,6 +393,7 @@ selectedMcq=idx;
 document.querySelectorAll('.opt').forEach(function(b){b.classList.remove('selected');});
 if(btn) btn.classList.add('selected');
 }
+// NO FEEDBACK HERE - Correct/Wrong ONLY in final Review
 function autoSubmitCurrent(){
 if(answered) return; answered=true; clearInterval(timerInt);
 var q=quizQuestions[current];
@@ -404,14 +403,12 @@ if(q.qtype==='open'){
   if(!userAns) userAns='No Answer (Time Up)';
   your=userAns; correct=String(q.answer||'');
   isCorrect=checkOpenAnswer(userAns, correct);
-  var fb=document.getElementById('openFeedback');
-  fb.textContent = isCorrect ? '✅ Correct!' : '❌ Wrong. Correct: '+correct;
-  fb.className='feedback show '+(isCorrect?'ok':'bad');
+  // DO NOT show feedback - client sees it only at end
 } else {
   your = selectedMcq>=0 ? q.options[selectedMcq] : 'No Answer (Time Up)';
   correct = q.options[q.answer];
   isCorrect = selectedMcq===q.answer;
-  document.querySelectorAll('.opt').forEach(function(b,i){if(i===q.answer) b.classList.add('correct'); if(i===selectedMcq && !isCorrect) b.classList.add('wrong');});
+  // DO NOT highlight correct/wrong - keep only selected blue
 }
 if(isCorrect) score++;
 answers.push({q:q.question,qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
@@ -419,7 +416,7 @@ setTimeout(function(){
   current++;
   if(current>=quizQuestions.length){ showFinalSubmit(); }
   else showQ();
-}, 800);
+}, 500);
 }
 function showFinalSubmit(){
 document.getElementById('quizCard').classList.add('hidden');
@@ -427,7 +424,6 @@ document.getElementById('submitCard').classList.remove('hidden');
 document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.';
 document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
 window.scrollTo({top:0,behavior:'smooth'});
-// FINAL COUNTDOWN - Quiz submits in: 5,4,3,2,1
 var left=5;
 var cd=document.getElementById('autoSubmitCountdown');
 cd.textContent='Quiz submits in: 5';
@@ -441,6 +437,8 @@ finalSubmitInt=setInterval(function(){
 async function finishQuiz(){
 if(finalSubmitted) return; finalSubmitted=true;
 clearInterval(finalSubmitInt);
+// SHOW HEADER AGAIN ON RESULTS
+document.getElementById('mainHeader').classList.remove('collapsed');
 document.getElementById('submitCard').classList.add('hidden');
 document.getElementById('resultCard').classList.remove('hidden');
 var total=quizQuestions.length;
@@ -467,6 +465,7 @@ renderBadgeGrid('myBadgesAfter', afterStats, false);
 document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
 var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
 var wrongCount=answers.length-correctCount;
+// ONLY PLACE CLIENT SEES CORRECT / WRONG
 document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
 var topic=document.getElementById('topic').value;
 var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
