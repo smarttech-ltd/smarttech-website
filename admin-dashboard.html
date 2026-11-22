@@ -39,6 +39,8 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 .scorebox{background:rgba(0,200,83,.15);border:1px solid #00c853;border-radius:12px;padding:10px;margin:8px 0;text-align:center}
 .scorebox b{font-size:22px;color:#00e676}
 .section-label{font-size:12px;font-weight:800;color:#facc15;margin:12px 0 8px;letter-spacing:.5px}
+.pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px}
+.pill-mcq{background:#00e5ff;color:#0a1931}.pill-open{background:#facc15;color:#0a1931}
 </style>
 </head>
 <body>
@@ -90,16 +92,41 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 <button class="btn" onclick="createPost()">📢 Publish Post</button><p class="small" id="postMsg" style="margin-top:8px"></p></div>
 <div class="card"><h3 style="color:#5ee1ff">All Posts</h3><div id="postsList" style="margin-top:10px"></div></div>
 </div>
+
+<!-- ============ QUESTIONS - MODIFIED FOR BULK PASTE 50 Qs ============ -->
 <div id="tab-questions" class="hidden">
 <div class="card"><h3 style="color:#5ee1ff">❓ Add New Quiz Question</h3>
-<select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option></select>
+<select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
 <input id="qText" class="input" placeholder="Question e.g. What does CPU stand for?">
 <input id="qA" class="input" placeholder="Option A"><input id="qB" class="input" placeholder="Option B"><input id="qC" class="input" placeholder="Option C"><input id="qD" class="input" placeholder="Option D">
 <select id="qAnswer" class="input"><option value="0">Correct = Option A</option><option value="1">Correct = Option B</option><option value="2">Correct = Option C</option><option value="3">Correct = Option D</option></select>
 <input id="qExplain" class="input" placeholder="Explanation"><input id="qTimer" class="input" type="number" value="30">
 <button class="btn" onclick="createQuestion()">➕ Add Question</button><p class="small" id="qMsg" style="margin-top:8px"></p></div>
-<div class="card"><h3 style="color:#5ee1ff">All Questions</h3><input id="searchQ" class="input" placeholder="🔍 Search question..." oninput="renderQuestions()"><div id="questionsList" style="margin-top:10px"></div></div>
+
+<!-- BULK PASTE -->
+<div class="card" style="border:2px solid #facc15">
+<h3 style="color:#facc15">📋 Paste 50 Questions At Once</h3>
+<p class="small">Mixture of MCQ + Open Ended allowed. Pick Topic above, then paste below.<br>MCQ needs A) B) C) D) + Answer: A/B/C/D<br>Open needs only Question + Answer:</p>
+<select id="bulkTopic" class="input">
+<option value="__USE_MAIN__">Use Topic Above ↑</option>
+<option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option>
+</select>
+<textarea id="bulkText" class="textarea" style="min-height:220px" placeholder="Paste here e.g.&#10;&#10;1. What does CPU stand for?&#10;A) Central Processing Unit&#10;B) Computer Personal Unit&#10;C) Central Program Unit&#10;D) Central Printer Unit&#10;Answer: A&#10;Explanation: CPU is the brain&#10;&#10;2. What is 2+2?&#10;Answer: 4&#10;Type: Open&#10;&#10;3. Which is an input device?&#10;A) Monitor&#10;B) Keyboard&#10;C) Printer&#10;D) Speaker&#10;Answer: B"></textarea>
+<div class="row">
+<button class="btn btn-ghost" onclick="previewBulk()">👀 Preview Parsed</button>
+<button class="btn" style="background:#facc15;color:#0a1931" onclick="useSample()">📄 Load Sample</button>
 </div>
+<button class="btn btn-green" style="margin-top:8px" onclick="addBulkQuestions()">🚀 Add ALL Parsed Questions</button>
+<p class="small" id="bulkMsg" style="margin-top:8px"></p>
+<div id="bulkPreview" style="margin-top:8px"></div>
+<button class="btn btn-ghost" onclick="clearBulk()" style="margin-top:8px">🧹 Clear Paste Box</button>
+</div>
+
+<div class="card"><h3 style="color:#5ee1ff">All Questions</h3>
+<div class="row" style="margin-bottom:8px"><select id="filterTopic" class="input" style="margin:0" onchange="renderQuestions()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn btn-red" style="width:auto;padding:12px 16px" onclick="clearQuestionsByTopic()">🗑️ Delete This Topic</button></div>
+<input id="searchQ" class="input" placeholder="🔍 Search question..." oninput="renderQuestions()"><div id="questionsList" style="margin-top:10px"></div></div>
+</div>
+
 <div id="tab-notify" class="hidden">
 <div class="card"><h3 style="color:#5ee1ff">🔔 Notifications History</h3><a href="admin-notify.html" style="display:block;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">🔔 Send New Notification →</a><div id="notifyList" style="margin-top:12px"></div><button class="btn btn-red" style="margin-top:10px" onclick="clearSheet('Notify')">🗑️ Clear All Notifications</button></div>
 </div>
@@ -107,10 +134,11 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 <div class="card"><h3 style="color:#5ee1ff">🗑️ Recycle Bin</h3><p class="small">Deleted items stay here. You can Restore them or Delete Forever.</p><div class="row" style="margin-top:10px"><button class="btn btn-green" onclick="restoreAllRecycle()">♻️ Restore All</button><button class="btn btn-red" onclick="emptyRecycle()">🗑️ Empty Bin Forever</button></div></div>
 <div id="recycleList"></div>
 </div>
-<div class="card" style="text-align:center;font-size:12px;color:#8ec8ff">SmartTech LTD Admin • WhatsApp 0183465547<br><a href="admin.html" style="color:#ff5252">Logout</a></div>
+<div class="card" style="text-align:center;font-size:12px;color:#8ec8ff">SmartTech LTD Admin • WhatsApp 0183465547<br><a href="#" onclick="logout();return false;" style="color:#ff5252">Logout</a></div>
 </div>
 <script>
 if(localStorage.getItem('smarttech_admin')!=='true' && localStorage.getItem('isAdmin')!=='true'){ location.href='admin.html'; }
+function logout(){ localStorage.removeItem('smarttech_admin'); localStorage.removeItem('isAdmin'); location.href='admin.html'; }
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function lowerKeys(r){ var o={}; Object.keys(r||{}).forEach(function(k){ o[String(k).toLowerCase().trim()]=r[k]; }); return o; }
@@ -122,7 +150,6 @@ function normalizeRows(data){
   return data.slice(1).map(function(row){ var o={}; h.forEach(function(k,i){ o[k]=row[i]; }); return o; });
 }
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
-// ✅ FIXED KEY - Name + Last 9 digits ONLY. No timestamp, no ID. Never changes after Refresh.
 function bookingKey(x){
   var name=String(x.name||x.title||'').toLowerCase().trim();
   var phone=String(x.phone||'').replace(/\D/g,'').slice(-9);
@@ -147,13 +174,11 @@ function clearPendingRetained(x){
 }
 function applyRetained(){
   var doneMap=getDoneMap(); var pendingMap=getPendingMap();
-  // Also migrate old v1 keys if they exist - check by name+phone without timestamp
   var oldDone={}; try{ oldDone=JSON.parse(localStorage.getItem('smarttech_done_map')||'{}'); }catch(e){}
   D.bookings.forEach(function(b){
     var k=bookingKey(b);
     if(pendingMap[k]===true){ b.status='Pending'; return; }
     if(doneMap[k]===true){ b.status='Done'; return; }
-    // Fallback: old key had timestamp, try match by name+phone part
     for(var oldK in oldDone){
       if(oldDone[oldK]===true){
         var parts=String(oldK).split('|');
@@ -166,7 +191,6 @@ function applyRetained(){
     }
   });
 }
-// ✅ RECYCLE BIN
 function getRecycle(){ try{ return JSON.parse(localStorage.getItem('smarttech_recycle')||'[]'); }catch(e){ return []; } }
 function saveRecycle(arr){ localStorage.setItem('smarttech_recycle', JSON.stringify(arr)); document.getElementById('recycleCount').textContent=arr.length; }
 function addToRecycle(type, item){
@@ -198,8 +222,10 @@ async function restoreRecycle(idx){
     D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,answers:x.answers,detailedAnswers:x.detailedanswers});
   } else if(r.type==='Posts'){
     D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext});
+  } else if(r.type==='Questions'){
+    D.questions.push(x); await postToSheet({type:'question',topic:x.topic,question:x.question||x.q,qtype:x.qtype||x.type,options:x.options,answer:x.answer,explanation:x.explanation||'',timer:x.timer||30});
   }
-  arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderOverview();
+  arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderOverview();
 }
 function deleteForeverRecycle(idx){
   if(!confirm('Delete this forever? Cannot be restored.')) return;
@@ -215,7 +241,7 @@ function emptyRecycle(){
   saveRecycle([]); renderRecycle();
 }
 let D={bookings:[],quiz:[],posts:[],questions:[],notify:[]};
-let bookingIndex={}, quizIndex={};
+let bookingIndex={}, quizIndex={}, postIndex={}, questionIndex={};
 function showTab(name,el){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   if(el) el.classList.add('active');
@@ -372,14 +398,56 @@ async function deleteOneQuiz(key){
 function renderPosts(){
   var el=document.getElementById('postsList');
   if(!D.posts.length){ el.innerHTML='<p class="small">No posts yet.</p>'; return; }
-  el.innerHTML=D.posts.slice().reverse().map(function(x,idx){ return '<div class="item" id="postcard-'+idx+'"><b>'+esc(x.title||'')+'</b><br>'+esc(x.caption||'')+'<br><span class="small">'+esc(x.type||'')+' • '+esc(x.timestamp||'')+'</span><br>'+(x.link?'<a href="'+esc(x.link)+'" target="_blank" style="color:#4aa3ff">'+esc(x.linktext||x.link)+'</a><br>':'')+(x.media?'<a href="'+esc(x.media)+'" target="_blank" style="color:#facc15">🖼️ View Media</a><br>':'')+'<button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteGeneric(\'Posts\','+idx+',\'posts\')">🗑️ Delete Post</button></div>'; }).join('');
+  postIndex={};
+  var reversed=D.posts.slice().reverse();
+  el.innerHTML=reversed.map(function(x,idx){ var key='post'+idx; postIndex[key]=x; return '<div class="item" id="postcard-'+key+'"><b>'+esc(x.title||'')+'</b><br>'+esc(x.caption||'')+'<br><span class="small">'+esc(x.type||'')+' • '+esc(x.timestamp||'')+'</span><br>'+(x.link?'<a href="'+esc(x.link)+'" target="_blank" style="color:#4aa3ff">'+esc(x.linktext||x.link)+'</a><br>':'')+(x.media?'<a href="'+esc(x.media)+'" target="_blank" style="color:#facc15">🖼️ View Media</a><br>':'')+'<button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteGeneric(\'Posts\',\''+key+'\')">🗑️ Delete Post</button></div>'; }).join('');
+}
+
+// ===== QUESTIONS - SINGLE + BULK =====
+function getQType(x){
+  var t=String(x.qtype||x.type||'').toLowerCase();
+  if(t.includes('open')) return 'open';
+  // If no options, treat as open
+  try{ var o=JSON.parse(x.options||'[]'); if(!o.length) return 'open'; }catch(e){ if(!x.options) return 'open'; }
+  return 'mcq';
 }
 function renderQuestions(){
   var q=(document.getElementById('searchQ').value||'').toLowerCase();
-  var list=D.questions.slice().reverse().filter(function(x){ return !q || (x.question||x.q||'').toLowerCase().includes(q); });
+  var ft=document.getElementById('filterTopic').value||'';
+  var list=D.questions.slice().reverse().filter(function(x){
+    if(ft && String(x.topic||'')!==ft) return false;
+    return !q || (x.question||x.q||'').toLowerCase().includes(q);
+  });
+  questionIndex={};
   var el=document.getElementById('questionsList');
-  if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above.</p>'; return; }
-  el.innerHTML=list.map(function(x){ var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} return '<div class="item"><b>'+esc(x.topic||'')+'</b> • '+esc(x.question||x.q||'')+'<br>'+(opts.length? opts.map(function(o,i){ return (i===parseInt(x.answer)?'✅ ':'')+esc(o)+'<br>'; }).join('') : '')+'<span class="small">Timer: '+esc(x.timer||30)+'s</span></div>'; }).join('');
+  if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; }
+  el.innerHTML=list.map(function(x,idx){
+    var key='qq'+idx; questionIndex[key]=x;
+    var type=getQType(x);
+    var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){}
+    var ansText='';
+    if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; }
+    else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); }
+    return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">Timer: '+esc(x.timer||30)+'s</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>';
+  }).join('');
+}
+async function deleteOneQuestion(key){
+  var x=questionIndex[key]; if(!x) return;
+  if(!confirm('Move this question to Recycle Bin?')) return;
+  addToRecycle('Questions', x);
+  var card=document.getElementById('qcard-'+key); if(card) card.style.display='none';
+  await postToSheet({type:'delete',sheet:'Questions',id:x.id||'',timestamp:x.timestamp||'',name:x.question||x.q||'',phone:''});
+  setTimeout(function(){ loadAll(); },800);
+}
+async function clearQuestionsByTopic(){
+  var ft=document.getElementById('filterTopic').value;
+  if(!ft) return alert('Select a Topic first to delete it');
+  var count=D.questions.filter(function(x){ return String(x.topic||'')===ft; }).length;
+  if(!count) return alert('No questions in '+ft);
+  if(!confirm('Delete ALL '+count+' questions in '+ft+' ? They go to Recycle Bin.')) return;
+  D.questions.filter(function(x){ return String(x.topic||'')===ft; }).forEach(function(x){ addToRecycle('Questions', x); });
+  await postToSheet({type:'clearTopic',sheet:'Questions',topic:ft});
+  loadAll();
 }
 function renderNotify(){
   var el=document.getElementById('notifyList');
@@ -398,15 +466,157 @@ async function createQuestion(){
   var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim();
   if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; }
   document.getElementById('qMsg').textContent='⏳ Saving...';
-  await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:parseInt(document.getElementById('qTimer').value)||30});
+  await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:'mcq',options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:parseInt(document.getElementById('qTimer').value)||30});
   document.getElementById('qMsg').textContent=''; ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; });
   loadAll();
 }
-async function deleteGeneric(sheet,idx,arrName){
+
+// ===== BULK PARSER - MCQ + OPEN =====
+function parseBulkQuestions(text){
+  var lines=String(text||'').split(/\r?\n/);
+  var blocks=[]; var cur=[];
+  function flush(){ if(cur.join(' ').trim()) blocks.push(cur.join('\n')); cur=[]; }
+  lines.forEach(function(line){
+    var t=line.trim();
+    // New question starts with 1. / 1) / Q1. / Q1:
+    if(/^(Q\s*)?\d+[\.\)\:\-]\s+\S/.test(t) && cur.length>0){
+      // Only split if previous block already has a question + answer/option
+      if(cur.join('\n').match(/Answer\s*:/i) || cur.join('\n').match(/^[A-D][\)\.\:]/m)) flush();
+    }
+    cur.push(line);
+  });
+  flush();
+  var out=[];
+  blocks.forEach(function(block){
+    var bLines=block.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    if(!bLines.length) return;
+    var qLine=bLines[0].replace(/^(Q\s*)?\d+[\.\)\:\-]\s*/,'').replace(/^Q\s*:\s*/i,'').trim();
+    // If first line is like "Topic: ..." skip it
+    if(/^topic\s*:/i.test(qLine)) qLine=bLines[1]||'';
+    var opts={A:'',B:'',C:'',D:''}; var answer=''; var expl=''; var qtype='open'; var explicitType='';
+    bLines.slice(1).forEach(function(l){
+      var m=l.match(/^([A-D])\s*[\)\.\:\-]\s*(.+)$/);
+      if(m){ opts[m[1]]=m[2].trim(); qtype='mcq'; return; }
+      var am=l.match(/^Answer\s*[:\-]\s*(.+)$/i);
+      if(am){ answer=am[1].trim(); return; }
+      var cm=l.match(/^Correct\s*(Answer)?\s*[:\-]\s*(.+)$/i);
+      if(cm){ answer=cm[2].trim(); return; }
+      var em=l.match(/^Explanation\s*[:\-]\s*(.+)$/i);
+      if(em){ expl=em[1].trim(); return; }
+      var tm=l.match(/^Type\s*[:\-]\s*(.+)$/i);
+      if(tm){ explicitType=tm[1].toLowerCase(); return; }
+      // Extra line after question with no label = part of question or answer for open
+      if(!answer && qtype==='open' && l!==qLine){
+        // If it looks like continuation, append to question
+        qLine+=' '+l;
+      }
+    });
+    // Decide type
+    if(explicitType.includes('open')) qtype='open';
+    else if(explicitType.includes('mcq')||explicitType.includes('multiple')) qtype='mcq';
+    else if(opts.A && opts.B) qtype='mcq';
+    else qtype='open';
+    if(qtype==='mcq'){
+      var arr=[opts.A,opts.B,opts.C,opts.D].filter(function(x){return x;});
+      // If only 2-3 options, still ok - pad not needed
+      var ansIdx=0;
+      var aUpper=String(answer).toUpperCase().trim();
+      if(/^[A-D]$/.test(aUpper)){ ansIdx=['A','B','C','D'].indexOf(aUpper); }
+      else {
+        // Answer is full text like "Central Processing Unit" - find it in options
+        var found=arr.findIndex(function(o){ return o.toLowerCase()===aUpper.toLowerCase(); });
+        if(found>=0) ansIdx=found; else ansIdx=0;
+      }
+      if(qLine && arr.length>=2) out.push({question:qLine,qtype:'mcq',options:arr,answer:ansIdx,explanation:expl});
+    } else {
+      // Open: answer is the Answer: line, if none, use explanation as answer
+      var openAns=answer||'';
+      if(!openAns && expl){ openAns=expl; expl=''; }
+      if(qLine && openAns) out.push({question:qLine,qtype:'open',options:[],answer:openAns,explanation:expl});
+      else if(qLine && !openAns){
+        // Question without answer - still keep with empty answer, admin can edit later - skip to avoid bad data
+      }
+    }
+  });
+  return out;
+}
+let parsedBulk=[];
+function getBulkTopic(){
+  var bt=document.getElementById('bulkTopic').value;
+  if(bt==='__USE_MAIN__') return document.getElementById('qTopic').value;
+  return bt;
+}
+function previewBulk(){
+  var text=document.getElementById('bulkText').value;
+  if(!text.trim()){ document.getElementById('bulkMsg').textContent='⚠️ Paste questions first'; return; }
+  parsedBulk=parseBulkQuestions(text);
+  var mcq=parsedBulk.filter(function(x){return x.qtype==='mcq';}).length;
+  var open=parsedBulk.filter(function(x){return x.qtype==='open';}).length;
+  document.getElementById('bulkMsg').textContent='✅ Found '+parsedBulk.length+' questions: '+mcq+' MCQ + '+open+' Open | Topic: '+getBulkTopic();
+  document.getElementById('bulkPreview').innerHTML=parsedBulk.slice(0,10).map(function(x,i){
+    return '<div class="item"><b>'+(i+1)+'. '+esc(x.question)+'</b> <span class="pill '+(x.qtype==='open'?'pill-open':'pill-mcq')+'">'+(x.qtype==='open'?'OPEN':'MCQ')+'</span><br>'+(x.qtype==='mcq'? x.options.map(function(o,j){return (j===x.answer?'✅ ':'')+esc(o)+'<br>';}).join('') : 'Answer: <b>'+esc(x.answer)+'</b>')+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'</div>';
+  }).join('') + (parsedBulk.length>10?'<p class="small">... + '+(parsedBulk.length-10)+' more (will all be added)</p>':'');
+}
+function useSample(){
+  document.getElementById('bulkText').value=
+`1. What does CPU stand for?
+A) Central Processing Unit
+B) Computer Personal Unit
+C) Central Program Unit
+D) Central Printer Unit
+Answer: A
+Explanation: CPU is the brain of computer
+
+2. What is the full form of RAM?
+Answer: Random Access Memory
+Type: Open
+
+3. Which is an input device?
+A) Monitor
+B) Keyboard
+C) Printer
+D) Speaker
+Answer: B
+
+4. Define software in one sentence.
+Answer: Software is a set of instructions that tells computer what to do.
+Type: Open
+
+5. Which shortcut is used to copy?
+A) Ctrl + X
+B) Ctrl + C
+C) Ctrl + V
+D) Ctrl + Z
+Answer: B`;
+  previewBulk();
+}
+function clearBulk(){ document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; document.getElementById('bulkMsg').textContent=''; parsedBulk=[]; }
+async function addBulkQuestions(){
+  var text=document.getElementById('bulkText').value;
+  if(!text.trim()){ alert('Paste questions first'); return; }
+  parsedBulk=parseBulkQuestions(text);
+  if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; }
+  var topic=getBulkTopic();
+  var timer=parseInt(document.getElementById('qTimer').value)||30;
+  if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ?')) return;
+  document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.';
+  var done=0;
+  for(var i=0;i<parsedBulk.length;i++){
+    var q=parsedBulk[i];
+    await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:timer});
+    done++;
+    document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...';
+    await new Promise(function(r){ setTimeout(r,300); });
+  }
+  document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'!';
+  document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[];
+  loadAll();
+}
+async function deleteGeneric(sheet,key){
   if(!confirm('Move this to Recycle Bin?')) return;
-  var x=D[arrName][D[arrName].length-1-idx]; if(!x) return;
+  var x=postIndex[key]; if(!x) return;
   addToRecycle(sheet, x);
-  var card=document.getElementById('postcard-'+idx); if(card) card.style.display='none';
+  var card=document.getElementById('postcard-'+key); if(card) card.style.display='none';
   await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''});
   loadAll();
 }
