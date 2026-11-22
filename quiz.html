@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Free Quiz - SmartTech LTD</title>
-<!-- EmailJS - for Send Results via Email ONLY when client taps button -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
@@ -19,6 +18,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .opt{width:100%;padding:13px;border-radius:12px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;text-align:left;cursor:pointer;margin-bottom:8px;font-size:14px}
 .opt:hover{background:#4aa3ff;color:#0a1931}
+.opt.selected{background:#4aa3ff!important;color:#0a1931;border:2px solid #00e5ff;font-weight:800}
 .opt.correct{background:#00c853!important;color:#fff}
 .opt.wrong{background:#ff5252!important;color:#fff}
 .small{font-size:12px;color:#8ec8ff;line-height:1.6}
@@ -49,7 +49,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
   body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .header,.btn,.btn-ghost,.no-print{display:none!important}
   .wrap{max-width:100%;padding:0;position:relative;z-index:1}
-  #startCard,#quizCard{display:none!important}
+  #startCard,#quizCard,#submitCard{display:none!important}
   #resultCard{display:block!important;position:relative;z-index:1}
   .card{background:transparent!important;color:#000!important;border:1px solid #ccc!important;position:relative;z-index:1}
   .scorebox{background:#fff!important;border:1px solid #000!important}
@@ -92,18 +92,29 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="leaderboard"><p class="small" style="text-align:center">Loading leaderboard...</p></div>
 </div>
 </div>
+
 <div class="card hidden" id="quizCard">
 <div style="display:flex;justify-content:space-between;font-size:13px"><span id="qCount">Q 1/5</span><span id="timer" style="color:#facc15;font-weight:800">⏱️ 45s</span></div>
 <div class="progress"><div id="prog"></div></div>
 <h3 id="qText" style="margin:10px 0;line-height:1.5">Question...</h3>
 <div id="options"></div>
 <div id="openBox" class="hidden">
-<input id="openAnswer" class="open-input" placeholder="Type your answer here..." autocomplete="off">
-<button class="btn btn-green" onclick="submitOpen()">✅ Submit Answer</button>
+<input id="openAnswer" class="open-input" placeholder="Type your answer here... No submit needed, it auto-saves when time ends" autocomplete="off">
+<p class="small" style="text-align:center">Tip: Include key words from the answer. Marked on key words.</p>
 </div>
 <div id="openFeedback" class="feedback"></div>
-<button class="btn btn-ghost" id="nextBtn" onclick="nextQ()">Next →</button>
+<p class="small" id="autoHint" style="text-align:center;margin-top:8px">⏳ Answer auto-submits when time ends • No Next / Submit button here</p>
 </div>
+
+<div class="card hidden" id="submitCard">
+<h2 style="text-align:center;color:#5ee1ff">✅ All Questions Done!</h2>
+<p class="small" style="text-align:center;margin:10px 0" id="submitSummary">You answered all questions.</p>
+<div style="background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:12px;padding:12px;text-align:center;font-weight:800;color:#facc15;margin:10px 0" id="autoSubmitCountdown">⏳ Auto-submitting in 5...</div>
+<div id="submitList" style="margin:10px 0"></div>
+<button class="btn btn-green" id="finalSubmitBtn" onclick="finishQuiz()">📤 Submit Quiz & See Results</button>
+<p class="small" style="text-align:center;margin-top:8px">Or wait 5 secs — it will submit automatically.</p>
+</div>
+
 <div class="card hidden" id="resultCard">
 <h2 style="text-align:center;color:#5ee1ff">🎉 Quiz Complete!</h2>
 <div id="pdfHeader" style="display:none;text-align:center;margin-bottom:10px"><b style="font-size:18px">SmartTech LTD — Quiz Result</b><br><span id="pdfMeta" style="font-size:12px;color:#333"></span><br><span style="font-size:11px;color:#666">Your trusted ICT Partner • WhatsApp 0183465547</span></div>
@@ -121,14 +132,16 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </div>
 <script>
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
-const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
-const EMAILJS_SERVICE_ID="service_84v01bj";
-const EMAILJS_TEMPLATE_ID="template_3zncmwh";
+const EMAILJS_PUBLIC_KEY="YOUR_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID="YOUR_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID="YOUR_TEMPLATE_ID";
 if(window.emailjs && EMAILJS_PUBLIC_KEY!=="YOUR_PUBLIC_KEY"){ emailjs.init(EMAILJS_PUBLIC_KEY); }
 let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=45, answered=false;
 let allQuizResults=[];
 let TIME_SETTINGS={mcq:45, open:90};
 let emailAlreadySent=false;
+let selectedMcq=-1;
+let finalSubmitInt=null, finalSubmitted=false;
 const DEFAULT_Q=[
 {topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],answer:0,explanation:"CPU = Central Processing Unit"},
 {topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",options:["Monitor","Keyboard","Printer","Speaker"],answer:1,explanation:"Keyboard is for typing"},
@@ -148,16 +161,24 @@ return data.slice(1).map(function(row){var o={};h.forEach(function(k,i){o[k]=row
 }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 function normalizeText(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+// ===== OPEN-ENDED MARKING: ON KEY WORDS =====
+function getKeywords(text){
+  var stop=['a','an','the','is','are','was','were','be','been','of','to','in','on','for','and','or','with','by','as','at','it','its','this','that','what','how','why','when','where','which','who'];
+  return normalizeText(text).split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)===-1; });
+}
 function checkOpenAnswer(user, correct){
   var u=normalizeText(user), c=normalizeText(correct);
   if(!u || !c) return false;
   if(u===c) return true;
   if(u.includes(c) || c.includes(u)) return true;
-  var cWords=c.split(' ').filter(function(w){ return w.length>2; });
-  if(!cWords.length) return u===c;
-  var matched=cWords.filter(function(w){ return u.includes(w); }).length;
-  if(matched / cWords.length >= 0.7) return true;
+  // Numbers must match exactly
   if(/^\d+$/.test(c)) return u===c;
+  // KEY WORDS: need 70% of keywords from correct answer
+  var kws=getKeywords(correct);
+  if(!kws.length) return u===c;
+  var matched=kws.filter(function(w){ return u.includes(w); }).length;
+  if(matched / kws.length >= 0.7) return true;
+  // Also: if user wrote 2+ keywords and no wrong long words? No - strict 70% above
   return false;
 }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
@@ -173,10 +194,10 @@ function downloadMyPDF(){
   document.getElementById('pdfMeta').textContent='Name: '+name+' • Phone: '+phone+' • Topic: '+topic+' • Score: '+scoreText+' • '+percText+' • Date: '+dateStr+' • SmartTech LTD';
   document.getElementById('startCard').classList.add('hidden');
   document.getElementById('quizCard').classList.add('hidden');
+  document.getElementById('submitCard').classList.add('hidden');
   document.getElementById('resultCard').classList.remove('hidden');
   setTimeout(function(){ window.print(); }, 300);
 }
-// ===== EMAIL - ONLY WHEN CLIENT TAPS BUTTON, NEVER AUTO =====
 async function sendResultsEmail(){
   if(emailAlreadySent){ document.getElementById('emailMsg').textContent='✅ Already sent to your email.'; return; }
   if(EMAILJS_PUBLIC_KEY==="YOUR_PUBLIC_KEY" || EMAILJS_SERVICE_ID==="YOUR_SERVICE_ID" || EMAILJS_TEMPLATE_ID==="YOUR_TEMPLATE_ID"){
@@ -199,23 +220,7 @@ async function sendResultsEmail(){
   var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT ✅':'WRONG ❌')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
   var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
   try{
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: email,
-      to_name: name,
-      from_name: 'SmartTech LTD',
-      reply_to: email,
-      name: name,
-      phone: phone,
-      email: email,
-      topic: topic,
-      score: scoreText,
-      percentage: percText,
-      correct: correctCount,
-      wrong: wrongCount,
-      date: dateStr,
-      message: message,
-      review: reviewText
-    });
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, to_name: name, from_name: 'SmartTech LTD', reply_to: email, name: name, phone: phone, email: email, topic: topic, score: scoreText, percentage: percText, correct: correctCount, wrong: wrongCount, date: dateStr, message: message, review: reviewText });
     emailAlreadySent=true;
     btn.textContent='✅ Sent to Email';
     document.getElementById('emailMsg').textContent='✅ Results sent to '+email+'. Check inbox / spam.';
@@ -357,21 +362,23 @@ if(!quizQuestions.length) quizQuestions=[...allQuestions];
 quizQuestions=quizQuestions.sort(function(){return Math.random()-0.5;});
 var want=parseInt(document.getElementById('qCountSel').value);
 if(want>0) quizQuestions=quizQuestions.slice(0,want);
-current=0;score=0;answers=[];emailAlreadySent=false;
+current=0;score=0;answers=[];emailAlreadySent=false;selectedMcq=-1;finalSubmitted=false;
+clearInterval(finalSubmitInt);
 document.getElementById('emailMsg').textContent='Email is sent ONLY if you tap this button.';
 var eb=document.getElementById('emailBtn'); if(eb){ eb.disabled=false; eb.textContent='📧 Send Results via Email'; }
 document.getElementById('startCard').classList.add('hidden');
 document.getElementById('quizCard').classList.remove('hidden');
+document.getElementById('submitCard').classList.add('hidden');
+document.getElementById('resultCard').classList.add('hidden');
 showQ();
 }
 function showQ(){
-answered=false;
+answered=false; selectedMcq=-1;
 var q=quizQuestions[current];
 document.getElementById('qCount').textContent='Q '+(current+1)+'/'+quizQuestions.length;
 document.getElementById('prog').style.width=((current/quizQuestions.length)*100)+'%';
 document.getElementById('qText').textContent=q.question;
 document.getElementById('openFeedback').classList.remove('show');
-document.getElementById('nextBtn').style.display='none';
 var opts=document.getElementById('options');
 var openBox=document.getElementById('openBox');
 if(q.qtype==='open'){
@@ -382,54 +389,67 @@ if(q.qtype==='open'){
   timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.open;
 } else {
   openBox.classList.add('hidden');
-  document.getElementById('nextBtn').style.display='block';
   opts.innerHTML=q.options.map(function(o,i){return '<button class="opt" onclick="pick('+i+',this)">'+esc(o)+'</button>';}).join('');
   timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.mcq;
 }
 document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);
+document.getElementById('autoHint').textContent='⏳ Auto-submits in '+fmtTime(timeLeft)+' • '+(q.qtype==='open'?'Just type - no submit button':'Tap an option - no Next button');
 clearInterval(timerInt);
-timerInt=setInterval(function(){timeLeft--;document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);if(timeLeft<=0){clearInterval(timerInt); if(q.qtype==='open') submitOpen(true); else pick(-1,null);}},1000);
+timerInt=setInterval(function(){timeLeft--;document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);if(timeLeft<=0){clearInterval(timerInt); autoSubmitCurrent();}},1000);
 }
 function pick(idx,btn){
+if(answered) return;
+selectedMcq=idx;
+document.querySelectorAll('.opt').forEach(function(b){b.classList.remove('selected');});
+if(btn) btn.classList.add('selected');
+}
+function autoSubmitCurrent(){
 if(answered) return; answered=true; clearInterval(timerInt);
 var q=quizQuestions[current];
-var your = idx>=0 ? q.options[idx] : 'No Answer (Time Up - Auto Submitted)';
-var correct = q.options[q.answer];
-var isCorrect = idx===q.answer;
-if(isCorrect) score++;
-if(btn){btn.classList.add(isCorrect?'correct':'wrong');}
-document.querySelectorAll('.opt').forEach(function(b,i){if(i===q.answer) b.classList.add('correct');});
-answers.push({q:q.question,qtype:'mcq',yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
-setTimeout(nextQ,900);
+var isCorrect=false, your='', correct='';
+if(q.qtype==='open'){
+  var userAns=document.getElementById('openAnswer').value.trim();
+  if(!userAns) userAns='No Answer (Time Up)';
+  your=userAns; correct=String(q.answer||'');
+  isCorrect=checkOpenAnswer(userAns, correct);
+  var fb=document.getElementById('openFeedback');
+  fb.textContent = isCorrect ? '✅ Auto-submitted: Correct!' : '❌ Auto-submitted. Correct: '+correct;
+  fb.className='feedback show '+(isCorrect?'ok':'bad');
+} else {
+  your = selectedMcq>=0 ? q.options[selectedMcq] : 'No Answer (Time Up)';
+  correct = q.options[q.answer];
+  isCorrect = selectedMcq===q.answer;
+  document.querySelectorAll('.opt').forEach(function(b,i){if(i===q.answer) b.classList.add('correct'); if(i===selectedMcq && !isCorrect) b.classList.add('wrong');});
 }
-function submitOpen(isTimeout){
-if(answered) return;
-var q=quizQuestions[current];
-var userAns=document.getElementById('openAnswer').value.trim();
-if(!userAns && !isTimeout){ alert('Type your answer first'); return; }
-answered=true; clearInterval(timerInt);
-if(!userAns) userAns='No Answer (Time Up - Auto Submitted)';
-var correct=String(q.answer||'');
-var isCorrect=checkOpenAnswer(userAns, correct);
 if(isCorrect) score++;
-var fb=document.getElementById('openFeedback');
-fb.textContent = isCorrect ? '✅ Correct! ' + (q.explanation||'') : '❌ Wrong. Correct: ' + correct + (q.explanation ? ' — '+q.explanation : '');
-fb.className='feedback show '+(isCorrect?'ok':'bad');
-document.getElementById('nextBtn').style.display='block';
-answers.push({q:q.question,qtype:'open',yourAnswer:userAns,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
-if(isTimeout) setTimeout(nextQ,1200);
+answers.push({q:q.question,qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
+setTimeout(function(){
+  current++;
+  if(current>=quizQuestions.length){ showFinalSubmit(); }
+  else showQ();
+}, 800);
 }
-document.addEventListener('keydown', function(e){
-  if(e.key==='Enter' && !document.getElementById('openBox').classList.contains('hidden') && !answered) submitOpen(false);
-});
-function nextQ(){
-current++;
-if(current>=quizQuestions.length) finishQuiz();
-else showQ();
+function showFinalSubmit(){
+document.getElementById('quizCard').classList.add('hidden');
+document.getElementById('submitCard').classList.remove('hidden');
+document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.<br>Tap below or wait 5 secs.';
+document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
+window.scrollTo({top:0,behavior:'smooth'});
+// AUTO-SUBMIT AFTER 5 SECS
+var left=5;
+var cd=document.getElementById('autoSubmitCountdown');
+cd.textContent='⏳ Auto-submitting in 5...';
+clearInterval(finalSubmitInt);
+finalSubmitInt=setInterval(function(){
+  left--;
+  if(left>0){ cd.textContent='⏳ Auto-submitting in '+left+'...'; }
+  else { clearInterval(finalSubmitInt); cd.textContent='⏳ Submitting...'; finishQuiz(); }
+},1000);
 }
 async function finishQuiz(){
-clearInterval(timerInt);
-document.getElementById('quizCard').classList.add('hidden');
+if(finalSubmitted) return; finalSubmitted=true;
+clearInterval(finalSubmitInt);
+document.getElementById('submitCard').classList.add('hidden');
 document.getElementById('resultCard').classList.remove('hidden');
 var total=quizQuestions.length;
 var perc = total>0 ? Math.round((score/total)*100) : 0;
@@ -455,13 +475,13 @@ renderBadgeGrid('myBadgesAfter', afterStats, false);
 document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
 var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
 var wrongCount=answers.length-correctCount;
-document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br>Correct Answer: '+esc(a.correctAnswer)+'<br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
+// REVIEW: Always show FULL correct answer, even if marked correct on keywords
+document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
 var topic=document.getElementById('topic').value;
 var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
 try{
 await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'quiz',name:name,phone:phone,email:document.getElementById('userEmail').value.trim(),topic:topic,score:score,total:total,percentage:percText,answers:JSON.stringify(answers),detailedAnswers:JSON.stringify(answers),badges:badgeNames})});
 }catch(e){}
-// NOTE: NO EMAIL HERE - Email only on button tap
 allQuizResults.push(newAttempt);
 renderLeaderboard();
 }
