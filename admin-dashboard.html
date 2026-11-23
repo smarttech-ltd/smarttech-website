@@ -156,7 +156,7 @@ th{color:#facc15;font-size:11px}
 <div class="card"><h3 style="color:#5ee1ff">🔔 Notifications History</h3><a href="admin-notify.html" style="display:block;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">🔔 Send New Notification →</a><div id="notifyList" style="margin-top:12px"></div><button class="btn btn-red" style="margin-top:10px" onclick="clearSheet('Notify')">🗑️ Clear All Notifications</button></div>
 </div>
 <div id="tab-analytics" class="hidden">
-<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Real data from ALL attempts. Overall Avg = Total Correct / Total Questions. Best ≠ Least when 2+ students.</p>
+<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Overall Analysis</h3><p class="small">Best / Least = OVERALL across ALL topics. Topic filter only filters the Attempts list at the bottom. Overall Avg = Total Correct / Total Questions.</p>
 <div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
 <p class="small">On phone: Tap Download → Choose Save as PDF. Tick Background graphics ON to see logo watermark.</p></div>
 <div id="analyticsContent"></div>
@@ -182,7 +182,6 @@ function normalizeRows(data){
 }
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
-// ===== FIXED TOPICS: 5/6 are NOT topics =====
 var KNOWN_TOPICS=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
 function cleanTopic(t){
   var s=String(t||'').trim();
@@ -274,16 +273,17 @@ function computeStudentStats(rows){
   listInput.forEach(function(r){
     if(parseInt(r.total||0)<=0) return;
     var k=studentKey(r); if(!k) return;
-    if(!byKey[k]) byKey[k]={name:r.name||'Student', phone:r.phone||'', attempts:0, totalPerc:0, totalScore:0, totalQs:0, best:0, daysSet:{}, topics:{}};
+    if(!byKey[k]) byKey[k]={name:r.name||'Student', phone:r.phone||'', attempts:0, totalPerc:0, totalScore:0, totalQs:0, best:0, worst:100, daysSet:{}, topics:{}};
     var perc=getPerc(r);
     byKey[k].attempts++; byKey[k].totalPerc+=perc; byKey[k].totalScore+=parseInt(r.score||0); byKey[k].totalQs+=parseInt(r.total||0);
     if(perc>byKey[k].best) byKey[k].best=perc;
+    if(perc<byKey[k].worst) byKey[k].worst=perc;
     if((!byKey[k].name || byKey[k].name==='(Unknown)') && r.name) byKey[k].name=r.name;
     if(!byKey[k].phone && r.phone) byKey[k].phone=r.phone;
     var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byKey[k].daysSet[d]=true;
     var t=r.topic||'Unknown'; byKey[k].topics[t]=(byKey[k].topics[t]||0)+1;
   });
-  var list=Object.values(byKey).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1]:null; return u; });
+  var list=Object.values(byKey).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; if(u.worst===100) u.worst=0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1]:null; return u; });
   list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
   return list;
 }
@@ -402,15 +402,18 @@ function renderAnalytics(){
   var valid=all.filter(function(r){ return parseInt(r.total||0)>0; });
   var filtered=topicFilter? valid.filter(function(r){ return cleanTopic(r.topic||'')===topicFilter; }) : valid;
   var el=document.getElementById('analyticsContent');
-  if(!filtered.length){ el.innerHTML='<div class="card"><p class="small">No valid quiz results yet for this topic.</p></div>'; return; }
-  var students=computeStudentStats(filtered);
-  var byAvgDesc=students.slice().sort(function(a,b){ return b.avg-a.avg || b.attempts-a.attempts; });
-  var byAvgAsc=students.slice().sort(function(a,b){ return a.avg-b.avg || b.attempts-a.attempts; });
+  if(!valid.length){ el.innerHTML='<div class="card"><p class="small">No valid quiz results yet.</p></div>'; return; }
+  // ===== OVERALL ANALYSIS - Best / Least / All Students / By Topic NEVER use topic filter =====
+  var overallStudents=computeStudentStats(valid);
+  var students=overallStudents;
+  var byAvgDesc=overallStudents.slice().sort(function(a,b){ return b.avg-a.avg || b.attempts-a.attempts; });
+  var byAvgAsc=overallStudents.slice().sort(function(a,b){ return a.avg-b.avg || b.attempts-a.attempts; });
   var best=byAvgDesc[0];
   var least=null;
-  if(students.length>1){ least=byAvgAsc.find(function(u){ return studentKey({phone:u.phone, name:u.name})!==studentKey({phone:best.phone, name:best.name}); })||byAvgAsc[0]; }
+  if(overallStudents.length>1){ least=byAvgAsc.find(function(u){ return studentKey({phone:u.phone, name:u.name})!==studentKey({phone:best.phone, name:best.name}); })||byAvgAsc[0]; }
+  // By Topic - OVERALL
   var byTopic={};
-  filtered.forEach(function(r){
+  valid.forEach(function(r){
     var t=cleanTopic(r.topic||'');
     if(!isValidTopic(t)) return;
     if(!byTopic[t]) byTopic[t]={attempts:0,totalScore:0,totalQs:0,best:0};
@@ -418,21 +421,26 @@ function renderAnalytics(){
     var p=getPerc(r); if(p>byTopic[t].best) byTopic[t].best=p;
   });
   var topicRows=Object.keys(byTopic).map(function(t){ var b=byTopic[t]; return {topic:t, attempts:b.attempts, avg:b.totalQs? Math.round((b.totalScore/b.totalQs)*100):0, best:b.best}; }).sort(function(a,b){ return b.avg-a.avg; });
-  var totS=filtered.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
-  var totQ=filtered.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
+  // Overall Avg - OVERALL
+  var totS=valid.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
+  var totQ=valid.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
   var overallAvg=totQ? Math.round((totS/totQ)*100):0;
+  // Filtered list only for Attempts table at bottom
+  var filteredTotS=filtered.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
+  var filteredTotQ=filtered.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
+  var filteredAvg=filteredTotQ? Math.round((filteredTotS/filteredTotQ)*100):0;
   var brokenCount=all.length-valid.length;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
   var leastHtml=least
-    ? '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone||'No phone')+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Days: '+least.days+'<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help. Topic: '+(topicFilter||'All')+'</span></div>'
-    : '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER</h3><p class="small">Only 1 student so far — no least performer yet. Best = '+esc(best.name)+'</p></div>';
+    ? '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone||'No phone')+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Worst: '+least.worst+'% • Days: '+least.days+'<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help. Based on ALL topics, not just '+(topicFilter||'All')+'</span></div>'
+    : '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL</h3><p class="small">Only 1 student so far — no least performer yet. Best = '+esc(best.name)+'</p></div>';
   el.innerHTML=
-  '<div class="card"><h3 style="color:#0a1931">SmartTech LTD — Quiz Analytics Report</h3><p class="small">Generated: '+esc(dateStr)+' • Topic: '+(topicFilter||'All Topics')+' • Valid Attempts: '+filtered.length+' • Students: '+students.length+' • Overall Avg: '+overallAvg+'% (Total Correct '+totS+' / Total Questions '+totQ+')'+(brokenCount? ' • ⚠️ '+brokenCount+' broken old row(s) excluded':'')+'</p></div>'+
-  '<div class="card" style="border:2px solid #00c853"><h3 style="color:#00e676">🏆 BEST PERFORMER</h3><b style="font-size:18px">'+esc(best.name)+' • '+esc(best.phone||'No phone')+'</b><br>Attempts: '+best.attempts+' • Avg: '+best.avg+'% • Best: '+best.best+'% • Days: '+best.days+'<br>'+best.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join('')+'</div>'+
+  '<div class="card"><h3 style="color:#0a1931">SmartTech LTD — Quiz Analytics Report — OVERALL</h3><p class="small">Generated: '+esc(dateStr)+' • Overall: Valid Attempts: '+valid.length+' • Students: '+overallStudents.length+' • Overall Avg: '+overallAvg+'% (Total Correct '+totS+' / Total Questions '+totQ+')'+(brokenCount? ' • '+brokenCount+' broken old row(s) excluded':'')+'<br>Attempts list below is filtered to: '+(topicFilter||'All Topics')+' ('+filtered.length+' attempts • Avg '+filteredAvg+'%)</p></div>'+
+  '<div class="card" style="border:2px solid #00c853"><h3 style="color:#00e676">🏆 BEST PERFORMER — OVERALL</h3><b style="font-size:18px">'+esc(best.name)+' • '+esc(best.phone||'No phone')+'</b><br>Attempts: '+best.attempts+' • Avg: '+best.avg+'% • Best: '+best.best+'% • Worst: '+best.worst+'% • Days: '+best.days+'<br>'+best.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join('')+'</div>'+
   leastHtml+
-  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic (Real Topics Only)</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+(topicRows.length? topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('') : '<tr><td colspan="4">No valid topic data — old rows had Topic = 5/6, now excluded</td></tr>')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — All Fields, Consistency + Performance</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone||'No phone')+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(cleanTopic(r.topic||''))+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
+  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic — OVERALL (Real Topics Only)</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+(topicRows.length? topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('') : '<tr><td colspan="4">No valid topic data — old rows had Topic = 5/6, now excluded</td></tr>')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — OVERALL, All Fields, Consistency + Performance</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Worst</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone||'No phone')+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.worst+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt — '+(topicFilter||'All Topics')+' (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(cleanTopic(r.topic||''))+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
 }
 function downloadAnalyticsPDF(){ showTab('analytics', document.querySelectorAll('.tab')[6]); setTimeout(function(){ window.print(); }, 400); }
 async function deleteGeneric(sheet,key){ if(!confirm('Move this to Recycle Bin?')) return; var x=postIndex[key]; if(!x) return; addToRecycle(sheet, x); var card=document.getElementById('postcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''}); loadAll(); }
