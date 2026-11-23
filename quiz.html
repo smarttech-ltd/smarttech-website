@@ -41,6 +41,9 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .new-badge{background:linear-gradient(135deg,#facc15,#ff9800);color:#0a1931;border-radius:14px;padding:12px;text-align:center;font-weight:800;margin:10px 0;animation:pulseBadge 1.5s infinite}
 @keyframes pulseBadge{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 .leader-row{display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px;margin-bottom:8px;font-size:13px}
+.pill-btn{padding:9px 12px;border-radius:20px;border:1px solid #2a5ab0;background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.pill-btn.active{background:#00e5ff;color:#0a1931;border-color:#00e5ff}
+.pill-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .pdf-watermark{display:none}
 .pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
 @media print{
@@ -80,9 +83,17 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="myBadgesGrid" class="badge-grid"></div>
 <div id="nextBadgeHint" class="small" style="text-align:center;color:#c8d6ff"></div>
 </div>
-<label class="small">Choose Topic</label>
+<label class="small">Choose Topic — Tap any button</label>
+<div id="topicPills" class="pill-wrap"></div>
 <select id="topic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option><option>All Topics</option></select>
-<label class="small">How many questions?</label>
+<div id="topicCounts" class="small" style="text-align:center;margin-bottom:10px">Loading question counts...</div>
+<label class="small">How many questions? — Tap any button</label>
+<div id="countPills" class="pill-wrap">
+<button type="button" class="pill-btn active" data-count="10" onclick="setCount(10,this)">10</button>
+<button type="button" class="pill-btn" data-count="20" onclick="setCount(20,this)">20</button>
+<button type="button" class="pill-btn" data-count="50" onclick="setCount(50,this)">50</button>
+<button type="button" class="pill-btn" data-count="0" onclick="setCount(0,this)">All</button>
+</div>
 <select id="qCountSel" class="input"><option value="10">10 Questions</option><option value="20">20 Questions</option><option value="50">50 Questions</option><option value="0">All Questions</option></select>
 <button class="btn" onclick="startQuiz()">▶️ Start Quiz</button>
 <p class="small" id="startMsg" style="margin-top:8px;text-align:center"></p>
@@ -91,7 +102,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="leaderboard"><p class="small" style="text-align:center">Loading leaderboard...</p></div>
 </div>
 </div>
-
 <div class="card hidden" id="quizCard">
 <div style="display:flex;justify-content:space-between;font-size:13px"><span id="qCount">Q 1/5</span><span id="timer" style="color:#facc15;font-weight:800">⏱️ 45s</span></div>
 <div class="progress"><div id="prog"></div></div>
@@ -102,7 +112,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </div>
 <div id="openFeedback" class="feedback"></div>
 </div>
-
 <div class="card hidden" id="submitCard">
 <h2 style="text-align:center;color:#5ee1ff">✅ All Questions Done!</h2>
 <p class="small" style="text-align:center;margin:10px 0" id="submitSummary">You answered all questions.</p>
@@ -110,7 +119,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="submitList" style="margin:10px 0"></div>
 <button class="btn btn-green" id="finalSubmitBtn" onclick="finishQuiz()">📤 Submit Quiz & See Results</button>
 </div>
-
 <div class="card hidden" id="resultCard">
 <h2 style="text-align:center;color:#5ee1ff">🎉 Quiz Complete!</h2>
 <div id="pdfHeader" style="display:none;text-align:center;margin-bottom:10px"><b style="font-size:18px">SmartTech LTD — Quiz Result</b><br><span id="pdfMeta" style="font-size:12px;color:#333"></span><br><span style="font-size:11px;color:#666">Your trusted ICT Partner • WhatsApp 0183465547</span></div>
@@ -157,6 +165,30 @@ var h=data[0].map(function(x){return String(x||'').toLowerCase().trim();});
 return data.slice(1).map(function(row){var o={};h.forEach(function(k,i){o[k]=row[i];});return o;});
 }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
+// ===== FIXED: Normalize ALL topic spellings so EVERY topic button works =====
+var KNOWN_TOPICS=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
+function normTopic(t){
+  var s=String(t||'').trim().toLowerCase();
+  if(!s) return 'Computer Basics';
+  if(s==='computer basics' || s==='computer basic' || s==='basics') return 'Computer Basics';
+  if(s==='ms word' || s==='microsoft word' || s==='word') return 'MS Word';
+  if(s==='ms excel' || s==='microsoft excel' || s==='excel') return 'MS Excel';
+  if(s==='internet safety' || s==='internet' || s==='safety') return 'Internet Safety';
+  if(s==='computer packages' || s==='packages' || s==='package') return 'Computer Packages';
+  if(s==='ict basics' || s==='ict' || s==='ict basic') return 'ICT Basics';
+  if(s==='all topics' || s==='all' || s==='all topic') return 'All Topics';
+  var found=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s; });
+  return found || String(t||'').trim() || 'Computer Basics';
+}
+function getPercForResult(r){
+  var s=parseFloat(r.score), t=parseFloat(r.total);
+  if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100);
+  var p=parseFloat(String(r.percentage||'').replace('%',''));
+  if(isNaN(p)) return 0;
+  if(typeof r.percentage==='number' && p>=0 && p<=1) return Math.round(p*100);
+  if(String(r.percentage||'').indexOf('.')>=0 && p>=0 && p<=1) return Math.round(p*100);
+  return Math.round(p);
+}
 function normalizeText(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
 function getKeywords(text){
   var stop=['a','an','the','is','are','was','were','be','been','of','to','in','on','for','and','or','with','by','as','at','it','its','this','that','what','how','why','when','where','which','who'];
@@ -175,7 +207,6 @@ function checkOpenAnswer(user, correct){
   return false;
 }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
-// ===== SHUFFLE - Fisher-Yates, different every attempt =====
 function shuffleArray(arr){
   var a = arr.slice();
   for(var i=a.length-1; i>0; i--){
@@ -185,15 +216,13 @@ function shuffleArray(arr){
   return a;
 }
 async function postToSheet(payload){
-  try{
-    await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-    return true;
-  }catch(e){ console.log('Sheet upload fail', e); return false; }
+  try{ await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }
+  catch(e){ console.log('Sheet upload fail', e); return false; }
 }
 function downloadMyPDF(){
   var name=document.getElementById('userName').value.trim();
   var phone=document.getElementById('userPhone').value.trim();
-  var topic=document.getElementById('topic').value;
+  var topic=normTopic(document.getElementById('topic').value);
   var scoreText=document.getElementById('finalScore').textContent;
   var percText=document.getElementById('finalPerc').textContent;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
@@ -215,7 +244,7 @@ async function sendResultsEmail(){
   document.getElementById('emailMsg').textContent='⏳ Sending to '+email+'...';
   var name=document.getElementById('userName').value.trim();
   var phone=document.getElementById('userPhone').value.trim();
-  var topic=document.getElementById('topic').value;
+  var topic=normTopic(document.getElementById('topic').value);
   var scoreText=document.getElementById('finalScore').textContent;
   var percText=document.getElementById('finalPerc').textContent;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
@@ -252,12 +281,7 @@ function getUserStats(phone, extraAttempt){
   if(extraAttempt) mine.push(extraAttempt);
   var attempts=mine.length;
   var totalPerc=0, best=0;
-  mine.forEach(function(r){
-    var perc=0;
-    if(r.percentage) perc=parseInt(String(r.percentage).replace('%',''))||0;
-    else if(r.total) perc=Math.round((parseInt(r.score||0)/parseInt(r.total))*100);
-    totalPerc+=perc; if(perc>best) best=perc;
-  });
+  mine.forEach(function(r){ var perc=getPercForResult(r); totalPerc+=perc; if(perc>best) best=perc; });
   var avg=attempts? Math.round(totalPerc/attempts):0;
   var daysSet={};
   mine.forEach(function(r){ var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) daysSet[d]=true; });
@@ -297,8 +321,7 @@ function renderLeaderboard(){
   allQuizResults.forEach(function(r){
     var p=cleanPhone(r.phone||''); if(!p) return;
     if(!byPhone[p]) byPhone[p]={name:r.name||'Student', phone:p, attempts:0, total:0, best:0, daysSet:{}};
-    var perc=parseInt(String(r.percentage||'').replace('%',''))||0;
-    if(!perc && r.total) perc=Math.round((parseInt(r.score||0)/parseInt(r.total))*100);
+    var perc=getPercForResult(r);
     byPhone[p].attempts++; byPhone[p].total+=perc; if(perc>byPhone[p].best) byPhone[p].best=perc;
     var d=String(r.timestamp||'').split(' ')[0]; if(d) byPhone[p].daysSet[d]=true;
   });
@@ -314,6 +337,43 @@ function renderLeaderboard(){
     return '<div class="leader-row"><span>'+medals[i]+' <b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone)+' • '+topBadge+'</span></span><span style="text-align:right"><b>'+u.attempts+' attempts</b><br><span class="small">Avg '+u.avg+'% • Best '+u.best+'%</span></span></div>';
   }).join('');
 }
+// ===== FIXED: Topic + Count pills - every button works =====
+function setTopic(topic, btn){
+  var sel=document.getElementById('topic'); if(sel) sel.value=topic;
+  document.querySelectorAll('#topicPills .pill-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  updateTopicCounts();
+}
+function setCount(n, btn){
+  var sel=document.getElementById('qCountSel'); if(sel) sel.value=String(n);
+  document.querySelectorAll('#countPills .pill-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  updateTopicCounts();
+}
+function countForTopic(topic){
+  if(topic==='All Topics') return allQuestions.length;
+  return allQuestions.filter(function(q){ return normTopic(q.topic)===topic; }).length;
+}
+function updateTopicCounts(){
+  var topic=normTopic(document.getElementById('topic').value);
+  var want=parseInt(document.getElementById('qCountSel').value);
+  var avail=countForTopic(topic);
+  var willLoad = (isNaN(want)||want<=0) ? avail : Math.min(want, avail);
+  var el=document.getElementById('topicCounts');
+  if(el) el.textContent = 'Available: '+avail+' in '+topic+' • Total: '+allQuestions.length+' • Will load: '+willLoad+(avail<want && want>0 ? ' (only '+avail+' exist)' : '');
+  var pills=document.getElementById('topicPills');
+  if(pills){
+    var html=KNOWN_TOPICS.map(function(t){
+      var c = t==='All Topics' ? allQuestions.length : countForTopic(t);
+      return '<button type="button" class="pill-btn '+(normTopic(document.getElementById('topic').value)===t?'active':'')+'" onclick="setTopic(\''+t+'\',this)">'+t+' ('+c+')</button>';
+    }).join('');
+    pills.innerHTML=html;
+  }
+}
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id==='topic') updateTopicCounts();
+  if(e.target && e.target.id==='qCountSel') updateTopicCounts();
+});
 async function loadQuestions(){
 try{
 var res=await fetch(SHEET_URL+"?type=all&t="+Date.now());
@@ -335,7 +395,7 @@ allQuestions=rows.map(function(r){
     var idx=opts.findIndex(function(o){ return String(o).toLowerCase()===String(r.answer||'').toLowerCase(); });
     ans = idx>=0 ? idx : 0;
   }
-  return {topic:r.topic||'Computer Basics',qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:ans,explanation:r.explanation||'',timer:parseInt(r.timer||0)||0};
+  return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:ans,explanation:r.explanation||'',timer:parseInt(r.timer||0)||0};
 }).filter(function(q){return q.question;});
 var qRows=normalizeRows(data.quiz||[]).map(lowerKeys);
 allQuizResults=qRows.map(function(r){ return {name:r.name, phone:r.phone, score:r.score, total:r.total, percentage:r.percentage, timestamp:r.timestamp||r.date||''}; }).filter(function(r){ return r.phone; });
@@ -347,28 +407,37 @@ document.getElementById('conn').textContent='✅ '+allQuestions.length+' Questio
     var res2=await fetch(SHEET_URL+"?type=questions");
     var data2=await res2.json();
     var rows2=normalizeRows(data2.questions||data2).map(lowerKeys);
-    allQuestions=rows2.map(function(r){ var opts=[];try{opts=JSON.parse(r.options||'[]');}catch(e){} var qt=String(r.qtype||'').toLowerCase(); var isOpen=qt.includes('open')||opts.length<2; return {topic:r.topic||'Computer Basics',qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:isOpen?String(r.answer||''):parseInt(r.answer||0),explanation:r.explanation||'',timer:0}; }).filter(function(q){return q.question;});
+    allQuestions=rows2.map(function(r){ var opts=[];try{opts=JSON.parse(r.options||'[]');}catch(e){} var qt=String(r.qtype||'').toLowerCase(); var isOpen=qt.includes('open')||opts.length<2; return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:isOpen?String(r.answer||''):parseInt(r.answer||0),explanation:r.explanation||'',timer:0}; }).filter(function(q){return q.question;});
   }catch(e2){}
   document.getElementById('conn').textContent='⚠️ Using offline questions';
 }
-if(!allQuestions.length) allQuestions=DEFAULT_Q;
+if(!allQuestions.length) allQuestions=DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,options:q.options,answer:q.answer,explanation:q.explanation,timer:0}; });
 renderLeaderboard();
 checkBadgesLive();
+updateTopicCounts();
 }
 loadQuestions();
 function startQuiz(){
 var name=document.getElementById('userName').value.trim();
 var phone=document.getElementById('userPhone').value.trim();
 if(!name||!phone){alert('Enter Name + Phone');return;}
-var topic=document.getElementById('topic').value;
-var pool = topic==='All Topics' ? allQuestions.slice() : allQuestions.filter(function(q){return q.topic===topic;});
-if(!pool.length) pool = allQuestions.slice();
+if(!allQuestions.length){ alert('No questions loaded yet. Wait a few seconds and try again.'); return; }
+var topic=normTopic(document.getElementById('topic').value);
+var pool = topic==='All Topics' ? allQuestions.slice() : allQuestions.filter(function(q){ return normTopic(q.topic)===topic; });
+if(!pool.length){
+  alert('No questions found for '+topic+' yet (0 questions). Showing ALL '+allQuestions.length+' questions instead. Add questions for '+topic+' in Admin.');
+  pool = allQuestions.slice();
+}
+var availBeforeShuffle=pool.length;
 pool = shuffleArray(pool);
 var want=parseInt(document.getElementById('qCountSel').value);
+if(isNaN(want)) want=10;
 if(want>0) pool=pool.slice(0,want);
+if(!pool.length){ alert('No questions available.'); return; }
+document.getElementById('startMsg').textContent='✅ Loaded '+pool.length+' / '+availBeforeShuffle+' questions for '+topic+(want>0 && availBeforeShuffle<want ? ' (only '+availBeforeShuffle+' exist)' : '');
 quizQuestions = pool.map(function(orig){
   if(orig.qtype==='open' || !orig.options || orig.options.length < 2){
-    return {topic:orig.topic, qtype:orig.qtype, question:orig.question, options:[], answer:orig.answer, explanation:orig.explanation||'', timer:orig.timer||0};
+    return {topic:normTopic(orig.topic), qtype:orig.qtype, question:orig.question, options:[], answer:orig.answer, explanation:orig.explanation||'', timer:orig.timer||0};
   }
   var idx = shuffleArray(orig.options.map(function(_,i){ return i; }));
   var newOptions = idx.map(function(i){ return orig.options[i]; });
@@ -376,7 +445,7 @@ quizQuestions = pool.map(function(orig){
   if(isNaN(oldCorrect)) oldCorrect = 0;
   var newCorrect = idx.indexOf(oldCorrect);
   if(newCorrect < 0) newCorrect = 0;
-  return {topic:orig.topic, qtype:'mcq', question:orig.question, options:newOptions, answer:newCorrect, explanation:orig.explanation||'', timer:orig.timer||0};
+  return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, options:newOptions, answer:newCorrect, explanation:orig.explanation||'', timer:orig.timer||0};
 });
 current=0;score=0;answers=[];emailAlreadySent=false;selectedMcq=-1;finalSubmitted=false;
 clearInterval(finalSubmitInt);
@@ -445,7 +514,7 @@ function showFinalSubmit(){
 document.getElementById('quizCard').classList.add('hidden');
 document.getElementById('submitCard').classList.remove('hidden');
 document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.';
-document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
+document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span class="small" style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
 window.scrollTo({top:0,behavior:'smooth'});
 var left=5;
 var cd=document.getElementById('autoSubmitCountdown');
@@ -488,9 +557,8 @@ document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStat
 var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
 var wrongCount=answers.length-correctCount;
 document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
-var topic=document.getElementById('topic').value;
+var topic=normTopic(document.getElementById('topic').value);
 var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
-// ===== UPLOAD - FIXED: ONE answers FIELD, NAMED KEYS ONLY =====
 document.getElementById('uploadStatus').textContent='⏳ Saving to Google Sheet...';
 var payload={
   type:'quiz',
