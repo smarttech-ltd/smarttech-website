@@ -97,7 +97,6 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <select id="qCountSel" class="input"><option value="10">10 Questions</option><option value="20">20 Questions</option><option value="50">50 Questions</option><option value="0">All Questions</option></select>
 <button class="btn" id="startBtn" type="button" onclick="startQuiz()">▶️ Start Quiz</button>
 <p class="small" id="startMsg" style="margin-top:8px;text-align:center"></p>
-<p class="small" id="debugMsg" style="margin-top:4px;text-align:center;color:#ff8fa8"></p>
 <div style="margin-top:14px">
 <div style="text-align:center;font-weight:800;color:#facc15;margin-bottom:8px">🏆 TOP CONSISTENT LEARNERS</div>
 <div id="leaderboard"><p class="small" style="text-align:center">Loading leaderboard...</p></div>
@@ -181,6 +180,26 @@ function normTopic(t){
   var found=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s; });
   return found || String(t||'').trim() || 'Computer Basics';
 }
+// FIX: Always return an ARRAY for options - string, JSON string, or broken value
+function parseOptions(raw){
+  if(Array.isArray(raw)) return raw.map(function(x){ return String(x==null?'':x); });
+  if(raw==null || raw==='') return [];
+  if(typeof raw==='object') return Object.values(raw).map(function(x){ return String(x==null?'':x); });
+  var s=String(raw).trim();
+  if(!s) return [];
+  try{
+    var j=JSON.parse(s);
+    if(Array.isArray(j)) return j.map(function(x){ return String(x==null?'':x); });
+    if(typeof j==='object' && j!==null) return Object.values(j).map(function(x){ return String(x==null?'':x); });
+    return [String(j)];
+  }catch(e){}
+  // Not JSON: "A | B | C" or "A;B;C" or "A,B,C"
+  if(s.indexOf('|')>=0) return s.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
+  if(s.indexOf(';')>=0) return s.split(';').map(function(x){ return x.trim(); }).filter(Boolean);
+  // Single string with newlines
+  if(s.indexOf('\n')>=0) return s.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
+  return [s];
+}
 function getPercForResult(r){
   var s=parseFloat(r.score), t=parseFloat(r.total);
   if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100);
@@ -216,7 +235,7 @@ function shuffleArray(arr){
   }
   return a;
 }
-function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,options:(q.options||[]).slice(),answer:q.answer,explanation:q.explanation,timer:0}; }); }
+function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,options:parseOptions(q.options),answer:q.answer,explanation:q.explanation,timer:0}; }); }
 async function postToSheet(payload){
   try{ await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }
   catch(e){ console.log('Sheet upload fail', e); return false; }
@@ -238,12 +257,12 @@ function downloadMyPDF(){
   setTimeout(function(){ window.print(); }, 300);
 }
 async function sendResultsEmail(){
-  if(emailAlreadySent){ document.getElementById('emailMsg').textContent='✅ Already sent to your email.'; return; }
+  if(emailAlreadySent){ document.getElementById('emailMsg').textContent='Already sent to your email.'; return; }
   var email=document.getElementById('userEmail').value.trim();
   if(!email){ email=prompt('Enter your email to receive results:'); if(!email) return; document.getElementById('userEmail').value=email; }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Enter a valid email'); return; }
-  var btn=document.getElementById('emailBtn'); btn.disabled=true; btn.textContent='⏳ Sending...';
-  document.getElementById('emailMsg').textContent='⏳ Sending to '+email+'...';
+  var btn=document.getElementById('emailBtn'); btn.disabled=true; btn.textContent='Sending...';
+  document.getElementById('emailMsg').textContent='Sending to '+email+'...';
   var name=document.getElementById('userName').value.trim();
   var phone=document.getElementById('userPhone').value.trim();
   var topic=normTopic(document.getElementById('topic').value);
@@ -252,17 +271,17 @@ async function sendResultsEmail(){
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
   var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
   var wrongCount=answers.length-correctCount;
-  var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT ✅':'WRONG ❌')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
+  var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT':'WRONG')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
   var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
   try{
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, to_name: name, from_name: 'SmartTech LTD', reply_to: email, name: name, phone: phone, email: email, topic: topic, score: scoreText, percentage: percText, correct: correctCount, wrong: wrongCount, date: dateStr, message: message, review: reviewText });
     emailAlreadySent=true;
-    btn.textContent='✅ Sent to Email';
-    document.getElementById('emailMsg').textContent='✅ Results sent to '+email+'. Check inbox / spam.';
+    btn.textContent='Sent to Email';
+    document.getElementById('emailMsg').textContent='Results sent to '+email+'. Check inbox / spam.';
   }catch(err){
     console.log(err);
-    btn.disabled=false; btn.textContent='📧 Send Results via Email';
-    document.getElementById('emailMsg').textContent='❌ Failed to send. Check EmailJS keys / template. Try again.';
+    btn.disabled=false; btn.textContent='Send Results via Email';
+    document.getElementById('emailMsg').textContent='Failed to send. Check EmailJS keys / template. Try again.';
   }
 }
 const BADGES=[
@@ -300,7 +319,7 @@ function renderBadgeGrid(elId, stats, showLocked){
 }
 function nextBadgeHint(stats){
   var locked=BADGES.find(function(b){ return !b.check(stats); });
-  if(!locked) return '👑 You have ALL badges! You are a Legend!';
+  if(!locked) return 'You have ALL badges! You are a Legend!';
   if(locked.id==='newcomer') return 'Next: Do 1 quiz to earn 🌱 Newcomer';
   if(locked.id==='regular') return 'Next: '+(3-stats.attempts)+' more attempt(s) to earn 🔥 Regular';
   if(locked.id==='consistent') return 'Next: '+(5-stats.attempts)+' more attempt(s) to earn ⭐ Consistent';
@@ -378,7 +397,7 @@ document.addEventListener('change', function(e){
   if(e.target && (e.target.id==='topic' || e.target.id==='qCountSel')) updateTopicCounts(false);
 });
 function parseQuestionRow(r){
-  var opts=[]; try{ opts=JSON.parse(r.options||'[]'); }catch(e){}
+  var opts=parseOptions(r.options);
   var qt=String(r.qtype||r.type||'').toLowerCase();
   var isOpen = qt.includes('open') || opts.length<2;
   var ans = isOpen ? String(r.answer||'') : parseInt(r.answer||0);
@@ -399,7 +418,7 @@ function applyTimeSettings(data){
 }
 async function loadQuestions(){
   if(questionsLoading) return; questionsLoading=true;
-  try{ document.getElementById('conn').textContent='🔄 Loading questions...'; }catch(e){}
+  try{ document.getElementById('conn').textContent='Loading questions...'; }catch(e){}
   var got=[];
   try{
     var res=await fetch(SHEET_URL+"?type=all&t="+Date.now());
@@ -431,23 +450,23 @@ async function loadQuestions(){
 }
 loadQuestions();
 function startQuiz(){
-  var dbg=document.getElementById('debugMsg');
+  // COLLAPSE HEADER FIRST - before any work, so it always hides on tap
+  try{ var _h=document.getElementById('mainHeader'); if(_h) _h.classList.add('collapsed'); }catch(e){}
   var msg=document.getElementById('startMsg');
   try{
-    if(dbg) dbg.textContent='';
     var nameEl=document.getElementById('userName');
     var phoneEl=document.getElementById('userPhone');
     var name=nameEl ? nameEl.value.trim() : '';
     var phone=phoneEl ? phoneEl.value.trim() : '';
-    if(!name||!phone){ alert('Enter Name + Phone'); return; }
-    if(!allQuestions || !allQuestions.length){
-      allQuestions=getDefaultQuestions();
-      if(msg) msg.textContent='⚠️ Sheet was slow — using built-in questions. Tap Start again if needed.';
+    if(!name||!phone){
+      try{ document.getElementById('mainHeader').classList.remove('collapsed'); }catch(e){}
+      alert('Enter Name + Phone'); return;
     }
+    if(!allQuestions || !allQuestions.length){ allQuestions=getDefaultQuestions(); }
     var topic=normTopic(document.getElementById('topic').value);
     var pool = topic==='All Topics' ? allQuestions.slice() : allQuestions.filter(function(q){ return normTopic(q.topic)===topic; });
     if(!pool.length){
-      if(msg) msg.textContent='⚠️ No questions for '+topic+' (0). Showing ALL '+allQuestions.length+' instead.';
+      if(msg) msg.textContent='No questions for '+topic+' (0). Showing ALL '+allQuestions.length+' instead.';
       pool = allQuestions.slice();
     }
     var availBeforeShuffle=pool.length;
@@ -456,26 +475,28 @@ function startQuiz(){
     if(isNaN(want)) want=10;
     if(want>0) pool=pool.slice(0,want);
     if(!pool.length){
-      if(msg) msg.textContent='❌ No questions available. Reloading...';
+      if(msg) msg.textContent='No questions available. Reloading...';
       allQuestions=getDefaultQuestions();
       pool=allQuestions.slice(0, want>0 ? want : 10);
     }
-    if(msg) msg.textContent='✅ Loaded '+pool.length+' / '+availBeforeShuffle+' questions for '+topic+(want>0 && availBeforeShuffle<want ? ' (only '+availBeforeShuffle+' exist)' : '');
+    if(msg) msg.textContent='Loaded '+pool.length+' / '+availBeforeShuffle+' questions for '+topic+(want>0 && availBeforeShuffle<want ? ' (only '+availBeforeShuffle+' exist)' : '');
     quizQuestions = pool.map(function(orig){
-      if(orig.qtype==='open' || !orig.options || orig.options.length < 2){
+      var safeOpts=parseOptions(orig.options);
+      var isOpen = orig.qtype==='open' || safeOpts.length < 2;
+      if(isOpen){
         return {topic:normTopic(orig.topic), qtype:orig.qtype, question:orig.question, options:[], answer:orig.answer, explanation:orig.explanation||'', timer:orig.timer||0};
       }
-      var idx = shuffleArray(orig.options.map(function(_,i){ return i; }));
-      var newOptions = idx.map(function(i){ return orig.options[i]; });
+      var idx = shuffleArray(safeOpts.map(function(_,i){ return i; }));
+      var newOptions = idx.map(function(i){ return safeOpts[i]; });
       var oldCorrect = parseInt(orig.answer);
       if(isNaN(oldCorrect)) oldCorrect = 0;
+      if(oldCorrect<0 || oldCorrect>=safeOpts.length) oldCorrect=0;
       var newCorrect = idx.indexOf(oldCorrect);
       if(newCorrect < 0) newCorrect = 0;
       return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, options:newOptions, answer:newCorrect, explanation:orig.explanation||'', timer:orig.timer||0};
     });
     current=0; score=0; answers=[]; emailAlreadySent=false; selectedMcq=-1; finalSubmitted=false;
     try{ clearInterval(finalSubmitInt); }catch(e){}
-    var hdr=document.getElementById('mainHeader'); if(hdr) hdr.classList.add('collapsed');
     var em=document.getElementById('emailMsg'); if(em) em.textContent='Email is sent ONLY if you tap this button.';
     var eb=document.getElementById('emailBtn'); if(eb){ eb.disabled=false; eb.textContent='📧 Send Results via Email'; }
     document.getElementById('startCard').classList.add('hidden');
@@ -485,9 +506,8 @@ function startQuiz(){
     showQ();
   }catch(err){
     console.log('startQuiz error', err);
-    if(dbg) dbg.textContent='❌ Start error: '+(err && err.message ? err.message : err)+' — screenshot this';
-    if(msg) msg.textContent='❌ Tap Start again. If it stays, screenshot the red text below.';
     try{ document.getElementById('startCard').classList.remove('hidden'); }catch(e){}
+    try{ document.getElementById('quizCard').classList.add('hidden'); }catch(e){}
   }
 }
 (function(){
@@ -496,7 +516,7 @@ function startQuiz(){
 })();
 function showQ(){
   if(!quizQuestions || !quizQuestions.length || !quizQuestions[current]){
-    var m=document.getElementById('startMsg'); if(m) m.textContent='❌ No questions to show. Tap Start again.';
+    var m=document.getElementById('startMsg'); if(m) m.textContent='No questions to show. Tap Start again.';
     try{ document.getElementById('quizCard').classList.add('hidden'); document.getElementById('startCard').classList.remove('hidden'); }catch(e){}
     return;
   }
@@ -516,7 +536,8 @@ function showQ(){
     timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.open;
   } else {
     openBox.classList.add('hidden');
-    opts.innerHTML=q.options.map(function(o,i){return '<button class="opt" type="button" onclick="pick('+i+',this)">'+esc(o)+'</button>';}).join('');
+    var safeOpts2=parseOptions(q.options);
+    opts.innerHTML=safeOpts2.map(function(o,i){return '<button class="opt" type="button" onclick="pick('+i+',this)">'+esc(o)+'</button>';}).join('');
     timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.mcq;
   }
   document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);
@@ -539,8 +560,9 @@ function autoSubmitCurrent(){
     your=userAns; correct=String(q.answer||'');
     isCorrect=checkOpenAnswer(userAns, correct);
   } else {
-    your = selectedMcq>=0 ? q.options[selectedMcq] : 'No Answer (Time Up)';
-    correct = q.options[q.answer];
+    var so=parseOptions(q.options);
+    your = selectedMcq>=0 ? so[selectedMcq] : 'No Answer (Time Up)';
+    correct = so[q.answer];
     isCorrect = selectedMcq===q.answer;
   }
   if(isCorrect) score++;
@@ -600,7 +622,7 @@ async function finishQuiz(){
   document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
   var topic=normTopic(document.getElementById('topic').value);
   var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
-  document.getElementById('uploadStatus').textContent='⏳ Saving to Google Sheet...';
+  document.getElementById('uploadStatus').textContent='Saving to Google Sheet...';
   var payload={
     type:'quiz',
     name:name,
@@ -617,7 +639,7 @@ async function finishQuiz(){
   };
   var ok=await postToSheet(payload);
   if(!ok){ ok=await postToSheet(payload); }
-  document.getElementById('uploadStatus').textContent= ok ? '✅ Saved — Admin can see it in 🧠 Quiz tab' : '⚠️ Could not save — check internet, tap Retake and try again';
+  document.getElementById('uploadStatus').textContent= ok ? 'Saved — Admin can see it in 🧠 Quiz tab' : 'Could not save — check internet, tap Retake and try again';
   try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
   allQuizResults.push(newAttempt);
   renderLeaderboard();
