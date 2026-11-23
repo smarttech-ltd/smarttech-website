@@ -156,7 +156,7 @@ th{color:#facc15;font-size:11px}
 <div class="card"><h3 style="color:#5ee1ff">🔔 Notifications History</h3><a href="admin-notify.html" style="display:block;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">🔔 Send New Notification →</a><div id="notifyList" style="margin-top:12px"></div><button class="btn btn-red" style="margin-top:10px" onclick="clearSheet('Notify')">🗑️ Clear All Notifications</button></div>
 </div>
 <div id="tab-analytics" class="hidden">
-<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Computed from Score / Total — never trusts Sheet % formatting. Sorted by Consistency (attempts) then Performance (avg).</p>
+<div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Every Quiz</h3><p class="small">Real data from ALL attempts. Overall Avg = Total Correct / Total Questions. Best ≠ Least when 2+ students.</p>
 <div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
 <p class="small">On phone: Tap Download → Choose Save as PDF. Tick Background graphics ON to see logo watermark.</p></div>
 <div id="analyticsContent"></div>
@@ -182,6 +182,17 @@ function normalizeRows(data){
 }
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
+// ===== FIXED TOPICS: 5/6 are NOT topics =====
+var KNOWN_TOPICS=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
+function cleanTopic(t){
+  var s=String(t||'').trim();
+  if(!s) return 'Unknown';
+  var f=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s.toLowerCase(); });
+  if(f) return f;
+  if(/^\d+(\.\d+)?%?$/.test(s)) return 'Unknown';
+  return s;
+}
+function isValidTopic(t){ return KNOWN_TOPICS.indexOf(cleanTopic(t))>=0; }
 function getPerc(x){
   var s=parseFloat(x.score); var t=parseFloat(x.total);
   if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100);
@@ -194,50 +205,52 @@ function getPerc(x){
 function fmtTimeAdmin(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
 function normalizeQuizRow(r){
   var o=lowerKeys(r);
-  var name=String(o.name||'').trim(); var topic=String(o.topic||'').trim();
-  var topicIsPhone=/^(0\d{9}|254\d{9})$/.test(topic.replace(/\D/g,'')); var nameIsId=/^id\d+/i.test(name);
-  if(nameIsId || topicIsPhone){
+  var name=String(o.name||'').trim(); var topicRaw=String(o.topic||'').trim();
+  var topic=cleanTopic(topicRaw);
+  var phoneRaw=String(o.phone||'').trim();
+  var scoreRaw=o.score, totalRaw=o.total;
+  var isShifted=/^id\d+/i.test(name) || /^(0\d{9}|254\d{9})$/.test(topicRaw.replace(/\D/g,'')) || topic==='Unknown' || !phoneRaw || isNaN(parseInt(scoreRaw)) || isNaN(parseInt(totalRaw));
+  if(isShifted){
     var vals=Object.values(o);
     var phone=vals.find(function(v){ return /^(0\d{9}|254\d{9})$/.test(String(v||'').replace(/\D/g,'')); })||'';
     var email=vals.find(function(v){ return String(v||'').includes('@'); })||'';
-    var topics=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
-    var realTopic=vals.find(function(v){ return topics.includes(String(v||'').trim()); })||'';
+    var realTopic=vals.find(function(v){ return isValidTopic(v); })||'';
     var date=vals.find(function(v){ return /^\d{4}-\d{2}-\d{2}/.test(String(v||'')); })||o.timestamp||o.date||'';
     var answers=vals.find(function(v){ return String(v||'').trim().startsWith('[{'); })||'';
-    var percRaw=vals.find(function(v){ return String(v||'').includes('%'); })||'';
-    var nums=vals.map(function(v){ return parseInt(v); }).filter(function(n){ return !isNaN(n); });
-    var total=nums.length? nums[nums.length-1]:0; var score=0;
-    if(percRaw){ var pp=parseFloat(String(percRaw).replace('%','')); if(!isNaN(pp)){ if(pp>=0&&pp<=1) pp=pp*100; if(total) score=Math.round((pp/100)*total); } }
-    var perc = total ? Math.round((score/total)*100)+'%' : '';
-    return {id:o.id||'', name:'(Shifted row - see phone)', phone:phone, email:email, topic:realTopic||'Unknown', score:score, total:total, percentage:perc, correct:score, wrong:total-score, badges:'', answers:answers, timestamp:date};
+    var realName=vals.find(function(v){
+      var s=String(v||'').trim();
+      if(!s || /^id\d+/i.test(s) || s.includes('@') || s.startsWith('[{') || /^\d{4}-\d{2}-\d{2}/.test(s) || /^(0\d{9}|254\d{9})$/.test(s.replace(/\D/g,'')) || isValidTopic(s) || /^\d+(\.\d+)?%?$/.test(s) || s.length>60) return false;
+      return true;
+    })||name||'(Unknown)';
+    var s=parseInt(scoreRaw), t=parseInt(totalRaw);
+    if(isNaN(s)||isNaN(t)||t<=0||s<0||s>t){
+      var nums=vals.map(function(v){ var n=parseFloat(v); return isNaN(n)?null:n; }).filter(function(n){ return n!==null && n>=0 && n<=100 && Number.isInteger(n); });
+      if(nums.length>=2){ t=nums[nums.length-1]; s=nums[nums.length-2]; if(s>t){ var tmp=s; s=t; t=tmp; } } else { s=0; t=0; }
+    }
+    var perc=t? Math.round((s/t)*100)+'%':'0%';
+    return {id:o.id||'', name:realName, phone:phone, email:email, topic:realTopic||'Unknown', score:isNaN(s)?0:s, total:isNaN(t)?0:t, percentage:perc, correct:isNaN(s)?0:s, wrong:(isNaN(t)||isNaN(s))?0:Math.max(0,t-s), badges:o.badges||'', answers:answers, timestamp:date, _broken:(!phone && !realTopic)?true:false};
   }
-  var s=parseInt(o.score||0), t=parseInt(o.total||0);
-  var correct = (o.correct!==undefined && o.correct!=='' ) ? parseInt(o.correct) : s;
-  var wrong = (o.wrong!==undefined && o.wrong!=='' ) ? parseInt(o.wrong) : (t - s);
-  if(isNaN(correct)) correct=s; if(isNaN(wrong)) wrong=Math.max(0, t - correct);
-  var perc = t ? Math.round((s/t)*100)+'%' : '0%';
-  var answers = o.answers || o.detailedanswers || o['detailed answers'] || '';
-  return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:o.topic||'', score:s, total:t, percentage:perc, correct:correct, wrong:wrong, badges:o.badges||'', answers:answers, timestamp:o.timestamp||o.date||''};
+  var s2=parseInt(o.score||0), t2=parseInt(o.total||0);
+  var correct=(o.correct!==undefined && o.correct!=='')?parseInt(o.correct):s2;
+  var wrong=(o.wrong!==undefined && o.wrong!=='')?parseInt(o.wrong):(t2-s2);
+  if(isNaN(correct)) correct=s2; if(isNaN(wrong)) wrong=Math.max(0,t2-correct);
+  var perc2=t2? Math.round((s2/t2)*100)+'%':'0%';
+  var answers2=o.answers||o.detailedanswers||o['detailed answers']||'';
+  return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:topic, score:s2, total:t2, percentage:perc2, correct:correct, wrong:wrong, badges:o.badges||'', answers:answers2, timestamp:o.timestamp||o.date||'', _broken:false};
 }
-// ===== NEW: Get answers for one quiz from QuizAnswers sheet, fallback to old JSON =====
 function getAnswersForQuiz(x){
-  var byId = (D.quizAnswers||[]).filter(function(a){
-    var qid = String(a.quizid||a.quizId||a['quiz id']||'').trim();
-    return qid && qid===String(x.id||'').trim();
-  });
-  if(byId.length){
-    byId.sort(function(a,b){ return parseInt(a.qno||a.qNo||0)-parseInt(b.qno||b.qNo||0); });
-    return byId.map(function(a,i){ return {q:a.question||'', yourAnswer:a.youranswer||a['your answer']||'', correctAnswer:a.correctanswer||a['correct answer']||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; });
-  }
-  var byPhone = (D.quizAnswers||[]).filter(function(a){
-    return cleanPhone(a.phone||'')===cleanPhone(x.phone||'') && String(a.timestamp||'').slice(0,16)===String(x.timestamp||'').slice(0,16);
-  });
-  if(byPhone.length){
-    byPhone.sort(function(a,b){ return parseInt(a.qno||0)-parseInt(b.qno||0); });
-    return byPhone.map(function(a){ return {q:a.question||'', yourAnswer:a.youranswer||'', correctAnswer:a.correctanswer||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; });
-  }
+  var byId=(D.quizAnswers||[]).filter(function(a){ var qid=String(a.quizid||a.quizId||a['quiz id']||'').trim(); return qid && qid===String(x.id||'').trim(); });
+  if(byId.length){ byId.sort(function(a,b){ return parseInt(a.qno||a.qNo||0)-parseInt(b.qno||b.qNo||0); }); return byId.map(function(a){ return {q:a.question||'', yourAnswer:a.youranswer||a['your answer']||'', correctAnswer:a.correctanswer||a['correct answer']||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; }); }
+  var byPhone=(D.quizAnswers||[]).filter(function(a){ return cleanPhone(a.phone||'')===cleanPhone(x.phone||'') && String(a.timestamp||'').slice(0,16)===String(x.timestamp||'').slice(0,16); });
+  if(byPhone.length){ byPhone.sort(function(a,b){ return parseInt(a.qno||0)-parseInt(b.qno||0); }); return byPhone.map(function(a){ return {q:a.question||'', yourAnswer:a.youranswer||'', correctAnswer:a.correctanswer||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; }); }
   try{ var d=JSON.parse(x.answers||'[]'); if(Array.isArray(d)) return d; }catch(e){}
   return [];
+}
+function studentKey(r){
+  var p=cleanPhone(r.phone||''); if(p) return 'phone:'+p;
+  var n=String(r.name||'').toLowerCase().trim();
+  if(n && n!=='(unknown)' && n!=='(shifted row - see phone)') return 'name:'+n;
+  return '';
 }
 function getTimeSettings(){ try{ var s=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); var mcq=(s.mcq>=5&&s.mcq<=180)?s.mcq:45; var open=(s.open>=5&&s.open<=180)?s.open:90; return {mcq:mcq, open:open}; }catch(e){ return {mcq:45, open:90}; } }
 function loadTimeSettingsUI(){ var s=getTimeSettings(); var m=document.getElementById('settingMcqTime'); if(m) m.value=s.mcq; var o=document.getElementById('settingOpenTime'); if(o) o.value=s.open; var c=document.getElementById('timeSettingCurrent'); if(c) c.textContent='MCQ '+s.mcq+'s • Open '+fmtTimeAdmin(s.open); var qt=document.getElementById('qTimer'); if(qt) qt.placeholder='Timer (5-180, blank = MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open)+')'; }
@@ -255,7 +268,25 @@ const BADGES=[
 { id:'perfect', emoji:'🎯', name:'Perfect', check:function(s){ return s.best===100; }},
 { id:'streak7', emoji:'📅', name:'7-Day Streak', check:function(s){ return s.days>=7; }},
 ];
-function computeStudentStats(){ var byPhone={}; D.quiz.forEach(function(r){ var p=cleanPhone(r.phone||''); if(!p) return; if(!byPhone[p]) byPhone[p]={name:r.name||'Student', phone:p, attempts:0, totalPerc:0, best:0, daysSet:{}, topics:{}}; var perc=getPerc(r); byPhone[p].attempts++; byPhone[p].totalPerc+=perc; if(perc>byPhone[p].best) byPhone[p].best=perc; var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byPhone[p].daysSet[d]=true; var t=r.topic||'All'; byPhone[p].topics[t]=(byPhone[p].topics[t]||0)+1; }); var list=Object.values(byPhone).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1] : null; return u; }); list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; }); return list; }
+function computeStudentStats(rows){
+  var listInput=rows||D.quiz;
+  var byKey={};
+  listInput.forEach(function(r){
+    if(parseInt(r.total||0)<=0) return;
+    var k=studentKey(r); if(!k) return;
+    if(!byKey[k]) byKey[k]={name:r.name||'Student', phone:r.phone||'', attempts:0, totalPerc:0, totalScore:0, totalQs:0, best:0, daysSet:{}, topics:{}};
+    var perc=getPerc(r);
+    byKey[k].attempts++; byKey[k].totalPerc+=perc; byKey[k].totalScore+=parseInt(r.score||0); byKey[k].totalQs+=parseInt(r.total||0);
+    if(perc>byKey[k].best) byKey[k].best=perc;
+    if((!byKey[k].name || byKey[k].name==='(Unknown)') && r.name) byKey[k].name=r.name;
+    if(!byKey[k].phone && r.phone) byKey[k].phone=r.phone;
+    var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byKey[k].daysSet[d]=true;
+    var t=r.topic||'Unknown'; byKey[k].topics[t]=(byKey[k].topics[t]||0)+1;
+  });
+  var list=Object.values(byKey).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1]:null; return u; });
+  list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
+  return list;
+}
 function badgeChips(u){ if(!u.badges || !u.badges.length) return '<span class="small">No badge yet</span>'; return u.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join(''); }
 function bookingKey(x){ var name=String(x.name||x.title||'').toLowerCase().trim(); var phone=String(x.phone||'').replace(/\D/g,'').slice(-9); if(x.id) return 'id:'+String(x.id).trim(); return name+'|'+phone; }
 function getDoneMap(){ try{ return JSON.parse(localStorage.getItem('smarttech_done_map_v2')||'{}'); }catch(e){ return {}; } }
@@ -310,9 +341,9 @@ function renderOverview(){
   document.getElementById('overviewBookings').innerHTML=b.length? b.map(function(x){ var done=isDoneStatus(x); return '<div class="item '+(done?'done':'')+'"><b>'+esc(x.name||'')+'</b> • '+esc(x.phone||'')+'<br>📌 '+esc(x.service||'')+'<br><span class="small">'+esc(x.timestamp||'')+' • '+(done?'✅ Done':'Pending')+'</span>'+(done?'<div class="done-box show">✅ Done ✓</div>':'')+'</div>'; }).join('') : '<p class="small">No bookings yet.</p>';
   var q=D.quiz.slice(-3).reverse();
   var students=computeStudentStats();
-  var map={}; students.forEach(function(u){ map[cleanPhone(u.phone)]=u; });
-  document.getElementById('overviewQuiz').innerHTML=q.length? q.map(function(x){ var p=calcPerc(x.score,x.total,x.percentage); var u=map[cleanPhone(x.phone)]; return '<div class="item"><b>'+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<br>🏆 Score: <b style="color:#00e676">'+esc(x.score||'0')+'/'+esc(x.total||'')+' - '+p+'</b><br>'+(u? badgeChips(u)+'<br>':'')+'<span class="small">'+esc(x.phone||'')+' • '+esc(x.email||'')+'</span></div>'; }).join('') : '<p class="small">No quiz results yet.</p>';
-  document.getElementById('overviewTop').innerHTML=students.length? students.slice(0,3).map(function(u,i){ return '<div class="item"><b>'+['🥇','🥈','🥉'][i]+' '+esc(u.name)+'</b> • '+esc(u.phone)+'<br>Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'<br>'+badgeChips(u)+'</div>'; }).join('') : '<p class="small">No learners yet.</p>';
+  var map={}; students.forEach(function(u){ if(u.phone) map[cleanPhone(u.phone)]=u; map['name:'+String(u.name||'').toLowerCase().trim()]=u; });
+  document.getElementById('overviewQuiz').innerHTML=q.length? q.map(function(x){ var p=calcPerc(x.score,x.total,x.percentage); var u=map[cleanPhone(x.phone)]||map['name:'+String(x.name||'').toLowerCase().trim()]; return '<div class="item"><b>'+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<br>🏆 Score: <b style="color:#00e676">'+esc(x.score||'0')+'/'+esc(x.total||'')+' - '+p+'</b><br>'+(u? badgeChips(u)+'<br>':'')+'<span class="small">'+esc(x.phone||'')+' • '+esc(x.email||'')+'</span></div>'; }).join('') : '<p class="small">No quiz results yet.</p>';
+  document.getElementById('overviewTop').innerHTML=students.length? students.slice(0,3).map(function(u,i){ return '<div class="item"><b>'+['🥇','🥈','🥉'][i]+' '+esc(u.name)+'</b> • '+esc(u.phone||'No phone')+'<br>Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'<br>'+badgeChips(u)+'</div>'; }).join('') : '<p class="small">No learners yet.</p>';
 }
 function bookingCardHTML(x, key){ var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', this is SmartTech LTD. About your booking: '+(x.service||'')+'. We are ready to help you.'); var isDone=isDoneStatus(x); return '<div class="item '+(isDone?'done':'')+'" id="card-'+key+'"><b>👤 '+esc(x.name||'')+'</b> <span class="badge '+(isDone?'badge-done':'badge-pending')+'" id="badge-'+key+'">'+(isDone?'✅ Done':'Pending')+'</span><br>📞 '+esc(x.phone||'')+'<br>📧 '+esc(x.email||'Not given')+'<br>📌 Service: <b>'+esc(x.service||'')+'</b><br>📝 Message: '+esc(x.message||x.details||'None')+'<br>🕒 '+esc(x.timestamp||'')+'<br>📅 Date wanted: '+esc(x['date wanted']||x.date||'Not given')+'<div class="done-box '+(isDone?'show':'')+'" id="donebox-'+key+'">✅ Done ✓</div><br><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Client</a><button class="btn-small" style="background:#00c853" onclick="markDoneOne(\''+key+'\')">✅ Mark Done</button><button class="btn-small" style="background:#ff9800" onclick="markPendingOne(\''+key+'\')">↩️ Pending</button><button class="btn-small" style="background:#ff5252" onclick="deleteOneBooking(\''+key+'\')">🗑️ Delete</button></div></div>'; }
 function renderBookings(){ var q=(document.getElementById('searchBooking').value||'').toLowerCase(); var filtered=D.bookings.slice().reverse().filter(function(x){ return !q || ((x.name||'')+' '+(x.phone||'')+' '+(x.service||'')).toLowerCase().includes(q); }); var pending=filtered.filter(function(x){ return !isDoneStatus(x); }); var done=filtered.filter(function(x){ return isDoneStatus(x); }); var list=pending.concat(done); bookingIndex={}; var el=document.getElementById('bookingsList'); if(!list.length){ el.innerHTML='<div class="card">No bookings found. Tap Refresh.</div>'; return; } var html=''; if(pending.length) html+='<div class="section-label">🟠 PENDING - NEED ACTION ('+pending.length+')</div>'; html+=pending.map(function(x,idx){ var key='p'+idx; bookingIndex[key]=x; return bookingCardHTML(x,key); }).join(''); if(done.length) html+='<div class="section-label">✅ DONE ('+done.length+') - AT BOTTOM</div>'; html+=done.map(function(x,idx){ var key='d'+idx; bookingIndex[key]=x; return bookingCardHTML(x,key); }).join(''); el.innerHTML=html; }
@@ -329,17 +360,17 @@ function renderQuiz(){
   var q=(document.getElementById('searchQuiz').value||'').toLowerCase();
   var list=D.quiz.slice().reverse().filter(function(x){ return !q || ((x.name||'')+' '+(x.topic||'')+' '+(x.phone||'')+' '+(x.email||'')).toLowerCase().includes(q); });
   quizIndex={};
-  var students=computeStudentStats(); var map={}; students.forEach(function(u){ map[cleanPhone(u.phone)]=u; });
+  var students=computeStudentStats(); var map={}; students.forEach(function(u){ if(u.phone) map[cleanPhone(u.phone)]=u; map['name:'+String(u.name||'').toLowerCase().trim()]=u; });
   var el=document.getElementById('quizList');
   if(!list.length){ el.innerHTML='<div class="card">No quiz results found.</div>'; return; }
   el.innerHTML=list.map(function(x,idx){
     var key='q'+idx; quizIndex[key]=x;
     var score=parseInt(x.score||0), total=parseInt(x.total||0);
     var perc=calcPerc(score,total,x.percentage);
-    var correct = (x.correct!==undefined && x.correct!=='' ) ? parseInt(x.correct) : score;
-    var wrong = (x.wrong!==undefined && x.wrong!=='' ) ? parseInt(x.wrong) : Math.max(0, total - score);
-    if(isNaN(correct)) correct=score; if(isNaN(wrong)) wrong=Math.max(0, total-correct);
-    var u=map[cleanPhone(x.phone)];
+    var correct=(x.correct!==undefined && x.correct!=='')?parseInt(x.correct):score;
+    var wrong=(x.wrong!==undefined && x.wrong!=='')?parseInt(x.wrong):Math.max(0,total-score);
+    if(isNaN(correct)) correct=score; if(isNaN(wrong)) wrong=Math.max(0,total-correct);
+    var u=map[cleanPhone(x.phone)]||map['name:'+String(x.name||'').toLowerCase().trim()];
     var detail='';
     var d=getAnswersForQuiz(x);
     if(d && d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions) — from QuizAnswers sheet</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>';
@@ -352,9 +383,9 @@ function renderQuiz(){
 async function deleteOneQuiz(key){ var x=quizIndex[key]; if(!x) return; if(!confirm('Move quiz result for '+x.name+' to Recycle Bin?')) return; addToRecycle('Quiz', x); var card=document.getElementById('quizcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Quiz',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''}); setTimeout(function(){ loadAll(); },800); }
 function renderPosts(){ var el=document.getElementById('postsList'); if(!D.posts.length){ el.innerHTML='<p class="small">No posts yet.</p>'; return; } postIndex={}; var reversed=D.posts.slice().reverse(); el.innerHTML=reversed.map(function(x,idx){ var key='post'+idx; postIndex[key]=x; return '<div class="item" id="postcard-'+key+'"><b>'+esc(x.title||'')+'</b><br>'+esc(x.caption||'')+'<br><span class="small">'+esc(x.type||'')+' • '+esc(x.timestamp||'')+'</span><br>'+(x.link?'<a href="'+esc(x.link)+'" target="_blank" style="color:#4aa3ff">'+esc(x.linktext||x.link)+'</a><br>':'')+(x.media?'<a href="'+esc(x.media)+'" target="_blank" style="color:#facc15">🖼️ View Media</a><br>':'')+'<button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteGeneric(\'Posts\',\''+key+'\')">🗑️ Delete Post</button></div>'; }).join(''); }
 function getQType(x){ var t=String(x.qtype||x.type||'').toLowerCase(); if(t.includes('open')) return 'open'; try{ var o=JSON.parse(x.options||'[]'); if(!o.length) return 'open'; }catch(e){ if(!x.options) return 'open'; } return 'mcq'; }
-function renderQuestions(){ var q=(document.getElementById('searchQ').value||'').toLowerCase(); var ft=document.getElementById('filterTopic').value||''; var list=D.questions.slice().reverse().filter(function(x){ if(ft && String(x.topic||'')!==ft) return false; return !q || (x.question||x.q||'').toLowerCase().includes(q); }); questionIndex={}; var el=document.getElementById('questionsList'); if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; } el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">⏱️ Timer: '+esc(x.timer||'Default (MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open)+')')+'</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join(''); }
+function renderQuestions(){ var q=(document.getElementById('searchQ').value||'').toLowerCase(); var ft=document.getElementById('filterTopic').value||''; var list=D.questions.slice().reverse().filter(function(x){ if(ft && cleanTopic(String(x.topic||''))!==ft && String(x.topic||'')!==ft) return false; return !q || (x.question||x.q||'').toLowerCase().includes(q); }); questionIndex={}; var el=document.getElementById('questionsList'); if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; } el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">⏱️ Timer: '+esc(x.timer||'Default (MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open)+')')+'</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join(''); }
 async function deleteOneQuestion(key){ var x=questionIndex[key]; if(!x) return; if(!confirm('Move this question to Recycle Bin?')) return; addToRecycle('Questions', x); var card=document.getElementById('qcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Questions',id:x.id||'',timestamp:x.timestamp||'',name:x.question||x.q||'',phone:''}); setTimeout(function(){ loadAll(); },800); }
-async function clearQuestionsByTopic(){ var ft=document.getElementById('filterTopic').value; if(!ft) return alert('Select a Topic first to delete it'); var count=D.questions.filter(function(x){ return String(x.topic||'')===ft; }).length; if(!count) return alert('No questions in '+ft); if(!confirm('Delete ALL '+count+' questions in '+ft+' ? They go to Recycle Bin.')) return; D.questions.filter(function(x){ return String(x.topic||'')===ft; }).forEach(function(x){ addToRecycle('Questions', x); }); await postToSheet({type:'clearTopic',sheet:'Questions',topic:ft}); loadAll(); }
+async function clearQuestionsByTopic(){ var ft=document.getElementById('filterTopic').value; if(!ft) return alert('Select a Topic first to delete it'); var count=D.questions.filter(function(x){ return cleanTopic(String(x.topic||''))===ft; }).length; if(!count) return alert('No questions in '+ft); if(!confirm('Delete ALL '+count+' questions in '+ft+' ? They go to Recycle Bin.')) return; D.questions.filter(function(x){ return cleanTopic(String(x.topic||''))===ft; }).forEach(function(x){ addToRecycle('Questions', x); }); await postToSheet({type:'clearTopic',sheet:'Questions',topic:ft}); loadAll(); }
 function renderNotify(){ var el=document.getElementById('notifyList'); if(!D.notify.length){ el.innerHTML='<p class="small">No notifications yet.</p>'; return; } el.innerHTML=D.notify.slice().reverse().map(function(x){ return '<div class="item"><b>'+esc(x.title||'')+'</b><br>'+esc(x.body||'')+'<br><span class="small">'+esc(x.timestamp||'')+'</span></div>'; }).join(''); }
 async function createPost(){ var title=document.getElementById('postTitle').value.trim(); var caption=document.getElementById('postCaption').value.trim(); if(!title || !caption){ alert('Enter title + caption'); return; } document.getElementById('postMsg').textContent='⏳ Saving...'; await postToSheet({type:'post',title:title,caption:caption,postType:document.getElementById('postType').value,media:document.getElementById('postMedia').value.trim(),link:document.getElementById('postLink').value.trim(),linkText:document.getElementById('postLinkText').value.trim()}); document.getElementById('postMsg').textContent=''; document.getElementById('postTitle').value=''; document.getElementById('postCaption').value=''; loadAll(); }
 async function createQuestion(){ var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim(); if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; } var tRaw=document.getElementById('qTimer').value.trim(); var timer=tRaw==='' ? 0 : parseInt(tRaw); if(tRaw!=='' && (isNaN(timer)||timer<5||timer>180)){ alert('Timer must be 5 to 180 seconds (max 3 mins) or leave blank for default'); return; } document.getElementById('qMsg').textContent='⏳ Saving...'; await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:'mcq',options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:timer}); document.getElementById('qMsg').textContent='✅ Saved! Timer: '+(timer? timer+'s' : 'Default MCQ '+getTimeSettings().mcq+'s'); ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('qTimer').value=''; loadAll(); }
@@ -367,22 +398,41 @@ function clearBulk(){ document.getElementById('bulkText').value=''; document.get
 async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var s=getTimeSettings(); var timer=0; if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ? Timer will be Default: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open))) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; var qTimer = q.qtype==='mcq' ? s.mcq : s.open; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:qTimer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'! Timer: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open); document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
 function renderAnalytics(){
   var topicFilter=document.getElementById('analyticsTopic') ? document.getElementById('analyticsTopic').value : '';
-  var all=D.quiz||[]; var filtered=topicFilter? all.filter(function(r){ return String(r.topic||'')===topicFilter; }) : all; var el=document.getElementById('analyticsContent');
-  if(!filtered.length){ el.innerHTML='<div class="card"><p class="small">No quiz results yet for this topic.</p></div>'; return; }
-  var byPhone={}; filtered.forEach(function(r){ var p=cleanPhone(r.phone||''); if(!p) return; if(!byPhone[p]) byPhone[p]={name:r.name||'Student', phone:p, attempts:0, total:0, best:0, worst:100, daysSet:{}}; var perc=getPerc(r); byPhone[p].attempts++; byPhone[p].total+=perc; if(perc>byPhone[p].best) byPhone[p].best=perc; if(perc<byPhone[p].worst) byPhone[p].worst=perc; var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byPhone[p].daysSet[d]=true; });
-  var students=Object.values(byPhone).map(function(u){ u.avg=u.attempts? Math.round(u.total/u.attempts):0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); return u; });
-  students.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
-  var best=students[0]; var leastPool=students.filter(function(u){ return u.attempts>=2; }); var least=leastPool.length? leastPool.slice().sort(function(a,b){ return a.avg-b.avg; })[0] : students.slice().sort(function(a,b){ return a.avg-b.avg; })[0];
-  var byTopic={}; filtered.forEach(function(r){ var t=r.topic||'Unknown'; if(!byTopic[t]) byTopic[t]={attempts:0,total:0,best:0}; var p=getPerc(r); byTopic[t].attempts++; byTopic[t].total+=p; if(p>byTopic[t].best) byTopic[t].best=p; });
-  var topicRows=Object.keys(byTopic).map(function(t){ return {topic:t, attempts:byTopic[t].attempts, avg:Math.round(byTopic[t].total/byTopic[t].attempts), best:byTopic[t].best}; }).sort(function(a,b){ return b.avg-a.avg; });
-  var overallAvg=filtered.length? Math.round(filtered.reduce(function(s,r){ return s+getPerc(r); },0)/filtered.length):0;
+  var all=D.quiz||[];
+  var valid=all.filter(function(r){ return parseInt(r.total||0)>0; });
+  var filtered=topicFilter? valid.filter(function(r){ return cleanTopic(r.topic||'')===topicFilter; }) : valid;
+  var el=document.getElementById('analyticsContent');
+  if(!filtered.length){ el.innerHTML='<div class="card"><p class="small">No valid quiz results yet for this topic.</p></div>'; return; }
+  var students=computeStudentStats(filtered);
+  var byAvgDesc=students.slice().sort(function(a,b){ return b.avg-a.avg || b.attempts-a.attempts; });
+  var byAvgAsc=students.slice().sort(function(a,b){ return a.avg-b.avg || b.attempts-a.attempts; });
+  var best=byAvgDesc[0];
+  var least=null;
+  if(students.length>1){ least=byAvgAsc.find(function(u){ return studentKey({phone:u.phone, name:u.name})!==studentKey({phone:best.phone, name:best.name}); })||byAvgAsc[0]; }
+  var byTopic={};
+  filtered.forEach(function(r){
+    var t=cleanTopic(r.topic||'');
+    if(!isValidTopic(t)) return;
+    if(!byTopic[t]) byTopic[t]={attempts:0,totalScore:0,totalQs:0,best:0};
+    byTopic[t].attempts++; byTopic[t].totalScore+=parseInt(r.score||0); byTopic[t].totalQs+=parseInt(r.total||0);
+    var p=getPerc(r); if(p>byTopic[t].best) byTopic[t].best=p;
+  });
+  var topicRows=Object.keys(byTopic).map(function(t){ var b=byTopic[t]; return {topic:t, attempts:b.attempts, avg:b.totalQs? Math.round((b.totalScore/b.totalQs)*100):0, best:b.best}; }).sort(function(a,b){ return b.avg-a.avg; });
+  var totS=filtered.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
+  var totQ=filtered.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
+  var overallAvg=totQ? Math.round((totS/totQ)*100):0;
+  var brokenCount=all.length-valid.length;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
-  el.innerHTML='<div class="card"><h3 style="color:#0a1931">SmartTech LTD — Quiz Analytics Report</h3><p class="small">Generated: '+esc(dateStr)+' • Topic: '+(topicFilter||'All Topics')+' • Total Attempts: '+filtered.length+' • Students: '+students.length+' • Overall Avg: '+overallAvg+'%</p></div>'+
-  '<div class="card" style="border:2px solid #00c853"><h3 style="color:#00e676">🏆 BEST PERFORMER</h3><b style="font-size:18px">'+esc(best.name)+' • '+esc(best.phone)+'</b><br>Attempts: '+best.attempts+' • Avg: '+best.avg+'% • Best: '+best.best+'% • Days: '+best.days+'<br>'+best.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join('')+'</div>'+
-  '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone)+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Worst: '+least.worst+'%<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help. Topic: '+(topicFilter||'All')+'</span></div>'+
-  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — Consistency + Performance (Best → Least)</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone)+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(r.topic||'')+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
+  var leastHtml=least
+    ? '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone||'No phone')+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Days: '+least.days+'<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help. Topic: '+(topicFilter||'All')+'</span></div>'
+    : '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER</h3><p class="small">Only 1 student so far — no least performer yet. Best = '+esc(best.name)+'</p></div>';
+  el.innerHTML=
+  '<div class="card"><h3 style="color:#0a1931">SmartTech LTD — Quiz Analytics Report</h3><p class="small">Generated: '+esc(dateStr)+' • Topic: '+(topicFilter||'All Topics')+' • Valid Attempts: '+filtered.length+' • Students: '+students.length+' • Overall Avg: '+overallAvg+'% (Total Correct '+totS+' / Total Questions '+totQ+')'+(brokenCount? ' • ⚠️ '+brokenCount+' broken old row(s) excluded':'')+'</p></div>'+
+  '<div class="card" style="border:2px solid #00c853"><h3 style="color:#00e676">🏆 BEST PERFORMER</h3><b style="font-size:18px">'+esc(best.name)+' • '+esc(best.phone||'No phone')+'</b><br>Attempts: '+best.attempts+' • Avg: '+best.avg+'% • Best: '+best.best+'% • Days: '+best.days+'<br>'+best.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join('')+'</div>'+
+  leastHtml+
+  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic (Real Topics Only)</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+(topicRows.length? topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('') : '<tr><td colspan="4">No valid topic data — old rows had Topic = 5/6, now excluded</td></tr>')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — All Fields, Consistency + Performance</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone||'No phone')+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(cleanTopic(r.topic||''))+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
 }
 function downloadAnalyticsPDF(){ showTab('analytics', document.querySelectorAll('.tab')[6]); setTimeout(function(){ window.print(); }, 400); }
 async function deleteGeneric(sheet,key){ if(!confirm('Move this to Recycle Bin?')) return; var x=postIndex[key]; if(!x) return; addToRecycle(sheet, x); var card=document.getElementById('postcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''}); loadAll(); }
