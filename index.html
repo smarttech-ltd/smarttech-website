@@ -107,7 +107,7 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 .refresh-btn:active{transform:rotate(180deg) scale(.92)}
 .refresh-btn.spinning{animation:spinRefresh .7s linear}
 @keyframes spinRefresh{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-/* ===== WELCOME SPLASH ===== */
+/* ===== WELCOME SPLASH - 12 SECONDS ===== */
 #welcomeSplash{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 20%, #0d2a5a 0%, #0a1931 55%, #060f22 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;transition:opacity .6s ease, visibility .6s}
 #welcomeSplash.hide{opacity:0;visibility:hidden;pointer-events:none}
 .splash-glow{position:absolute;width:320px;height:320px;background:radial-gradient(circle, rgba(74,163,255,.45), transparent 70%);filter:blur(20px);animation:splashPulse 2s ease-in-out infinite}
@@ -132,10 +132,11 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 .splash-trust{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;z-index:2}
 .splash-trust span{background:rgba(255,255,255,.1);border:1px solid rgba(74,163,255,.4);padding:7px 12px;border-radius:20px;font-size:12px;font-weight:700}
 .splash-bar{width:200px;height:6px;background:rgba(255,255,255,.15);border-radius:10px;margin-top:20px;overflow:hidden;z-index:2}
-.splash-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#4aa3ff,#00e5ff,#00c853);border-radius:10px;animation:loadBar 3s ease forwards}
+.splash-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#4aa3ff,#00e5ff,#00c853);border-radius:10px;animation:loadBar 12s linear forwards}
 @keyframes loadBar{to{width:100%}}
 .splash-btn{margin-top:18px;background:#00e5ff;color:#0a1931;border:none;padding:13px 28px;border-radius:25px;font-weight:900;font-size:15px;cursor:pointer;z-index:2;box-shadow:0 10px 30px rgba(0,229,255,.4)}
 .splash-skip{margin-top:10px;background:none;border:none;color:#8ec8ff;font-size:12px;cursor:pointer;z-index:2;text-decoration:underline}
+.splash-count{margin-top:12px;color:#8ec8ff;font-size:12px;z-index:2}
 /* Interactive feel */
 .book-btn,.quiz-btn,.chat-btn,.follow-btn,.install-btn,.notify-btn,.updates-btn,.how-to-pay,.mpesa-pay-btn{transition:transform .15s ease, box-shadow .15s ease}
 .book-btn:active,.quiz-btn:active,.chat-btn:active,.follow-btn:active,.install-btn:active,.notify-btn:active,.updates-btn:active{transform:scale(.96)}
@@ -145,7 +146,7 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 </style>
 </head>
 <body>
-<!-- WELCOME SPLASH -->
+<!-- WELCOME SPLASH - 12 SEC -->
 <div id="welcomeSplash">
   <div class="splash-glow"></div>
   <div class="splash-icons">
@@ -156,6 +157,7 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
   <div class="splash-sub" id="splashTyping">Your Trusted ICT Partner 💙</div>
   <div class="splash-trust"><span>🛡️ 100% Trusted</span><span>🤝 Fast Support</span><span>💻 All Kenya - Online</span></div>
   <div class="splash-bar"><i></i></div>
+  <div class="splash-count" id="splashCount">Entering in 12s...</div>
   <button class="splash-btn" onclick="enterSite()">Enter SmartTech →</button>
   <button class="splash-skip" onclick="enterSite()">Skip →</button>
 </div>
@@ -413,17 +415,25 @@ function refreshPage(btn){
   if(btn) btn.classList.add('spinning');
   setTimeout(()=>{ location.reload(); }, 250);
 }
-// ===== WELCOME + INTERACTIVITY =====
+// ===== WELCOME 12 SEC + INTERACTIVITY =====
 let splashDone=false;
+let splashLeft=12;
+let splashTimer=null;
 function enterSite(){
   if(splashDone) return; splashDone=true;
+  if(splashTimer) clearInterval(splashTimer);
   document.getElementById('welcomeSplash').classList.add('hide');
   document.body.style.overflow='';
   setTimeout(()=>{document.getElementById('welcomeSplash').style.display='none';},650);
   document.querySelectorAll('.hero-card,.quiz-card,.feed-card').forEach((el,i)=>{ el.classList.add('reveal'); setTimeout(()=>el.classList.add('visible'), 80*i); });
 }
 document.body.style.overflow='hidden';
-setTimeout(enterSite, 3500);
+splashTimer=setInterval(()=>{
+  splashLeft--;
+  var c=document.getElementById('splashCount');
+  if(c) c.textContent = splashLeft>0 ? 'Entering in '+splashLeft+'s...' : 'Entering...';
+  if(splashLeft<=0){ clearInterval(splashTimer); enterSite(); }
+},1000);
 document.getElementById('welcomeSplash').addEventListener('click', function(e){ if(e.target.id==='welcomeSplash') enterSite(); });
 (function(){
   const msgs=["Your Trusted ICT Partner 💙","Karibu SmartTech LTD 👋","Fast • Trusted • Affordable ✨"];
