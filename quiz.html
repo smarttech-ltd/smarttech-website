@@ -46,10 +46,14 @@ select.input{cursor:pointer}
 .pill-btn.active{background:#00e5ff;color:#0a1931;border-color:#00e5ff}
 .pill-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .pdf-watermark{display:none}
+.pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
 .lang-select{background:rgba(255,255,255,.1);border:1px solid #2a5ab0;color:#fff;padding:6px 8px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;outline:none}
 .lang-select option{color:#000}
 .time-badge{background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:10px;padding:8px;text-align:center;font-size:12px;color:#facc15;font-weight:700;margin:8px 0}
 .keyword-hint{background:rgba(0,229,255,.1);border:1px dashed #00e5ff;border-radius:10px;padding:8px;font-size:11px;color:#c8e6ff;margin-top:6px;text-align:center}
+.analysis-box{background:rgba(250,204,21,.08);border:1px solid #facc15;border-radius:14px;padding:12px;margin:10px 0;font-size:13px;line-height:1.7}
+.analysis-box b{color:#facc15}
+.keyword-tag{display:inline-block;background:rgba(0,229,255,.15);border:1px solid #00e5ff;color:#c8e6ff;padding:2px 8px;border-radius:20px;font-size:11px;margin:2px}
 @media print{
   @page{margin:14mm}
   body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -133,6 +137,7 @@ select.input{cursor:pointer}
 <h2 style="text-align:center;color:#5ee1ff" data-i18n="complete">🎉 Quiz Complete!</h2>
 <div id="pdfHeader" style="display:none;text-align:center;margin-bottom:10px"><b style="font-size:18px">SmartTech LTD — Quiz Result</b><br><span id="pdfMeta" style="font-size:12px;color:#333"></span><br><span style="font-size:11px;color:#666">Your trusted ICT Partner • WhatsApp 0183465547</span></div>
 <div class="scorebox"><div data-i18n="yourScore">YOUR SCORE</div><b id="finalScore">0/0</b><div id="finalPerc" style="font-size:20px;font-weight:800;color:#fff;margin-top:4px">0%</div><div id="finalMsg" style="font-size:13px;margin-top:6px;color:#c8d6ff"></div></div>
+<div id="autoAnalysisBox" class="analysis-box hidden"></div>
 <div id="newBadgesBox"></div>
 <div id="myBadgesAfter" class="badge-grid"></div>
 <div id="myStatsAfter" class="small" style="text-align:center;margin-bottom:10px"></div>
@@ -147,8 +152,6 @@ select.input{cursor:pointer}
 </div>
 <script>
 // ===== CONFIG: QUIZ TIME - MODIFY OR USE DEFAULT =====
-// Change these numbers to change time for ALL quizzes. Admin Dashboard can override via localStorage.
-// If you don't change, DEFAULT is used.
 const QUIZ_TIME_CONFIG = { MCQ: 45, OPEN: 90, AUTO_SUBMIT: 5, MIN: 5, MAX: 180 };
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
 const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
@@ -164,8 +167,10 @@ fr:{home:"Accueil",title:"🧠 Quiz ICT GRATUIT",subtitle:"Bases Informatiques �
 la:{home:"Domus",title:"🧠 Probatio ICT GRATIS",subtitle:"Fundamenta Computatralia • MS Word • MS Excel • Securitas Interretialis<br>Quaestiones Electivae + Apertae • Insignia Mere!",nameLabel:"Nomen Tuum *",phoneLabel:"Telephonum *",emailLabel:"Epistula Electronica (optionale)",myBadges:"🏆 INSIGNIA MEA",chooseTopic:"Elige Argumentum — Tange Bullam",howMany:"Quot Quaestiones? — Tange Bullam",startBtn:"▶️ Incipe Probationem",topLearners:"🏆 OPTIMI DISCENTES",openHint:"💡 Consilium: Verbis clavibus utere. Responsum tuum verbis clavibus iudicatur.",allDone:"✅ Omnes Quaestiones Perfectae!",submitBtn:"📤 Submitte & Vide Eventus",complete:"🎉 Probatio Perfecta!",yourScore:"PUNCTUM TUUM",downloadPDF:"📄 Depone Eventum ut PDF",sendEmail:"📧 Mitte Eventus per Epistulam",retake:"🔄 Repete Probationem",bookHelp:"📅 Reserva Auxilium ICT"}
 };
 let currentLang = localStorage.getItem('smarttech_lang') || 'en';
+if(['en','sw','fr','la'].indexOf(currentLang)===-1) currentLang='en';
 function setLanguage(lang){
-  currentLang = lang; localStorage.setItem('smarttech_lang', lang);
+  if(['en','sw','fr','la'].indexOf(lang)===-1) lang='en';
+  currentLang = lang; localStorage.setItem('smarttech_lang', lang); localStorage.setItem('smarttech_admin_lang', lang);
   document.getElementById('langSelect').value = lang;
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
@@ -187,7 +192,8 @@ let emailAlreadySent=false;
 let selectedMcq=-1;
 let finalSubmitInt=null, finalSubmitted=false;
 let questionsLoading=false;
-// FIXED DEFAULT QUESTIONS - with translations + keywords
+let analyticsCache=null;
+// DEFAULT QUESTIONS - with translations + keywords + language
 const DEFAULT_Q=[
 {topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",translations:{sw:"CPU inasimama kwa nini?",fr:"Que signifie CPU ?",la:"Quid significat CPU?"},options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],options_translations:{sw:["Kitengo Kikuu cha Uchakataji","Kitengo cha Kompyuta Binafsi","Kitengo Kikuu cha Programu","Kitengo cha Kudhibiti Uchakataji"],fr:["Unité Centrale de Traitement","Unité Personnelle d'Ordinateur","Unité Centrale de Programme","Unité de Contrôle de Traitement"],la:["Unitas Centralis Processus","Unitas Personalis Computatri","Unitas Centralis Programmatis","Unitas Moderationis Processus"]},answer:0,explanation:"CPU = Central Processing Unit",keywords:["central","processing","unit"]},
 {topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",translations:{sw:"Kifaa gani kinatumika kuandika?",fr:"Quel appareil sert à taper ?",la:"Quo instrumento scribitur?"},options:["Monitor","Keyboard","Printer","Speaker"],options_translations:{sw:["Kichunguzi","Kibodi","Printa","Spika"],fr:["Écran","Clavier","Imprimante","Haut-parleur"],la:["Monitor","Claviatura","Typographus","Loquens"]},answer:1,explanation:"Keyboard is for typing",keywords:["keyboard"]},
@@ -197,6 +203,7 @@ const DEFAULT_Q=[
 {topic:"Internet Safety",qtype:"open",question:"What is a strong password?",translations:{sw:"Nenosiri imara ni nini?",fr:"Qu'est-ce qu'un mot de passe fort ?",la:"Quid est tessera valida?"},options:[],answer:"Mix of letters numbers and symbols",explanation:"Strong password mixes letters, numbers, symbols",keywords:["letters","numbers","symbols","mix"]}
 ];
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// ===== ACCURATE COLUMN READING: lowerKeys + header-name mapping =====
 function lowerKeys(r){var o={};Object.keys(r||{}).forEach(function(k){o[String(k).toLowerCase().trim()]=r[k];});return o;}
 function normalizeRows(data){
 if(!data) return [];
@@ -237,6 +244,20 @@ function parseOptions(raw){
   if(s.indexOf('\n')>=0) return s.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
   return [s];
 }
+function parseKeywords(raw){
+  if(!raw) return [];
+  if(Array.isArray(raw)) return raw.map(function(x){return String(x).trim().toLowerCase();}).filter(Boolean);
+  var s=String(raw).trim();
+  if(!s) return [];
+  try{ var j=JSON.parse(s); if(Array.isArray(j)) return j.map(function(x){return String(x).trim().toLowerCase();}).filter(Boolean); }catch(e){}
+  return s.split(/[|,;]/).map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
+}
+function parseTranslations(raw){
+  if(!raw) return {};
+  if(typeof raw==='object') return raw;
+  try{ var j=JSON.parse(raw); if(typeof j==='object') return j; }catch(e){}
+  return {};
+}
 function getPercForResult(r){
   var s=parseFloat(r.score), t=parseFloat(r.total);
   if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100);
@@ -251,19 +272,16 @@ function getKeywords(text){
   var stop=['a','an','the','is','are','was','were','be','been','of','to','in','on','for','and','or','with','by','as','at','it','its','this','that','what','how','why','when','where','which','who'];
   return normalizeText(text).split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)===-1; });
 }
-// ===== FIXED: OPEN-ENDED KEYWORD MARKING =====
-// Returns {correct, matched, total, matchedWords}
-// Correct if >=60% keywords found OR exact match OR contains full answer
+// ===== FIXED: OPEN-ENDED KEYWORD MARKING - 60% threshold + synonyms in 4 langs =====
 function checkOpenAnswerDetailed(user, correct, explicitKeywords){
   var u=normalizeText(user), c=normalizeText(correct);
-  if(!u || !c) return {correct:false, matched:[], total:0, score:0};
-  if(u===c) return {correct:true, matched:[c], total:1, score:100};
-  if(u.includes(c) || c.includes(u)) return {correct:true, matched:[c], total:1, score:100};
-  if(/^\d+$/.test(c)) return {correct: u===c, matched: u===c?[c]:[], total:1, score: u===c?100:0};
+  if(!u || !c) return {correct:false, matched:[], total:0, score:0, keywordInfo:"0/0 (0%)"};
+  if(u===c) return {correct:true, matched:[c], total:1, score:100, keywordInfo:"Exact Match (1/1)"};
+  if(u.includes(c) || c.includes(u)) return {correct:true, matched:[c], total:1, score:100, keywordInfo:"Contains Answer (1/1)"};
+  if(/^\d+$/.test(c)) return {correct: u===c, matched: u===c?[c]:[], total:1, score: u===c?100:0, keywordInfo: u===c?"1/1":"0/1"};
   var kws = explicitKeywords && explicitKeywords.length ? explicitKeywords.map(function(w){return normalizeText(w);}) : getKeywords(correct);
-  if(!kws.length) return {correct: u===c, matched:[], total:0, score:0};
-  // Synonym map for 4 languages
-  var synonyms = { "central":["central","kuu","centrale","centralis"], "processing":["processing","uchakataji","traitement","processus"], "unit":["unit","kitengo","unité","unitas"], "random":["random","nasibu","aléatoire","fortuitus"], "access":["access","ufikiaji","accès","accessus"], "memory":["memory","kumbukumbu","mémoire","memoria"], "letters":["letters","herufi","lettres","litterae"], "numbers":["numbers","nambari","chiffres","numeri"], "symbols":["symbols","alama","symboles","signa"] };
+  if(!kws.length) return {correct: u===c, matched:[], total:0, score:0, keywordInfo:"0/0"};
+  var synonyms = { "central":["central","kuu","centrale","centralis"], "processing":["processing","uchakataji","traitement","processus"], "unit":["unit","kitengo","unité","unitas"], "random":["random","nasibu","aléatoire","fortuitus"], "access":["access","ufikiaji","accès","accessus"], "memory":["memory","kumbukumbu","mémoire","memoria"], "letters":["letters","herufi","lettres","litterae"], "numbers":["numbers","nambari","chiffres","numeri"], "symbols":["symbols","alama","symboles","signa"], "strong":["strong","imara","fort","valida"], "password":["password","nenosiri","mot","tessera"], "computer":["computer","kompyuta","ordinateur","computatrum"], "internet":["internet","mtandao","internet","interrete"] };
   var matched=[];
   kws.forEach(function(kw){
     var variants = synonyms[kw] || [kw];
@@ -271,7 +289,8 @@ function checkOpenAnswerDetailed(user, correct, explicitKeywords){
     else if(u.includes(kw)) matched.push(kw);
   });
   var ratio = matched.length / kws.length;
-  return {correct: ratio >= 0.6, matched: matched, total: kws.length, score: Math.round(ratio*100)};
+  var info = matched.join(", ")+" ("+matched.length+"/"+kws.length+" - "+Math.round(ratio*100)+"%)";
+  return {correct: ratio >= 0.6, matched: matched, total: kws.length, score: Math.round(ratio*100), keywordInfo: info};
 }
 function checkOpenAnswer(user, correct, keywords){ return checkOpenAnswerDetailed(user, correct, keywords).correct; }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
@@ -283,7 +302,7 @@ function shuffleArray(arr){
   }
   return a;
 }
-function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,translations:q.translations||{},options:parseOptions(q.options),options_translations:q.options_translations||{},answer:q.answer,explanation:q.explanation,keywords:q.keywords||[],timer:0}; }); }
+function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,translations:q.translations||{},options:parseOptions(q.options),options_translations:q.options_translations||{},answer:q.answer,explanation:q.explanation,keywords:q.keywords||[],timer:0,language:'en'}; }); }
 async function postToSheet(payload){
   try{ await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }
   catch(e){ console.log('Sheet upload fail', e); return false; }
@@ -319,10 +338,10 @@ async function sendResultsEmail(){
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
   var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
   var wrongCount=answers.length-correctCount;
-  var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT':'WRONG')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
+  var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT':'WRONG')+'\nCorrect Answer: '+a.correctAnswer+'\nKeyword: '+(a.keywordInfo||'')+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
   var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nLanguage: '+currentLang.toUpperCase()+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
   try{
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, to_name: name, from_name: 'SmartTech LTD', reply_to: email, name: name, phone: phone, email: email, topic: topic, score: scoreText, percentage: percText, correct: correctCount, wrong: wrongCount, date: dateStr, message: message, review: reviewText });
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, to_name: name, from_name: 'SmartTech LTD', reply_to: email, name: name, phone: phone, email: email, topic: topic, score: scoreText, percentage: percText, correct: correctCount, wrong: wrongCount, date: dateStr, message: message, review: reviewText, language: currentLang });
     emailAlreadySent=true;
     btn.textContent='Sent to Email';
     document.getElementById('emailMsg').textContent='Results sent to '+email+'. Check inbox / spam.';
@@ -444,25 +463,32 @@ function updateTopicCounts(rebuildPills){
 document.addEventListener('change', function(e){
   if(e.target && (e.target.id==='topic' || e.target.id==='qCountSel')) updateTopicCounts(false);
 });
+// ===== ACCURATE QUESTION PARSING - BY COLUMN NAME =====
 function parseQuestionRow(r){
+  // r is already lowerKeys() - so keys are lowercase: topic, question, qtype, options, answer, explanation, timer, keywords, translations, language
   var opts=parseOptions(r.options);
   var qt=String(r.qtype||r.type||'').toLowerCase();
   var isOpen = qt.includes('open') || opts.length<2;
-  // FIXED MCQ: validate answer is a valid index
-  var ans = isOpen ? String(r.answer||'') : parseInt(r.answer||0);
-  if(!isOpen){
-    if(isNaN(ans)) {
+  var kws = parseKeywords(r.keywords || r.keyword || '');
+  var trans = parseTranslations(r.translations || '');
+  var lang = String(r.language||'en').toLowerCase();
+  if(['en','sw','fr','la'].indexOf(lang)===-1) lang='en';
+  var ans;
+  if(isOpen){
+    ans = String(r.answer||'');
+    if(!kws.length) kws = getKeywords(ans);
+  } else {
+    // FIXED MCQ: Validate answer is valid index, or find by text
+    ans = parseInt(r.answer);
+    if(isNaN(ans)){
       var idx=opts.findIndex(function(o){ return String(o).toLowerCase()===String(r.answer||'').toLowerCase(); });
       ans = idx>=0 ? idx : 0;
     }
-    // Clamp to valid range
     if(ans<0 || ans>=opts.length) ans=0;
   }
-  var keywords = r.keywords ? parseOptions(r.keywords) : getKeywords(String(r.answer||''));
-  return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',translations:{},options:opts,answer:ans,explanation:r.explanation||'',keywords:keywords,timer:parseInt(r.timer||0)||0};
+  return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',translations:trans,options:opts,answer:ans,explanation:r.explanation||'',keywords:kws,timer:parseInt(r.timer||0)||0,language:lang};
 }
 function applyTimeSettings(data){
-  // Priority: 1) Admin localStorage 2) Sheet settings 3) DEFAULT QUIZ_TIME_CONFIG
   let fromAdmin = null;
   try{ let ls = JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); if(ls.mcq) fromAdmin = ls; }catch(e){}
   if(fromAdmin){
@@ -486,11 +512,12 @@ async function loadQuestions(){
     var res=await fetch(SHEET_URL+"?type=all&t="+Date.now());
     var data=await res.json();
     applyTimeSettings(data);
+    if(data.analytics) analyticsCache = data.analytics;
     var rows=normalizeRows(data.questions||[]);
     if(!rows.length && Array.isArray(data) ) rows=normalizeRows(data);
     got=rows.map(lowerKeys).map(parseQuestionRow).filter(function(q){return q.question;});
     var qRows=normalizeRows(data.quiz||[]).map(lowerKeys);
-    allQuizResults=qRows.map(function(r){ return {name:r.name, phone:r.phone, score:r.score, total:r.total, percentage:r.percentage, timestamp:r.timestamp||r.date||''}; }).filter(function(r){ return r.phone; });
+    allQuizResults=qRows.map(function(r){ return {name:r.name, phone:r.phone, score:r.score, total:r.total, percentage:r.percentage, timestamp:r.timestamp||r.date||'', language:r.language||'en'}; }).filter(function(r){ return r.phone; });
   }catch(e){ console.log('load all failed', e); }
   if(!got.length){
     try{
@@ -542,14 +569,13 @@ function startQuiz(){
       pool=allQuestions.slice(0, want>0 ? want : 10);
     }
     if(msg) msg.textContent='Loaded '+pool.length+' / '+availBeforeShuffle+' questions for '+topic+(want>0 && availBeforeShuffle<want ? ' (only '+availBeforeShuffle+' exist)' : '');
-    // ===== FIXED MCQ SHUFFLE: Preserve correct answer =====
+    // ===== FIXED MCQ SHUFFLE: Preserve correct answer via index mapping =====
     quizQuestions = pool.map(function(orig){
       var safeOpts=parseOptions(orig.options);
       var isOpen = orig.qtype==='open' || safeOpts.length < 2;
       if(isOpen){
-        return {topic:normTopic(orig.topic), qtype:'open', question:orig.question, translations:orig.translations||{}, options:[], answer:String(orig.answer||''), explanation:orig.explanation||'', keywords:orig.keywords||getKeywords(String(orig.answer||'')), timer:orig.timer||0};
+        return {topic:normTopic(orig.topic), qtype:'open', question:orig.question, translations:orig.translations||{}, options:[], answer:String(orig.answer||''), explanation:orig.explanation||'', keywords:orig.keywords||getKeywords(String(orig.answer||'')), timer:orig.timer||0, language:orig.language||'en'};
       }
-      // Create index map, shuffle indices, then map correct index correctly
       var idx = shuffleArray(safeOpts.map(function(_,i){ return i; }));
       var newOptions = idx.map(function(i){ return safeOpts[i]; });
       var oldCorrect = parseInt(orig.answer);
@@ -557,13 +583,12 @@ function startQuiz(){
       if(oldCorrect<0 || oldCorrect>=safeOpts.length) oldCorrect=0;
       var newCorrect = idx.indexOf(oldCorrect);
       if(newCorrect < 0) newCorrect = 0;
-      // Also shuffle translated options if present, using same idx
       var newOptionsTrans = null;
       if(orig.options_translations && orig.options_translations[currentLang]){
         var transOpts = orig.options_translations[currentLang];
         if(transOpts.length===safeOpts.length) newOptionsTrans = idx.map(function(i){ return transOpts[i]; });
       }
-      return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, translations:orig.translations||{}, options:newOptions, options_translations: newOptionsTrans ? {[currentLang]: newOptionsTrans} : {}, answer:newCorrect, explanation:orig.explanation||'', keywords:orig.keywords||[], timer:orig.timer||0};
+      return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, translations:orig.translations||{}, options:newOptions, options_translations: newOptionsTrans ? {[currentLang]: newOptionsTrans} : {}, answer:newCorrect, explanation:orig.explanation||'', keywords:orig.keywords||[], timer:orig.timer||0, language:orig.language||'en'};
     });
     current=0; score=0; answers=[]; emailAlreadySent=false; selectedMcq=-1; finalSubmitted=false;
     try{ clearInterval(finalSubmitInt); }catch(e){}
@@ -638,21 +663,22 @@ function autoSubmitCurrent(){
     your=userAns; correct=String(q.answer||'');
     var detail = checkOpenAnswerDetailed(userAns, correct, q.keywords);
     isCorrect = detail.correct;
-    keywordInfo = detail.total>0 ? ' | Keywords: '+detail.matched.join(', ')+' ('+detail.matched.length+'/'+detail.total+')' : '';
+    keywordInfo = detail.keywordInfo;
     var fb=document.getElementById('openFeedback');
     if(userAns!=='No Answer (Time Up)'){
-      fb.textContent = isCorrect ? '✅ Correct! Matched: '+detail.matched.join(', ') : '❌ Keywords matched: '+(detail.matched.length+'/'+detail.total)+' — '+detail.matched.join(', ');
+      fb.textContent = isCorrect ? '✅ Correct! Matched: '+detail.matched.join(', ')+' ('+detail.matched.length+'/'+detail.total+')' : '❌ Keywords matched: '+(detail.matched.length+'/'+detail.total)+' — '+detail.matched.join(', ');
       fb.className='feedback show '+(isCorrect?'ok':'bad');
     }
   } else {
     var so=getDisplayOptions(q);
     your = selectedMcq>=0 ? so[selectedMcq] : 'No Answer (Time Up)';
     correct = so[q.answer];
-    // FIXED MCQ CHECK: Strict equality of index, not text
+    // FIXED MCQ CHECK: Strict index equality, not text
     isCorrect = (selectedMcq !== -1 && selectedMcq === parseInt(q.answer));
+    keywordInfo = '';
   }
   if(isCorrect) score++;
-  answers.push({q:getDisplayQuestion(q),qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||'',keywordInfo:keywordInfo});
+  answers.push({q:getDisplayQuestion(q),qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||'',keywordInfo:keywordInfo,language:currentLang});
   setTimeout(function(){
     current++;
     if(current>=quizQuestions.length){ showFinalSubmit(); }
@@ -675,6 +701,32 @@ function showFinalSubmit(){
     else { clearInterval(finalSubmitInt); cd.textContent='Quiz submits in: 0'; finishQuiz(); }
   },1000);
 }
+// ===== AUTO ANALYSIS: Compute from local + server analytics =====
+function buildAutoAnalysis(afterStats, perc, topic, keywordScoreText){
+  var box=document.getElementById('autoAnalysisBox');
+  if(!box) return;
+  var overallAvg = null, bestName = '';
+  if(analyticsCache && analyticsCache.length){
+    var overall = analyticsCache.find(function(a){ return String(a.metric||'').toUpperCase()==='OVERALL'; });
+    if(overall) overallAvg = parseInt(overall.avg||overall.Avg||0);
+    var best = analyticsCache.find(function(a){ return String(a.metric||'').toUpperCase()==='BEST'; });
+    if(best) bestName = best.name || best.Name || '';
+  }
+  var mcqCorrect = answers.filter(function(a){ return a.qtype==='mcq' && a.isCorrect; }).length;
+  var mcqTotal = answers.filter(function(a){ return a.qtype==='mcq'; }).length;
+  var openCorrect = answers.filter(function(a){ return a.qtype==='open' && a.isCorrect; }).length;
+  var openTotal = answers.filter(function(a){ return a.qtype==='open'; }).length;
+  var langLabel={en:'English',sw:'Kiswahili',fr:'Français',la:'Latina'}[currentLang]||currentLang;
+  var html = '<b>📊 AUTO ANALYSIS</b><br>';
+  html += '🌍 Language: <b>'+langLabel+'</b> • 📚 Topic: <b>'+esc(topic)+'</b><br>';
+  html += '🔘 MCQ: <b>'+mcqCorrect+'/'+mcqTotal+'</b> • ✍️ Open: <b>'+openCorrect+'/'+openTotal+'</b> '+(keywordScoreText? '• 🔑 Keywords: <b>'+esc(keywordScoreText)+'</b>':'')+'<br>';
+  html += '👤 Your Avg: <b>'+afterStats.avg+'%</b> • Best: <b>'+afterStats.best+'%</b> • Attempts: <b>'+afterStats.attempts+'</b><br>';
+  if(overallAvg!==null) html += '🌐 Overall Avg (All Students): <b>'+overallAvg+'%</b> • '+(perc>=overallAvg ? '✅ You are ABOVE average!' : '📈 You are BELOW average — keep practicing!')+'<br>';
+  if(bestName) html += '🏆 Top Student: <b>'+esc(bestName)+'</b><br>';
+  html += '<span class="small">'+nextBadgeHint(afterStats)+'</span>';
+  box.innerHTML = html;
+  box.classList.remove('hidden');
+}
 async function finishQuiz(){
   if(finalSubmitted) return; finalSubmitted=true;
   clearInterval(finalSubmitInt);
@@ -688,7 +740,7 @@ async function finishQuiz(){
   var name=document.getElementById('userName').value.trim();
   var beforeStats=getUserStats(phone);
   var beforeIds=getEarnedBadges(beforeStats).map(function(b){return b.id;});
-  var newAttempt={name:name, phone:phone, score:score, total:total, percentage:percText, timestamp:new Date().toISOString().slice(0,10)};
+  var newAttempt={name:name, phone:phone, score:score, total:total, percentage:percText, timestamp:new Date().toISOString().slice(0,10), language:currentLang};
   var afterStats=getUserStats(phone, newAttempt);
   var afterBadges=getEarnedBadges(afterStats);
   var newBadges=afterBadges.filter(function(b){ return !beforeIds.includes(b.id); });
@@ -702,11 +754,20 @@ async function finishQuiz(){
     document.getElementById('newBadgesBox').innerHTML='';
   }
   renderBadgeGrid('myBadgesAfter', afterStats, false);
-  document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
+  document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • Lang: '+currentLang.toUpperCase()+' • '+nextBadgeHint(afterStats);
   var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
   var wrongCount=answers.length-correctCount;
-  document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b>'+(a.keywordInfo?'<br><span style="color:#facc15;font-size:11px">'+esc(a.keywordInfo)+'</span>':'')+'<br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
+  // KeywordScore summary for Sheet
+  var openAns = answers.filter(function(a){ return a.qtype==='open'; });
+  var kwMatched=0, kwTotal=0;
+  openAns.forEach(function(a){
+    var m = String(a.keywordInfo||"").match(/(\d+)\/(\d+)/);
+    if(m){ kwMatched+=parseInt(m[1]); kwTotal+=parseInt(m[2]); }
+  });
+  var keywordScoreText = kwTotal>0 ? kwMatched+"/"+kwTotal+" ("+Math.round((kwMatched/kwTotal)*100)+"%)" : "";
   var topic=normTopic(document.getElementById('topic').value);
+  buildAutoAnalysis(afterStats, perc, topic, keywordScoreText);
+  document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+' • 🌍 '+currentLang.toUpperCase()+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b>'+(a.keywordInfo?'<br><span style="color:#facc15;font-size:11px">🔑 '+esc(a.keywordInfo)+'</span>':'')+'<br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
   var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
   document.getElementById('uploadStatus').textContent='Saving to Google Sheet...';
   var payload={
@@ -722,12 +783,14 @@ async function finishQuiz(){
     wrong:wrongCount,
     badges:badgeNames,
     language:currentLang,
+    lang:currentLang,
+    keywordScore: keywordScoreText,
     answers:JSON.stringify(answers)
   };
   var ok=await postToSheet(payload);
   if(!ok){ ok=await postToSheet(payload); }
-  document.getElementById('uploadStatus').textContent= ok ? 'Saved — Admin can see it in 🧠 Quiz tab' : 'Could not save — check internet, tap Retake and try again';
-  try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,language:currentLang,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
+  document.getElementById('uploadStatus').textContent= ok ? 'Saved — Admin can see it in 🧠 Quiz tab • Lang: '+currentLang.toUpperCase() : 'Could not save — check internet, tap Retake and try again';
+  try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,language:currentLang,keywordScore:keywordScoreText,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
   allQuizResults.push(newAttempt);
   renderLeaderboard();
 }
