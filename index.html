@@ -24,6 +24,10 @@
 <link rel="icon" href="/logo.png">
 <link rel="apple-touch-icon" href="/logo.png">
 <meta name="theme-color" content="#0a1931">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SmartTech">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -40,11 +44,7 @@
   "addressRegion": "Busia County",
   "addressCountry": "KE"
 },
-"areaServed": [
-  "Alupe University area",
-  "Busia Town",
-  "Kenya"
-],
+"areaServed": ["Alupe University area","Busia Town","Kenya"],
   "openingHours": "Mo-Su 07:00-23:00",
   "sameAs": ["https://whatsapp.com/channel/0029Vb8g2IyLdQeduLS5MD3z"]
 }
@@ -88,6 +88,7 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 .action-row{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 .chat-btn, .follow-btn, .install-btn, .notify-btn, .updates-btn{padding:11px 16px;border-radius:24px;font-weight:700;font-size:12px;text-decoration:none;cursor:pointer;border:none;display:flex;align-items:center;gap:6px}
 .chat-btn{background:#00e676;color:white}.follow-btn{background:rgba(10,42,107,0.85);border:1px solid #2a5ab0;color:#7dd3ff}.install-btn{background:#4aa3ff;color:#0a1931;box-shadow:0 0 14px rgba(74,163,255,0.6)}.notify-btn{background:#ff9800;color:white}.updates-btn{background:#8b5cf6;color:white}
+.install-btn.installed{background:#00c853!important;color:#fff!important;box-shadow:0 0 14px rgba(0,200,83,.5)}
 .hidden{display:none!important}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.78);z-index:200;align-items:center;justify-content:center;padding:16px}
 .modal.show{display:flex}
@@ -102,12 +103,10 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 @keyframes slideDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}
 .notify-toast b{color:#ffcc80}
 .notify-item{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:10px}
-/* ===== REFRESH BUTTON - LEFT TOP ===== */
 .refresh-btn{width:40px;height:40px;min-width:40px;background:rgba(255,255,255,.08);border:1px solid #2a5ab0;color:#4aa3ff;border-radius:50%;font-size:22px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .3s}
 .refresh-btn:active{transform:rotate(180deg) scale(.92)}
 .refresh-btn.spinning{animation:spinRefresh .7s linear}
 @keyframes spinRefresh{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-/* ===== WELCOME SPLASH - 12 SECONDS, NO COUNTDOWN ===== */
 #welcomeSplash{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 20%, #0d2a5a 0%, #0a1931 55%, #060f22 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;overflow:hidden;transition:opacity .6s ease, visibility .6s}
 #welcomeSplash.hide{opacity:0;visibility:hidden;pointer-events:none}
 .splash-glow{position:absolute;width:320px;height:320px;background:radial-gradient(circle, rgba(74,163,255,.45), transparent 70%);filter:blur(20px);animation:splashPulse 2s ease-in-out infinite}
@@ -136,7 +135,6 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 @keyframes loadBar{to{width:100%}}
 .splash-btn{margin-top:18px;background:#00e5ff;color:#0a1931;border:none;padding:13px 28px;border-radius:25px;font-weight:900;font-size:15px;cursor:pointer;z-index:2;box-shadow:0 10px 30px rgba(0,229,255,.4)}
 .splash-skip{margin-top:10px;background:none;border:none;color:#8ec8ff;font-size:12px;cursor:pointer;z-index:2;text-decoration:underline}
-/* Interactive feel */
 .book-btn,.quiz-btn,.chat-btn,.follow-btn,.install-btn,.notify-btn,.updates-btn,.how-to-pay,.mpesa-pay-btn{transition:transform .15s ease, box-shadow .15s ease}
 .book-btn:active,.quiz-btn:active,.chat-btn:active,.follow-btn:active,.install-btn:active,.notify-btn:active,.updates-btn:active{transform:scale(.96)}
 .hero-card,.quiz-card,.feed-card{transition:transform .3s ease}
@@ -145,7 +143,6 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
 </style>
 </head>
 <body>
-<!-- WELCOME SPLASH - 12 SEC, NO COUNTDOWN -->
 <div id="welcomeSplash">
   <div class="splash-glow"></div>
   <div class="splash-icons">
@@ -174,7 +171,7 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
   <a href="updates.html" class="menu-item">📢 Updates - Latest Posts</a>
   <a href="booking.html" class="menu-item">📅 BOOK FREE - All Services</a>
   <a href="https://whatsapp.com/channel/0029Vb8g2IyLdQeduLS5MD3z" target="_blank" class="menu-item channel">📢 Follow WhatsApp Channel</a>
-<a href="admin.html" class="menu-item">🔒 Admin Dashboard</a>
+  <a href="admin.html" class="menu-item">🔒 Admin Dashboard</a>
 </div>
 <div class="notify-toast" id="notifyToast">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
@@ -213,11 +210,12 @@ body{background:#0a1931;color:white;min-height:100vh;overflow-x:hidden;position:
     </div>
     <div class="action-row">
       <a href="https://wa.me/254183465547" class="chat-btn">💬 Chat</a>
-      <button id="installBtn" class="install-btn hidden">📲 Install App</button>
+      <button id="installBtn" class="install-btn">📲 Install App</button>
       <a href="updates.html" class="updates-btn">📢 Updates</a>
       <a id="followBtn" href="https://whatsapp.com/channel/0029Vb8g2IyLdQeduLS5MD3z" target="_blank" class="follow-btn" onclick="handleFollow()">📢 Follow</a>
       <button id="notifyBtn" class="notify-btn" onclick="allowNotify()">🔔 Allow Notifications</button>
     </div>
+    <p id="installMsg" style="font-size:11px;color:#8ec8ff;margin-top:8px;min-height:16px"></p>
   </div>
   <div class="quiz-card">
     <h3 style="color:#5ee1ff">🧠 SmartTech Quick Check</h3>
@@ -328,14 +326,62 @@ function closeMenu(){document.getElementById('mobileMenu').classList.remove('ope
 function openPay(){document.getElementById('payModal').classList.add('show');}
 function closePay(){document.getElementById('payModal').classList.remove('show');}
 function copyNum(){navigator.clipboard.writeText('0183465547');alert('Copied: 0183465547');}
-let deferredPrompt=null;const installBtn=document.getElementById('installBtn');
-function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;}
-installBtn.classList.add('hidden');
-if(isStandalone()){localStorage.setItem('appInstalled','true');installBtn.classList.add('hidden');}
-else if(localStorage.getItem('appInstalled')!=='true'){setTimeout(()=>{if(!isStandalone()) installBtn.classList.remove('hidden');},1000);}
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(isStandalone()) return;if(localStorage.getItem('appInstalled')==='true') localStorage.removeItem('appInstalled');installBtn.classList.remove('hidden');});
-installBtn.addEventListener('click',async()=>{if(deferredPrompt){deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted'){localStorage.setItem('appInstalled','true');installBtn.classList.add('hidden');}deferredPrompt=null;}else alert('To install: ⋮ → Add to Home Screen');});
-window.addEventListener('appinstalled',()=>{localStorage.setItem('appInstalled','true');installBtn.classList.add('hidden');deferredPrompt=null;});
+
+// ===== FIXED: Install App Button - Never hides forever =====
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+const installMsg = document.getElementById('installMsg');
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function updateInstallBtn(){
+  if(!installBtn) return;
+  if(isStandalone()){
+    installBtn.classList.remove('hidden');
+    installBtn.classList.add('installed');
+    installBtn.textContent = '✅ App Installed';
+    if(installMsg) installMsg.textContent = 'You are using the installed app ✅';
+    return;
+  }
+  // In browser: ALWAYS show Install button, even if prompt not fired yet
+  installBtn.classList.remove('hidden');
+  installBtn.classList.remove('installed');
+  installBtn.textContent = '📲 Install App';
+  if(installMsg) installMsg.textContent = '';
+}
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  updateInstallBtn();
+});
+if(installBtn){
+  installBtn.addEventListener('click', async ()=>{
+    if(isStandalone()){
+      alert('✅ App is already installed! You are using it now.');
+      return;
+    }
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if(outcome === 'accepted'){
+        if(installMsg) installMsg.textContent = '✅ Installing... Check home screen';
+      } else {
+        if(installMsg) installMsg.textContent = 'Install cancelled. Tap again to install.';
+      }
+      deferredPrompt = null;
+      updateInstallBtn();
+    } else {
+      alert('To install:\n\nAndroid Chrome: Tap ⋮ Menu → Add to Home screen / Install app\n\niPhone Safari: Tap Share → Add to Home Screen');
+      if(installMsg) installMsg.textContent = 'Chrome: ⋮ → Add to Home screen • iPhone: Share → Add to Home Screen';
+    }
+  });
+}
+window.addEventListener('appinstalled', ()=>{
+  deferredPrompt = null;
+  updateInstallBtn();
+});
+updateInstallBtn();
+
 const followBtn=document.getElementById('followBtn');function handleFollow(){localStorage.setItem('channelFollowed','true');followBtn.classList.add('hidden');}if(localStorage.getItem('channelFollowed')) followBtn.classList.add('hidden');
 let currentToastLink='updates.html';
 let unreadCount=0;
@@ -402,18 +448,16 @@ function loadHomeFeed(){
   }).join('');
 }
 loadFromSheet();
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js').catch(()=>{});}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/service-worker.js').then(()=>{console.log('SW registered');}).catch(()=>{});}
 if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('message',e=>{
     if(e.data && e.data.type==='notify'){showToast(e.data); updateBell();}
   });
 }
-// ===== REFRESH BUTTON =====
 function refreshPage(btn){
   if(btn) btn.classList.add('spinning');
   setTimeout(()=>{ location.reload(); }, 250);
 }
-// ===== WELCOME 12 SEC - NO COUNTDOWN =====
 let splashDone=false;
 function enterSite(){
   if(splashDone) return; splashDone=true;
