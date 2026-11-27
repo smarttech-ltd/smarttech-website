@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
 body{background:#0a1931;color:#fff;min-height:100vh}
-.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a}
+.header{background:rgba(10,25,49,.95);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e3a5a;flex-wrap:wrap}
 .header a{color:#4aa3ff;text-decoration:none;font-size:13px;font-weight:700}
 .wrap{max-width:720px;margin:0 auto;padding:14px}
 .card{background:rgba(13,35,90,.92);border:1px solid #2a5ab0;border-radius:18px;padding:14px;margin-bottom:12px}
@@ -42,9 +42,13 @@ pre{white-space:pre-wrap;font-size:12px;color:#c8d6ff;background:rgba(0,0,0,.3);
 .pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px}
 .pill-mcq{background:#00e5ff;color:#0a1931}.pill-open{background:#facc15;color:#0a1931}
 .badge-chip{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:800;background:rgba(250,204,21,.18);border:1px solid #facc15;color:#ffe27a;margin:2px}
+.keyword-chip{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(0,229,255,.15);border:1px dashed #00e5ff;color:#c8e6ff;margin:2px}
 table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
 th,td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
 th{color:#facc15;font-size:11px}
+.lang-select{background:rgba(255,255,255,.1);border:1px solid #2a5ab0;color:#fff;padding:6px 8px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;outline:none}
+.lang-select option{color:#000}
+.time-badge{background:rgba(250,204,21,.12);border:1px solid #facc15;border-radius:10px;padding:8px;text-align:center;font-size:12px;color:#facc15;font-weight:700;margin:8px 0}
 .pdf-watermark{display:none}
 .pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
 @media print{
@@ -58,7 +62,7 @@ th{color:#facc15;font-size:11px}
   .small{color:#333!important}
   th{color:#000!important}
   td{color:#000!important}
-  .badge-chip{background:#fff!important;color:#000!important;border:1px solid #999!important}
+  .badge-chip,.keyword-chip{background:#fff!important;color:#000!important;border:1px solid #999!important}
   #tab-analytics{display:block!important}
   #tab-overview,#tab-bookings,#tab-quiz,#tab-posts,#tab-questions,#tab-notify,#tab-recycle{display:none!important}
   .pdf-watermark{display:block!important;position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;width:78%!important;max-width:420px!important;opacity:.10!important;z-index:0!important;pointer-events:none!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -67,8 +71,13 @@ th{color:#facc15;font-size:11px}
 </head>
 <body>
 <div class="pdf-watermark"><img src="logo.png" alt=""></div>
-<div class="header"><a href="index.html">← Home</a><b>🔒 SmartTech Admin</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="connStatus">🔄 Loading...</span></div>
+<div class="header"><a href="index.html">← <span data-i18n="home">Home</span></a><b>🔒 SmartTech Admin</b>
+<select id="adminLang" class="lang-select" onchange="setAdminLang(this.value)" style="margin-left:auto">
+<option value="en">🌍 English</option><option value="sw">🇰🇪 Kiswahili</option><option value="fr">🇫🇷 Français</option><option value="la">🏛️ Latina</option>
+</select>
+<span style="font-size:11px;color:#8ec8ff" id="connStatus">🔄 Loading...</span></div>
 <div class="wrap">
+<div class="time-badge" id="adminTimeBadge">⏱️ MCQ: 45s • Open: 90s • Default Time</div>
 <div class="stats">
 <div class="stat"><b id="cBookings">0</b><span>Bookings</span></div>
 <div class="stat"><b id="cQuiz">0</b><span>Quiz Results</span></div>
@@ -89,7 +98,9 @@ th{color:#facc15;font-size:11px}
 </div>
 <button class="btn btn-ghost no-print" onclick="loadAll(true)" style="margin-bottom:12px">🔄 Refresh All</button>
 <div id="tab-overview">
-<div class="card"><h3 style="color:#5ee1ff">Quick Actions</h3><div class="row" style="margin-top:10px"><a href="admin-notify.html" style="flex:1;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">🔔 Send Notification</a><a href="updates.html" style="flex:1;background:#4aa3ff;color:#0a1931;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">📢 View Updates</a></div></div>
+<div class="card"><h3 style="color:#5ee1ff">Quick Actions</h3><div class="row" style="margin-top:10px"><a href="admin-notify.html" style="flex:1;background:#ff9800;color:#fff;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">🔔 Send Notification</a><a href="updates.html" style="flex:1;background:#4aa3ff;color:#0a1931;padding:12px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;font-size:13px">📢 View Updates</a></div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" onclick="exportQuizCSV()">📥 Export Quiz CSV</button><button class="btn btn-ghost" onclick="exportBookingsCSV()">📥 Export Bookings CSV</button></div>
+</div>
 <div class="card"><h3 style="color:#5ee1ff">🏆 Top Learners (Badges)</h3><div id="overviewTop" style="margin-top:10px"></div></div>
 <div class="card"><h3 style="color:#5ee1ff">Latest Bookings</h3><div id="overviewBookings" style="margin-top:10px"></div></div>
 <div class="card"><h3 style="color:#5ee1ff">Latest Quiz Results + Scores</h3><div id="overviewQuiz" style="margin-top:10px"></div></div>
@@ -103,7 +114,13 @@ th{color:#facc15;font-size:11px}
 <div id="bookingsList"></div>
 </div>
 <div id="tab-quiz" class="hidden">
-<div class="card"><h3 style="color:#5ee1ff">🧠 All Quiz Results + Scores + Badges</h3><input id="searchQuiz" class="input" style="margin-top:10px" placeholder="🔍 Search name / topic / phone..." oninput="renderQuiz()"><div class="row"><button class="btn btn-ghost" onclick="loadAll(true)">🔄 Refresh</button><button class="btn btn-red" onclick="clearSheet('Quiz')">🗑️ Delete All Quiz</button></div></div>
+<div class="card"><h3 style="color:#5ee1ff">🧠 All Quiz Results + Scores + Badges</h3>
+<input id="searchQuiz" class="input" style="margin-top:10px" placeholder="🔍 Search name / topic / phone..." oninput="renderQuiz()">
+<div class="row">
+<select id="filterQuizLang" class="input" style="margin:0" onchange="renderQuiz()"><option value="">🌍 All Languages</option><option value="en">🇬🇧 English</option><option value="sw">🇰🇪 Kiswahili</option><option value="fr">🇫🇷 Français</option><option value="la">🏛️ Latina</option></select>
+<select id="filterQuizTopic" class="input" style="margin:0" onchange="renderQuiz()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
+</div>
+<div class="row" style="margin-top:8px"><button class="btn btn-ghost" onclick="loadAll(true)">🔄 Refresh</button><button class="btn btn-green" onclick="exportQuizCSV()">📥 Export CSV</button><button class="btn btn-red" onclick="clearSheet('Quiz')">🗑️ Delete All Quiz</button></div></div>
 <div id="quizList"></div>
 </div>
 <div id="tab-posts" class="hidden">
@@ -119,8 +136,8 @@ th{color:#facc15;font-size:11px}
 </div>
 <div id="tab-questions" class="hidden">
 <div class="card" style="border:2px solid #00e5ff">
-<h3 style="color:#00e5ff">⏱️ Quiz Time Settings</h3>
-<p class="small">Set time per question. Max 3 mins (180 secs). Applies to ALL new quizzes. Per-question timer (from single / bulk add) still overrides if you set it.</p>
+<h3 style="color:#00e5ff">⏱️ Quiz Time Settings — Modify or Use Default</h3>
+<p class="small">Set time per question. Max 3 mins (180 secs). Applies to ALL new quizzes. Per-question timer still overrides if you set it. If you don't save, DEFAULT 45s / 90s is used.</p>
 <label class="small">Multiple Choice Time (seconds) — Default 45s</label>
 <input id="settingMcqTime" class="input" type="number" min="5" max="180" value="45" placeholder="45">
 <label class="small">Open Ended Time (seconds) — Default 90s = 1 min 30s</label>
@@ -132,18 +149,36 @@ th{color:#facc15;font-size:11px}
 <p class="small" id="timeSettingMsg" style="margin-top:8px"></p>
 <p class="small">Current: <span id="timeSettingCurrent">MCQ 45s • Open 1 min 30s</span></p>
 </div>
-<div class="card"><h3 style="color:#5ee1ff">❓ Add New Quiz Question</h3>
+<div class="card" style="border:2px solid #00e5ff"><h3 style="color:#5ee1ff">❓ Add New Quiz Question — MCQ / Open + Keywords + Languages</h3>
 <select id="qTopic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
+<select id="qTypeSel" class="input" onchange="toggleQType()"><option value="mcq">🔘 Multiple Choice (MCQ)</option><option value="open">✍️ Open Ended (Keyword Marked)</option></select>
 <input id="qText" class="input" placeholder="Question e.g. What does CPU stand for?">
+<div id="mcqFields">
 <input id="qA" class="input" placeholder="Option A"><input id="qB" class="input" placeholder="Option B"><input id="qC" class="input" placeholder="Option C"><input id="qD" class="input" placeholder="Option D">
 <select id="qAnswer" class="input"><option value="0">Correct = Option A</option><option value="1">Correct = Option B</option><option value="2">Correct = Option C</option><option value="3">Correct = Option D</option></select>
-<input id="qExplain" class="input" placeholder="Explanation"><input id="qTimer" class="input" type="number" min="5" max="180" value="45" placeholder="Timer in seconds (5-180, blank = use Time Settings above)">
+</div>
+<div id="openFields" class="hidden">
+<input id="qOpenAnswer" class="input" placeholder="Correct Answer e.g. Random Access Memory">
+<input id="qKeywords" class="input" placeholder="Keywords (comma separated) e.g. random, access, memory — Quiz marks on these!">
+<p class="small">💡 Open questions are marked if student types ≥60% of keywords. Leave blank = auto-generate keywords from answer.</p>
+</div>
+<input id="qExplain" class="input" placeholder="Explanation">
+<input id="qTimer" class="input" type="number" min="5" max="180" value="" placeholder="Timer in seconds (5-180, blank = use Time Settings above)">
+<details><summary>🌍 Translations — Optional (SW / FR / LA)</summary>
+<input id="qTransSW" class="input" placeholder="Kiswahili: e.g. CPU inasimama kwa nini?" style="margin-top:8px">
+<input id="qTransFR" class="input" placeholder="Français: e.g. Que signifie CPU ?">
+<input id="qTransLA" class="input" placeholder="Latina: e.g. Quid significat CPU?">
+<input id="qTransOptsSW" class="input" placeholder="SW Options: A | B | C | D (separate with | )">
+<input id="qTransOptsFR" class="input" placeholder="FR Options: A | B | C | D">
+<input id="qTransOptsLA" class="input" placeholder="LA Options: A | B | C | D">
+<p class="small">If blank, quiz shows English question. Client chooses language on quiz page.</p>
+</details>
 <button class="btn" onclick="createQuestion()">➕ Add Question</button><p class="small" id="qMsg" style="margin-top:8px"></p></div>
 <div class="card" style="border:2px solid #facc15">
 <h3 style="color:#facc15">📋 Paste 50 Questions At Once</h3>
 <p class="small">Mixture of MCQ + Open Ended allowed. Pick Topic above, then paste below. If you don't set Timer in bulk, it will use Time Settings above (MCQ 45s / Open 90s).</p>
 <select id="bulkTopic" class="input"><option value="__USE_MAIN__">Use Topic Above ↑</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select>
-<textarea id="bulkText" class="textarea" style="min-height:220px" placeholder="Paste here e.g.&#10;&#10;1. What does CPU stand for?&#10;A) Central Processing Unit&#10;B) Computer Personal Unit&#10;C) Central Program Unit&#10;D) Central Printer Unit&#10;Answer: A&#10;Explanation: CPU is the brain&#10;&#10;2. What is 2+2?&#10;Answer: 4&#10;Type: Open"></textarea>
+<textarea id="bulkText" class="textarea" style="min-height:220px" placeholder="Paste here e.g.&#10;&#10;1. What does CPU stand for?&#10;A) Central Processing Unit&#10;B) Computer Personal Unit&#10;C) Central Program Unit&#10;D) Central Printer Unit&#10;Answer: A&#10;Explanation: CPU is the brain&#10;Keywords: central, processing, unit&#10;&#10;2. What is 2+2?&#10;Answer: 4&#10;Type: Open"></textarea>
 <div class="row"><button class="btn btn-ghost" onclick="previewBulk()">👀 Preview Parsed</button><button class="btn" style="background:#facc15;color:#0a1931" onclick="useSample()">📄 Load Sample</button></div>
 <button class="btn btn-green" style="margin-top:8px" onclick="addBulkQuestions()">🚀 Add ALL Parsed Questions</button>
 <p class="small" id="bulkMsg" style="margin-top:8px"></p><div id="bulkPreview" style="margin-top:8px"></div>
@@ -157,7 +192,7 @@ th{color:#facc15;font-size:11px}
 </div>
 <div id="tab-analytics" class="hidden">
 <div class="card"><h3 style="color:#facc15">📊 Quiz Analytics — Overall Analysis</h3><p class="small">Best / Least = OVERALL across ALL topics. Topic filter only filters the Attempts list at the bottom. Overall Avg = Total Correct / Total Questions.</p>
-<div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
+<div class="row" style="margin-top:10px"><select id="analyticsTopic" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">All Topics</option><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option></select><select id="analyticsLang" class="input" style="margin:0" onchange="renderAnalytics()"><option value="">🌍 All Languages</option><option value="en">English</option><option value="sw">Kiswahili</option><option value="fr">Français</option><option value="la">Latina</option></select><button class="btn" style="background:#facc15;color:#0a1931" onclick="downloadAnalyticsPDF()">📄 Download Analytics as PDF</button></div>
 <p class="small">On phone: Tap Download → Choose Save as PDF. Tick Background graphics ON to see logo watermark.</p></div>
 <div id="analyticsContent"></div>
 </div>
@@ -171,6 +206,12 @@ th{color:#facc15;font-size:11px}
 if(localStorage.getItem('smarttech_admin')!=='true' && localStorage.getItem('isAdmin')!=='true'){ location.href='admin.html'; }
 function logout(){ localStorage.removeItem('smarttech_admin'); localStorage.removeItem('isAdmin'); location.href='admin.html'; }
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
+const QUIZ_DEFAULTS={MCQ:45, OPEN:90};
+const ADMIN_I18N={
+en:{home:"Home"}, sw:{home:"Nyumbani"}, fr:{home:"Accueil"}, la:{home:"Domus"}
+};
+let adminLang = localStorage.getItem('smarttech_admin_lang') || 'en';
+function setAdminLang(lang){ adminLang=lang; localStorage.setItem('smarttech_admin_lang', lang); document.getElementById('adminLang').value=lang; document.querySelectorAll('[data-i18n]').forEach(el=>{ let k=el.getAttribute('data-i18n'); if(ADMIN_I18N[lang]&&ADMIN_I18N[lang][k]) el.textContent=ADMIN_I18N[lang][k]; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function lowerKeys(r){ var o={}; Object.keys(r||{}).forEach(function(k){ o[String(k).toLowerCase().trim()]=r[k]; }); return o; }
 function normalizeRows(data){
@@ -183,24 +224,9 @@ function normalizeRows(data){
 function isDoneStatus(x){ return String(x.status||'').toLowerCase()==='done'; }
 function cleanPhone(p){ var d=String(p||'').replace(/\D/g,''); if(d.startsWith('254')) return '0'+d.slice(3); if(d.length===9) return '0'+d; return d; }
 var KNOWN_TOPICS=['Computer Basics','MS Word','MS Excel','Internet Safety','Computer Packages','ICT Basics','All Topics'];
-function cleanTopic(t){
-  var s=String(t||'').trim();
-  if(!s) return 'Unknown';
-  var f=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s.toLowerCase(); });
-  if(f) return f;
-  if(/^\d+(\.\d+)?%?$/.test(s)) return 'Unknown';
-  return s;
-}
+function cleanTopic(t){ var s=String(t||'').trim(); if(!s) return 'Unknown'; var f=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s.toLowerCase(); }); if(f) return f; if(/^\d+(\.\d+)?%?$/.test(s)) return 'Unknown'; return s; }
 function isValidTopic(t){ return KNOWN_TOPICS.indexOf(cleanTopic(t))>=0; }
-function getPerc(x){
-  var s=parseFloat(x.score); var t=parseFloat(x.total);
-  if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100);
-  var raw=x.percentage; if(raw===undefined||raw===null||raw==='') return 0;
-  var p=parseFloat(String(raw).replace('%','').trim()); if(isNaN(p)) return 0;
-  if(typeof raw==='number' && p>=0 && p<=1) return Math.round(p*100);
-  if(String(raw).indexOf('.')>=0 && p>=0 && p<=1 && String(raw).indexOf('%')===-1) return Math.round(p*100);
-  return Math.round(p);
-}
+function getPerc(x){ var s=parseFloat(x.score); var t=parseFloat(x.total); if(!isNaN(s) && !isNaN(t) && t>0) return Math.round((s/t)*100); var raw=x.percentage; if(raw===undefined||raw===null||raw==='') return 0; var p=parseFloat(String(raw).replace('%','').trim()); if(isNaN(p)) return 0; if(typeof raw==='number' && p>=0 && p<=1) return Math.round(p*100); if(String(raw).indexOf('.')>=0 && p>=0 && p<=1 && String(raw).indexOf('%')===-1) return Math.round(p*100); return Math.round(p); }
 function fmtTimeAdmin(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
 function normalizeQuizRow(r){
   var o=lowerKeys(r);
@@ -216,18 +242,11 @@ function normalizeQuizRow(r){
     var realTopic=vals.find(function(v){ return isValidTopic(v); })||'';
     var date=vals.find(function(v){ return /^\d{4}-\d{2}-\d{2}/.test(String(v||'')); })||o.timestamp||o.date||'';
     var answers=vals.find(function(v){ return String(v||'').trim().startsWith('[{'); })||'';
-    var realName=vals.find(function(v){
-      var s=String(v||'').trim();
-      if(!s || /^id\d+/i.test(s) || s.includes('@') || s.startsWith('[{') || /^\d{4}-\d{2}-\d{2}/.test(s) || /^(0\d{9}|254\d{9})$/.test(s.replace(/\D/g,'')) || isValidTopic(s) || /^\d+(\.\d+)?%?$/.test(s) || s.length>60) return false;
-      return true;
-    })||name||'(Unknown)';
+    var realName=vals.find(function(v){ var s=String(v||'').trim(); if(!s || /^id\d+/i.test(s) || s.includes('@') || s.startsWith('[{') || /^\d{4}-\d{2}-\d{2}/.test(s) || /^(0\d{9}|254\d{9})$/.test(s.replace(/\D/g,'')) || isValidTopic(s) || /^\d+(\.\d+)?%?$/.test(s) || s.length>60) return false; return true; })||name||'(Unknown)';
     var s=parseInt(scoreRaw), t=parseInt(totalRaw);
-    if(isNaN(s)||isNaN(t)||t<=0||s<0||s>t){
-      var nums=vals.map(function(v){ var n=parseFloat(v); return isNaN(n)?null:n; }).filter(function(n){ return n!==null && n>=0 && n<=100 && Number.isInteger(n); });
-      if(nums.length>=2){ t=nums[nums.length-1]; s=nums[nums.length-2]; if(s>t){ var tmp=s; s=t; t=tmp; } } else { s=0; t=0; }
-    }
+    if(isNaN(s)||isNaN(t)||t<=0||s<0||s>t){ var nums=vals.map(function(v){ var n=parseFloat(v); return isNaN(n)?null:n; }).filter(function(n){ return n!==null && n>=0 && n<=100 && Number.isInteger(n); }); if(nums.length>=2){ t=nums[nums.length-1]; s=nums[nums.length-2]; if(s>t){ var tmp=s; s=t; t=tmp; } } else { s=0; t=0; } }
     var perc=t? Math.round((s/t)*100)+'%':'0%';
-    return {id:o.id||'', name:realName, phone:phone, email:email, topic:realTopic||'Unknown', score:isNaN(s)?0:s, total:isNaN(t)?0:t, percentage:perc, correct:isNaN(s)?0:s, wrong:(isNaN(t)||isNaN(s))?0:Math.max(0,t-s), badges:o.badges||'', answers:answers, timestamp:date, _broken:(!phone && !realTopic)?true:false};
+    return {id:o.id||'', name:realName, phone:phone, email:email, topic:realTopic||'Unknown', score:isNaN(s)?0:s, total:isNaN(t)?0:t, percentage:perc, correct:isNaN(s)?0:s, wrong:(isNaN(t)||isNaN(s))?0:Math.max(0,t-s), badges:o.badges||'', language:o.language||'en', answers:answers, timestamp:date, _broken:(!phone && !realTopic)?true:false};
   }
   var s2=parseInt(o.score||0), t2=parseInt(o.total||0);
   var correct=(o.correct!==undefined && o.correct!=='')?parseInt(o.correct):s2;
@@ -235,26 +254,21 @@ function normalizeQuizRow(r){
   if(isNaN(correct)) correct=s2; if(isNaN(wrong)) wrong=Math.max(0,t2-correct);
   var perc2=t2? Math.round((s2/t2)*100)+'%':'0%';
   var answers2=o.answers||o.detailedanswers||o['detailed answers']||'';
-  return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:topic, score:s2, total:t2, percentage:perc2, correct:correct, wrong:wrong, badges:o.badges||'', answers:answers2, timestamp:o.timestamp||o.date||'', _broken:false};
+  return {id:o.id||'', name:o.name||'', phone:o.phone||'', email:o.email||'', topic:topic, score:s2, total:t2, percentage:perc2, correct:correct, wrong:wrong, badges:o.badges||'', language:(o.language||'en').toLowerCase(), answers:answers2, timestamp:o.timestamp||o.date||'', _broken:false};
 }
 function getAnswersForQuiz(x){
   var byId=(D.quizAnswers||[]).filter(function(a){ var qid=String(a.quizid||a.quizId||a['quiz id']||'').trim(); return qid && qid===String(x.id||'').trim(); });
   if(byId.length){ byId.sort(function(a,b){ return parseInt(a.qno||a.qNo||0)-parseInt(b.qno||b.qNo||0); }); return byId.map(function(a){ return {q:a.question||'', yourAnswer:a.youranswer||a['your answer']||'', correctAnswer:a.correctanswer||a['correct answer']||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; }); }
-  var byPhone=(D.quizAnswers||[]).filter(function(a){ return cleanPhone(a.phone||'')===cleanPhone(x.phone||'') && String(a.timestamp||'').slice(0,16)===String(x.timestamp||'').slice(0,16); });
-  if(byPhone.length){ byPhone.sort(function(a,b){ return parseInt(a.qno||0)-parseInt(b.qno||0); }); return byPhone.map(function(a){ return {q:a.question||'', yourAnswer:a.youranswer||'', correctAnswer:a.correctanswer||'', isCorrect:String(a.result||'').toLowerCase()==='correct', explanation:a.explanation||''}; }); }
   try{ var d=JSON.parse(x.answers||'[]'); if(Array.isArray(d)) return d; }catch(e){}
   return [];
 }
-function studentKey(r){
-  var p=cleanPhone(r.phone||''); if(p) return 'phone:'+p;
-  var n=String(r.name||'').toLowerCase().trim();
-  if(n && n!=='(unknown)' && n!=='(shifted row - see phone)') return 'name:'+n;
-  return '';
-}
-function getTimeSettings(){ try{ var s=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); var mcq=(s.mcq>=5&&s.mcq<=180)?s.mcq:45; var open=(s.open>=5&&s.open<=180)?s.open:90; return {mcq:mcq, open:open}; }catch(e){ return {mcq:45, open:90}; } }
-function loadTimeSettingsUI(){ var s=getTimeSettings(); var m=document.getElementById('settingMcqTime'); if(m) m.value=s.mcq; var o=document.getElementById('settingOpenTime'); if(o) o.value=s.open; var c=document.getElementById('timeSettingCurrent'); if(c) c.textContent='MCQ '+s.mcq+'s • Open '+fmtTimeAdmin(s.open); var qt=document.getElementById('qTimer'); if(qt) qt.placeholder='Timer (5-180, blank = MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open)+')'; }
+function studentKey(r){ var p=cleanPhone(r.phone||''); if(p) return 'phone:'+p; var n=String(r.name||'').toLowerCase().trim(); if(n && n!=='(unknown)') return 'name:'+n; return ''; }
+// ===== FIXED TIME SETTINGS: MODIFY OR USE DEFAULT =====
+function getTimeSettings(){ try{ var s=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); var mcq=(s.mcq>=5&&s.mcq<=180)?s.mcq:QUIZ_DEFAULTS.MCQ; var open=(s.open>=5&&s.open<=180)?s.open:QUIZ_DEFAULTS.OPEN; return {mcq:mcq, open:open}; }catch(e){ return {mcq:QUIZ_DEFAULTS.MCQ, open:QUIZ_DEFAULTS.OPEN}; } }
+function loadTimeSettingsUI(){ var s=getTimeSettings(); var m=document.getElementById('settingMcqTime'); if(m) m.value=s.mcq; var o=document.getElementById('settingOpenTime'); if(o) o.value=s.open; var c=document.getElementById('timeSettingCurrent'); if(c) c.textContent='MCQ '+s.mcq+'s • Open '+fmtTimeAdmin(s.open); var qt=document.getElementById('qTimer'); if(qt) qt.placeholder='Timer (5-180, blank = MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open)+')'; var ab=document.getElementById('adminTimeBadge'); if(ab){ var isCustom = localStorage.getItem('smarttech_time_settings') ? 'Custom (Admin)' : 'Default'; ab.textContent='⏱️ MCQ: '+s.mcq+'s • Open: '+fmtTimeAdmin(s.open)+' • '+isCustom+' Time'; } }
 async function saveTimeSettings(){ var mcq=parseInt(document.getElementById('settingMcqTime').value); var open=parseInt(document.getElementById('settingOpenTime').value); if(isNaN(mcq)||mcq<5||mcq>180){ alert('MCQ time must be 5 to 180 seconds (max 3 mins)'); return; } if(isNaN(open)||open<5||open>180){ alert('Open time must be 5 to 180 seconds (max 3 mins)'); return; } localStorage.setItem('smarttech_time_settings', JSON.stringify({mcq:mcq, open:open})); document.getElementById('timeSettingCurrent').textContent='MCQ '+mcq+'s • Open '+fmtTimeAdmin(open); document.getElementById('timeSettingMsg').textContent='✅ Saved! Quiz will now use MCQ '+mcq+'s / Open '+fmtTimeAdmin(open); try{ await postToSheet({type:'settings', mcqTime:mcq, openTime:open, mcq:mcq, open:open}); }catch(e){} loadTimeSettingsUI(); }
-async function resetTimeSettings(){ if(!confirm('Reset to default? MCQ 45s / Open 90s (1 min 30s)')) return; document.getElementById('settingMcqTime').value=45; document.getElementById('settingOpenTime').value=90; await saveTimeSettings(); document.getElementById('timeSettingMsg').textContent='✅ Reset to Default: MCQ 45s • Open 1 min 30s'; }
+async function resetTimeSettings(){ if(!confirm('Reset to default? MCQ 45s / Open 90s (1 min 30s)')) return; localStorage.removeItem('smarttech_time_settings'); document.getElementById('settingMcqTime').value=QUIZ_DEFAULTS.MCQ; document.getElementById('settingOpenTime').value=QUIZ_DEFAULTS.OPEN; await saveTimeSettings(); document.getElementById('timeSettingMsg').textContent='✅ Reset to Default: MCQ 45s • Open 1 min 30s'; }
+function toggleQType(){ var t=document.getElementById('qTypeSel').value; document.getElementById('mcqFields').classList.toggle('hidden', t!=='mcq'); document.getElementById('openFields').classList.toggle('hidden', t!=='open'); }
 const BADGES=[
 { id:'newcomer', emoji:'🌱', name:'Newcomer', check:function(s){ return s.attempts>=1; }},
 { id:'regular', emoji:'🔥', name:'Regular', check:function(s){ return s.attempts>=3; }},
@@ -267,26 +281,7 @@ const BADGES=[
 { id:'perfect', emoji:'🎯', name:'Perfect', check:function(s){ return s.best===100; }},
 { id:'streak7', emoji:'📅', name:'7-Day Streak', check:function(s){ return s.days>=7; }},
 ];
-function computeStudentStats(rows){
-  var listInput=rows||D.quiz;
-  var byKey={};
-  listInput.forEach(function(r){
-    if(parseInt(r.total||0)<=0) return;
-    var k=studentKey(r); if(!k) return;
-    if(!byKey[k]) byKey[k]={name:r.name||'Student', phone:r.phone||'', attempts:0, totalPerc:0, totalScore:0, totalQs:0, best:0, worst:100, daysSet:{}, topics:{}};
-    var perc=getPerc(r);
-    byKey[k].attempts++; byKey[k].totalPerc+=perc; byKey[k].totalScore+=parseInt(r.score||0); byKey[k].totalQs+=parseInt(r.total||0);
-    if(perc>byKey[k].best) byKey[k].best=perc;
-    if(perc<byKey[k].worst) byKey[k].worst=perc;
-    if((!byKey[k].name || byKey[k].name==='(Unknown)') && r.name) byKey[k].name=r.name;
-    if(!byKey[k].phone && r.phone) byKey[k].phone=r.phone;
-    var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byKey[k].daysSet[d]=true;
-    var t=r.topic||'Unknown'; byKey[k].topics[t]=(byKey[k].topics[t]||0)+1;
-  });
-  var list=Object.values(byKey).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; if(u.worst===100) u.worst=0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1]:null; return u; });
-  list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; });
-  return list;
-}
+function computeStudentStats(rows){ var listInput=rows||D.quiz; var byKey={}; listInput.forEach(function(r){ if(parseInt(r.total||0)<=0) return; var k=studentKey(r); if(!k) return; if(!byKey[k]) byKey[k]={name:r.name||'Student', phone:r.phone||'', attempts:0, totalPerc:0, totalScore:0, totalQs:0, best:0, worst:100, daysSet:{}, topics:{}}; var perc=getPerc(r); byKey[k].attempts++; byKey[k].totalPerc+=perc; byKey[k].totalScore+=parseInt(r.score||0); byKey[k].totalQs+=parseInt(r.total||0); if(perc>byKey[k].best) byKey[k].best=perc; if(perc<byKey[k].worst) byKey[k].worst=perc; if((!byKey[k].name || byKey[k].name==='(Unknown)') && r.name) byKey[k].name=r.name; if(!byKey[k].phone && r.phone) byKey[k].phone=r.phone; var d=String(r.timestamp||'').split(' ')[0].split('T')[0]; if(d) byKey[k].daysSet[d]=true; var t=r.topic||'Unknown'; byKey[k].topics[t]=(byKey[k].topics[t]||0)+1; }); var list=Object.values(byKey).map(function(u){ u.avg=u.attempts? Math.round(u.totalPerc/u.attempts):0; if(u.worst===100) u.worst=0; u.days=Object.keys(u.daysSet).length; u.badges=BADGES.filter(function(b){ return b.check(u); }); u.topBadge=u.badges.length? u.badges[u.badges.length-1]:null; return u; }); list.sort(function(a,b){ if(b.attempts!==a.attempts) return b.attempts-a.attempts; return b.avg-a.avg; }); return list; }
 function badgeChips(u){ if(!u.badges || !u.badges.length) return '<span class="small">No badge yet</span>'; return u.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join(''); }
 function bookingKey(x){ var name=String(x.name||x.title||'').toLowerCase().trim(); var phone=String(x.phone||'').replace(/\D/g,'').slice(-9); if(x.id) return 'id:'+String(x.id).trim(); return name+'|'+phone; }
 function getDoneMap(){ try{ return JSON.parse(localStorage.getItem('smarttech_done_map_v2')||'{}'); }catch(e){ return {}; } }
@@ -296,12 +291,12 @@ function savePendingMap(m){ localStorage.setItem('smarttech_pending_map_v2', JSO
 function setDoneRetained(x, done){ var m=getDoneMap(); var p=getPendingMap(); var k=bookingKey(x); if(done){ m[k]=true; delete p[k]; } else { delete m[k]; } saveDoneMap(m); savePendingMap(p); }
 function setPendingRetained(x){ var m=getDoneMap(); var p=getPendingMap(); var k=bookingKey(x); p[k]=true; delete m[k]; saveDoneMap(m); savePendingMap(p); }
 function clearPendingRetained(x){ var p=getPendingMap(); delete p[bookingKey(x)]; savePendingMap(p); }
-function applyRetained(){ var doneMap=getDoneMap(); var pendingMap=getPendingMap(); var oldDone={}; try{ oldDone=JSON.parse(localStorage.getItem('smarttech_done_map')||'{}'); }catch(e){} D.bookings.forEach(function(b){ var k=bookingKey(b); if(pendingMap[k]===true){ b.status='Pending'; return; } if(doneMap[k]===true){ b.status='Done'; return; } for(var oldK in oldDone){ if(oldDone[oldK]===true){ var parts=String(oldK).split('|'); var oldName=(parts[0]||'').toLowerCase().trim(); var oldPhone=String(parts[1]||'').replace(/\D/g,'').slice(-9); var curName=String(b.name||'').toLowerCase().trim(); var curPhone=String(b.phone||'').replace(/\D/g,'').slice(-9); if(oldName && oldName===curName && oldPhone && oldPhone===curPhone){ b.status='Done'; setDoneRetained(b,true); break; } } } }); }
+function applyRetained(){ var doneMap=getDoneMap(); var pendingMap=getPendingMap(); D.bookings.forEach(function(b){ var k=bookingKey(b); if(pendingMap[k]===true){ b.status='Pending'; return; } if(doneMap[k]===true){ b.status='Done'; return; } }); }
 function getRecycle(){ try{ return JSON.parse(localStorage.getItem('smarttech_recycle')||'[]'); }catch(e){ return []; } }
 function saveRecycle(arr){ localStorage.setItem('smarttech_recycle', JSON.stringify(arr)); document.getElementById('recycleCount').textContent=arr.length; }
 function addToRecycle(type, item){ var arr=getRecycle(); arr.unshift({type:type, item:item, deletedAt:new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'})}); saveRecycle(arr); }
 function renderRecycle(){ var arr=getRecycle(); document.getElementById('recycleCount').textContent=arr.length; var el=document.getElementById('recycleList'); if(!arr.length){ el.innerHTML='<div class="card">Recycle Bin is empty.</div>'; return; } el.innerHTML=arr.map(function(r,idx){ var x=r.item||{}; var title = r.type==='Bookings' ? (x.name||'')+' • '+(x.phone||'')+' • '+(x.service||'') : r.type==='Quiz' ? (x.name||'')+' • '+(x.topic||'')+' • '+x.score+'/'+x.total : r.type==='Posts' ? (x.title||'')+' • '+(x.caption||'') : (x.name||x.title||JSON.stringify(x).slice(0,80)); return '<div class="item"><b>🗑️ '+esc(r.type)+'</b> <span class="small">Deleted: '+esc(r.deletedAt)+'</span><br>'+esc(title)+'<br><span class="small">'+esc(x.timestamp||'')+'</span><br><div style="display:flex;gap:6px;margin-top:10px"><button class="btn-small" style="background:#00c853" onclick="restoreRecycle('+idx+')">♻️ Restore</button><button class="btn-small" style="background:#ff5252" onclick="deleteForeverRecycle('+idx+')">🗑️ Delete Forever</button></div></div>'; }).join(''); }
-async function restoreRecycle(idx){ var arr=getRecycle(); var r=arr[idx]; if(!r) return; var x=r.item; if(r.type==='Bookings'){ D.bookings.push(x); await postToSheet({type:'booking',name:x.name,phone:x.phone,email:x.email,service:x.service,message:x.message||x.details,dateWanted:x['date wanted']||x.date}); if(String(x.status||'').toLowerCase()==='done') setDoneRetained(x,true); } else if(r.type==='Quiz'){ D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,correct:x.correct, wrong:x.wrong, badges:x.badges, answers:x.answers}); } else if(r.type==='Posts'){ D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext}); } else if(r.type==='Questions'){ D.questions.push(x); await postToSheet({type:'question',topic:x.topic,question:x.question||x.q,qtype:x.qtype||x.type,options:x.options,answer:x.answer,explanation:x.explanation||'',timer:x.timer||30}); } arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderOverview(); renderAnalytics(); }
+async function restoreRecycle(idx){ var arr=getRecycle(); var r=arr[idx]; if(!r) return; var x=r.item; if(r.type==='Bookings'){ D.bookings.push(x); await postToSheet({type:'booking',name:x.name,phone:x.phone,email:x.email,service:x.service,message:x.message||x.details,dateWanted:x['date wanted']||x.date}); if(String(x.status||'').toLowerCase()==='done') setDoneRetained(x,true); } else if(r.type==='Quiz'){ D.quiz.push(x); await postToSheet({type:'quiz',name:x.name,phone:x.phone,email:x.email,topic:x.topic,score:x.score,total:x.total,percentage:x.percentage,correct:x.correct, wrong:x.wrong, badges:x.badges, language:x.language||'en', answers:x.answers}); } else if(r.type==='Posts'){ D.posts.push(x); await postToSheet({type:'post',title:x.title,caption:x.caption,postType:x.type,media:x.media,link:x.link,linkText:x.linktext}); } else if(r.type==='Questions'){ D.questions.push(x); await postToSheet({type:'question',topic:x.topic,question:x.question||x.q,qtype:x.qtype||x.type,options:x.options,answer:x.answer,explanation:x.explanation||'',keywords:x.keywords||'',timer:x.timer||30}); } arr.splice(idx,1); saveRecycle(arr); renderRecycle(); renderBookings(); renderQuiz(); renderPosts(); renderQuestions(); renderOverview(); renderAnalytics(); }
 function deleteForeverRecycle(idx){ if(!confirm('Delete this forever? Cannot be restored.')) return; var arr=getRecycle(); arr.splice(idx,1); saveRecycle(arr); renderRecycle(); }
 async function restoreAllRecycle(){ var arr=getRecycle(); if(!arr.length) return; if(!confirm('Restore ALL '+arr.length+' items?')) return; for(var i=arr.length-1;i>=0;i--){ await restoreRecycle(i); } }
 function emptyRecycle(){ if(!confirm('Empty Recycle Bin forever? Cannot be restored.')) return; saveRecycle([]); renderRecycle(); }
@@ -326,7 +321,6 @@ async function loadAll(force){
     }
     applyRetained();
     document.getElementById('connStatus').textContent='✅ Connected';
-    document.getElementById('bookingMsg').textContent='';
     document.getElementById('cBookings').textContent=D.bookings.length;
     document.getElementById('cQuiz').textContent=D.quiz.length;
     document.getElementById('cPosts').textContent=D.posts.length;
@@ -342,7 +336,7 @@ function renderOverview(){
   var q=D.quiz.slice(-3).reverse();
   var students=computeStudentStats();
   var map={}; students.forEach(function(u){ if(u.phone) map[cleanPhone(u.phone)]=u; map['name:'+String(u.name||'').toLowerCase().trim()]=u; });
-  document.getElementById('overviewQuiz').innerHTML=q.length? q.map(function(x){ var p=calcPerc(x.score,x.total,x.percentage); var u=map[cleanPhone(x.phone)]||map['name:'+String(x.name||'').toLowerCase().trim()]; return '<div class="item"><b>'+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<br>🏆 Score: <b style="color:#00e676">'+esc(x.score||'0')+'/'+esc(x.total||'')+' - '+p+'</b><br>'+(u? badgeChips(u)+'<br>':'')+'<span class="small">'+esc(x.phone||'')+' • '+esc(x.email||'')+'</span></div>'; }).join('') : '<p class="small">No quiz results yet.</p>';
+  document.getElementById('overviewQuiz').innerHTML=q.length? q.map(function(x){ var p=calcPerc(x.score,x.total,x.percentage); var u=map[cleanPhone(x.phone)]||map['name:'+String(x.name||'').toLowerCase().trim()]; return '<div class="item"><b>'+esc(x.name||'')+'</b> • '+esc(x.topic||'')+' • 🌍 '+(x.language||'en').toUpperCase()+'<br>🏆 Score: <b style="color:#00e676">'+esc(x.score||'0')+'/'+esc(x.total||'')+' - '+p+'</b><br>'+(u? badgeChips(u)+'<br>':'')+'<span class="small">'+esc(x.phone||'')+' • '+esc(x.email||'')+'</span></div>'; }).join('') : '<p class="small">No quiz results yet.</p>';
   document.getElementById('overviewTop').innerHTML=students.length? students.slice(0,3).map(function(u,i){ return '<div class="item"><b>'+['🥇','🥈','🥉'][i]+' '+esc(u.name)+'</b> • '+esc(u.phone||'No phone')+'<br>Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'<br>'+badgeChips(u)+'</div>'; }).join('') : '<p class="small">No learners yet.</p>';
 }
 function bookingCardHTML(x, key){ var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', this is SmartTech LTD. About your booking: '+(x.service||'')+'. We are ready to help you.'); var isDone=isDoneStatus(x); return '<div class="item '+(isDone?'done':'')+'" id="card-'+key+'"><b>👤 '+esc(x.name||'')+'</b> <span class="badge '+(isDone?'badge-done':'badge-pending')+'" id="badge-'+key+'">'+(isDone?'✅ Done':'Pending')+'</span><br>📞 '+esc(x.phone||'')+'<br>📧 '+esc(x.email||'Not given')+'<br>📌 Service: <b>'+esc(x.service||'')+'</b><br>📝 Message: '+esc(x.message||x.details||'None')+'<br>🕒 '+esc(x.timestamp||'')+'<br>📅 Date wanted: '+esc(x['date wanted']||x.date||'Not given')+'<div class="done-box '+(isDone?'show':'')+'" id="donebox-'+key+'">✅ Done ✓</div><br><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Client</a><button class="btn-small" style="background:#00c853" onclick="markDoneOne(\''+key+'\')">✅ Mark Done</button><button class="btn-small" style="background:#ff9800" onclick="markPendingOne(\''+key+'\')">↩️ Pending</button><button class="btn-small" style="background:#ff5252" onclick="deleteOneBooking(\''+key+'\')">🗑️ Delete</button></div></div>'; }
@@ -350,19 +344,41 @@ function renderBookings(){ var q=(document.getElementById('searchBooking').value
 async function postToSheet(payload){ try{ await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }catch(e){ return false; } }
 function showDoneInstant(key){ var badge=document.getElementById('badge-'+key); var box=document.getElementById('donebox-'+key); var card=document.getElementById('card-'+key); if(badge){ badge.textContent='✅ Done'; badge.className='badge badge-done'; } if(box) box.classList.add('show'); if(card) card.classList.add('done'); }
 function showPendingInstant(key){ var badge=document.getElementById('badge-'+key); var box=document.getElementById('donebox-'+key); var card=document.getElementById('card-'+key); if(badge){ badge.textContent='Pending'; badge.className='badge badge-pending'; } if(box) box.classList.remove('show'); if(card) card.classList.remove('done'); }
-async function markDoneOne(key){ var x=bookingIndex[key]; if(!x) return; x.status='Done'; setDoneRetained(x,true); clearPendingRetained(x); showDoneInstant(key); document.getElementById('bookingMsg').textContent=''; await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Done'}); setTimeout(function(){ renderBookings(); },400); }
-async function markPendingOne(key){ var x=bookingIndex[key]; if(!x) return; x.status='Pending'; setPendingRetained(x); showPendingInstant(key); document.getElementById('bookingMsg').textContent=''; await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Pending'}); setTimeout(function(){ renderBookings(); },400); }
-async function deleteOneBooking(key){ var x=bookingIndex[key]; if(!x) return; if(!confirm('Move booking for '+x.name+' to Recycle Bin?')) return; addToRecycle('Bookings', x); var card=document.getElementById('card-'+key); if(card) card.style.display='none'; document.getElementById('bookingMsg').textContent=''; setDoneRetained(x,false); clearPendingRetained(x); await postToSheet({type:'delete',sheet:'Bookings',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''}); setTimeout(function(){ loadAll(); },800); }
-async function markAllDone(){ if(!D.bookings.length) return alert('No bookings'); if(!confirm('Mark ALL '+D.bookings.length+' bookings as Done?')) return; D.bookings.forEach(function(b){ b.status='Done'; setDoneRetained(b,true); clearPendingRetained(b); }); renderBookings(); document.getElementById('bookingMsg').textContent=''; await postToSheet({type:'markalldone'}); }
-async function markAllPending(){ if(!D.bookings.length) return alert('No bookings'); if(!confirm('Mark ALL bookings as Pending?')) return; D.bookings.forEach(function(b){ b.status='Pending'; setPendingRetained(b); }); renderBookings(); document.getElementById('bookingMsg').textContent=''; await postToSheet({type:'markallpending'}); }
+async function markDoneOne(key){ var x=bookingIndex[key]; if(!x) return; x.status='Done'; setDoneRetained(x,true); clearPendingRetained(x); showDoneInstant(key); await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Done'}); setTimeout(function(){ renderBookings(); },400); }
+async function markPendingOne(key){ var x=bookingIndex[key]; if(!x) return; x.status='Pending'; setPendingRetained(x); showPendingInstant(key); await postToSheet({type:'updatestatus',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||'',status:'Pending'}); setTimeout(function(){ renderBookings(); },400); }
+async function deleteOneBooking(key){ var x=bookingIndex[key]; if(!x) return; if(!confirm('Move booking for '+x.name+' to Recycle Bin?')) return; addToRecycle('Bookings', x); var card=document.getElementById('card-'+key); if(card) card.style.display='none'; setDoneRetained(x,false); clearPendingRetained(x); await postToSheet({type:'delete',sheet:'Bookings',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''}); setTimeout(function(){ loadAll(); },800); }
+async function markAllDone(){ if(!D.bookings.length) return alert('No bookings'); if(!confirm('Mark ALL '+D.bookings.length+' bookings as Done?')) return; D.bookings.forEach(function(b){ b.status='Done'; setDoneRetained(b,true); clearPendingRetained(b); }); renderBookings(); await postToSheet({type:'markalldone'}); }
+async function markAllPending(){ if(!D.bookings.length) return alert('No bookings'); if(!confirm('Mark ALL bookings as Pending?')) return; D.bookings.forEach(function(b){ b.status='Pending'; setPendingRetained(b); }); renderBookings(); await postToSheet({type:'markallpending'}); }
 async function deleteAllBookings(){ if(!D.bookings.length) return alert('No bookings to delete'); if(!confirm('Move ALL '+D.bookings.length+' bookings to Recycle Bin?')) return; D.bookings.forEach(function(b){ addToRecycle('Bookings', b); }); document.getElementById('bookingsList').innerHTML='<div class="card">Moved to Recycle Bin</div>'; localStorage.removeItem('smarttech_done_map_v2'); localStorage.removeItem('smarttech_pending_map_v2'); D.bookings=[]; await postToSheet({type:'clear',sheet:'Bookings'}); setTimeout(function(){ loadAll(); },800); }
+function exportQuizCSV(){
+  if(!D.quiz.length) return alert('No quiz results');
+  var rows=[['Name','Phone','Email','Topic','Score','Total','Percentage','Language','Timestamp','Badges']];
+  D.quiz.forEach(function(r){ rows.push([r.name||'', r.phone||'', r.email||'', r.topic||'', r.score||'', r.total||'', getPerc(r)+'%', r.language||'en', r.timestamp||'', r.badges||'']); });
+  downloadCSV(rows, 'smarttech-quiz.csv');
+}
+function exportBookingsCSV(){
+  if(!D.bookings.length) return alert('No bookings');
+  var rows=[['Name','Phone','Email','Service','Message','Status','Timestamp']];
+  D.bookings.forEach(function(r){ rows.push([r.name||'', r.phone||'', r.email||'', r.service||'', r.message||r.details||'', r.status||'Pending', r.timestamp||'']); });
+  downloadCSV(rows, 'smarttech-bookings.csv');
+}
+function downloadCSV(rows, filename){
+  var csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], {type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+}
 function renderQuiz(){
   var q=(document.getElementById('searchQuiz').value||'').toLowerCase();
-  var list=D.quiz.slice().reverse().filter(function(x){ return !q || ((x.name||'')+' '+(x.topic||'')+' '+(x.phone||'')+' '+(x.email||'')).toLowerCase().includes(q); });
+  var langF=document.getElementById('filterQuizLang') ? document.getElementById('filterQuizLang').value : '';
+  var topicF=document.getElementById('filterQuizTopic') ? document.getElementById('filterQuizTopic').value : '';
+  var list=D.quiz.slice().reverse().filter(function(x){
+    if(langF && String(x.language||'en').toLowerCase()!==langF) return false;
+    if(topicF && cleanTopic(x.topic||'')!==topicF) return false;
+    return !q || ((x.name||'')+' '+(x.topic||'')+' '+(x.phone||'')+' '+(x.email||'')).toLowerCase().includes(q);
+  });
   quizIndex={};
   var students=computeStudentStats(); var map={}; students.forEach(function(u){ if(u.phone) map[cleanPhone(u.phone)]=u; map['name:'+String(u.name||'').toLowerCase().trim()]=u; });
   var el=document.getElementById('quizList');
-  if(!list.length){ el.innerHTML='<div class="card">No quiz results found.</div>'; return; }
+  if(!list.length){ el.innerHTML='<div class="card">No quiz results found for this filter.</div>'; return; }
   el.innerHTML=list.map(function(x,idx){
     var key='q'+idx; quizIndex[key]=x;
     var score=parseInt(x.score||0), total=parseInt(x.total||0);
@@ -373,37 +389,72 @@ function renderQuiz(){
     var u=map[cleanPhone(x.phone)]||map['name:'+String(x.name||'').toLowerCase().trim()];
     var detail='';
     var d=getAnswersForQuiz(x);
-    if(d && d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions) — from QuizAnswers sheet</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>';
-    else if(x.answers && String(x.answers).trim().startsWith('[{')){ try{ var d2=JSON.parse(x.answers); detail='<details><summary>📋 View Full Answers ('+d2.length+' questions) — old format</summary><pre>'+esc(d2.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\n'; }).join('\n'))+'</pre></details>'; }catch(e){} }
-    else detail='<p class="small">Answers: See QuizAnswers sheet in Google Sheet (ID: '+esc(x.id||'')+')</p>';
+    if(d && d.length) detail='<details><summary>📋 View Full Answers ('+d.length+' questions)</summary><pre>'+esc(d.map(function(a,i){ return 'Q'+(i+1)+'. '+(a.q||a.question||'')+'\nYour Answer: '+(a.yourAnswer||'')+'\nCorrect Answer: '+(a.correctAnswer||'')+'\nResult: '+(a.isCorrect?'✅ Correct':'❌ Wrong')+'\nExplanation: '+(a.explanation||'')+'\n'; }).join('\n'))+'</pre></details>';
+    else detail='<p class="small">Answers in Google Sheet (ID: '+esc(x.id||'')+')</p>';
     var wa='https://wa.me/'+cleanPhone(x.phone)+'?text='+encodeURIComponent('Hello '+x.name+', SmartTech here. Your Quiz result for '+(x.topic||'')+' is '+score+'/'+total+' ('+perc+'). Well done!');
-    return '<div class="item" id="quizcard-'+key+'"><b>🧠 '+esc(x.name||'')+'</b> • '+esc(x.topic||'')+'<div class="scorebox">🏆 SCORE<br><b>'+score+'/'+total+' - '+perc+'</b></div>'+(x.badges? '<div style="margin:6px 0"><b>🏆 Badges (this quiz):</b><br><span class="badge-chip">'+esc(x.badges)+'</span></div>':'')+(u? '<div style="margin:6px 0"><b>🏆 Badges (total):</b><br>'+badgeChips(u)+'<br><span class="small">Total Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'</span></div>':'')+'👤 Name: <b>'+esc(x.name||'')+'</b><br>📞 Phone: '+esc(x.phone||'')+'<br>📧 Email: '+esc(x.email||'Not given')+'<br>📚 Topic: '+esc(x.topic||'')+'<br>🕒 Date: '+esc(x.timestamp||'')+'<br>✅ Correct: '+correct+' • ❌ Wrong: '+wrong+' • Total: '+total+' • Percentage: '+perc+detail+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Result</a><button class="btn-small" style="background:#ff5252" onclick="deleteOneQuiz(\''+key+'\')">🗑️ Delete</button></div></div>';
+    var langLabel={en:'🇬🇧 English',sw:'🇰🇪 Kiswahili',fr:'🇫🇷 Français',la:'🏛️ Latina'}[String(x.language||'en').toLowerCase()] || x.language;
+    return '<div class="item" id="quizcard-'+key+'"><b>🧠 '+esc(x.name||'')+'</b> • '+esc(x.topic||'')+' • 🌍 '+langLabel+'<div class="scorebox">🏆 SCORE<br><b>'+score+'/'+total+' - '+perc+'</b></div>'+(x.badges? '<div style="margin:6px 0"><b>🏆 Badges (this quiz):</b><br><span class="badge-chip">'+esc(x.badges)+'</span></div>':'')+(u? '<div style="margin:6px 0"><b>🏆 Badges (total):</b><br>'+badgeChips(u)+'<br><span class="small">Total Attempts: '+u.attempts+' • Avg: '+u.avg+'% • Best: '+u.best+'% • Days: '+u.days+'</span></div>':'')+'👤 Name: <b>'+esc(x.name||'')+'</b><br>📞 Phone: '+esc(x.phone||'')+'<br>📧 Email: '+esc(x.email||'Not given')+'<br>📚 Topic: '+esc(x.topic||'')+'<br>🌍 Language: '+langLabel+'<br>🕒 Date: '+esc(x.timestamp||'')+'<br>✅ Correct: '+correct+' • ❌ Wrong: '+wrong+' • Total: '+total+' • Percentage: '+perc+detail+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><a href="'+wa+'" target="_blank" style="background:#25D366;color:#fff;padding:9px 14px;border-radius:20px;text-decoration:none;font-size:12px;font-weight:800">💬 WhatsApp Result</a><button class="btn-small" style="background:#ff5252" onclick="deleteOneQuiz(\''+key+'\')">🗑️ Delete</button></div></div>';
   }).join('');
 }
 async function deleteOneQuiz(key){ var x=quizIndex[key]; if(!x) return; if(!confirm('Move quiz result for '+x.name+' to Recycle Bin?')) return; addToRecycle('Quiz', x); var card=document.getElementById('quizcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Quiz',id:x.id||'',timestamp:x.timestamp||'',name:x.name||'',phone:x.phone||''}); setTimeout(function(){ loadAll(); },800); }
 function renderPosts(){ var el=document.getElementById('postsList'); if(!D.posts.length){ el.innerHTML='<p class="small">No posts yet.</p>'; return; } postIndex={}; var reversed=D.posts.slice().reverse(); el.innerHTML=reversed.map(function(x,idx){ var key='post'+idx; postIndex[key]=x; return '<div class="item" id="postcard-'+key+'"><b>'+esc(x.title||'')+'</b><br>'+esc(x.caption||'')+'<br><span class="small">'+esc(x.type||'')+' • '+esc(x.timestamp||'')+'</span><br>'+(x.link?'<a href="'+esc(x.link)+'" target="_blank" style="color:#4aa3ff">'+esc(x.linktext||x.link)+'</a><br>':'')+(x.media?'<a href="'+esc(x.media)+'" target="_blank" style="color:#facc15">🖼️ View Media</a><br>':'')+'<button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteGeneric(\'Posts\',\''+key+'\')">🗑️ Delete Post</button></div>'; }).join(''); }
 function getQType(x){ var t=String(x.qtype||x.type||'').toLowerCase(); if(t.includes('open')) return 'open'; try{ var o=JSON.parse(x.options||'[]'); if(!o.length) return 'open'; }catch(e){ if(!x.options) return 'open'; } return 'mcq'; }
-function renderQuestions(){ var q=(document.getElementById('searchQ').value||'').toLowerCase(); var ft=document.getElementById('filterTopic').value||''; var list=D.questions.slice().reverse().filter(function(x){ if(ft && cleanTopic(String(x.topic||''))!==ft && String(x.topic||'')!==ft) return false; return !q || (x.question||x.q||'').toLowerCase().includes(q); }); questionIndex={}; var el=document.getElementById('questionsList'); if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; } el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">⏱️ Timer: '+esc(x.timer||'Default (MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open)+')')+'</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join(''); }
+function parseKeywordsField(raw){
+  if(!raw) return [];
+  if(Array.isArray(raw)) return raw;
+  try{ var j=JSON.parse(raw); if(Array.isArray(j)) return j; }catch(e){}
+  return String(raw).split(',').map(function(s){return s.trim();}).filter(Boolean);
+}
+function renderQuestions(){ var q=(document.getElementById('searchQ').value||'').toLowerCase(); var ft=document.getElementById('filterTopic').value||''; var list=D.questions.slice().reverse().filter(function(x){ if(ft && cleanTopic(String(x.topic||''))!==ft && String(x.topic||'')!==ft) return false; return !q || (x.question||x.q||'').toLowerCase().includes(q); }); questionIndex={}; var el=document.getElementById('questionsList'); if(!list.length){ el.innerHTML='<p class="small">No questions. Add one above or paste 50 at once.</p>'; return; } el.innerHTML=list.map(function(x,idx){ var key='qq'+idx; questionIndex[key]=x; var type=getQType(x); var opts=[]; try{ opts=JSON.parse(x.options||'[]'); }catch(e){} var ansText=''; if(type==='open'){ ansText='Answer: <b style="color:#00e676">'+esc(x.answer||'')+'</b>'; } else { var ai=parseInt(x.answer); ansText=opts.map(function(o,i){ return (i===ai?'✅ ':'')+esc(o)+'<br>'; }).join(''); } var kws=parseKeywordsField(x.keywords||''); var kwHtml=kws.length? '<br><span class="small">🔑 Keywords: </span>'+kws.map(function(k){ return '<span class="keyword-chip">'+esc(k)+'</span>'; }).join('') : ''; var transHtml=''; if(x.translations_sw||x.translation_sw) transHtml+='<br><span class="small">🇰🇪 SW: '+esc(x.translations_sw||x.translation_sw)+'</span>'; if(x.translations_fr) transHtml+='<br><span class="small">🇫🇷 FR: '+esc(x.translations_fr)+'</span>'; if(x.translations_la) transHtml+='<br><span class="small">🏛️ LA: '+esc(x.translations_la)+'</span>'; return '<div class="item" id="qcard-'+key+'"><b>'+esc(x.topic||'')+'</b> <span class="pill '+(type==='open'?'pill-open':'pill-mcq')+'">'+(type==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+esc(x.question||x.q||'')+'<br>'+ansText+kwHtml+transHtml+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'<br><span class="small">⏱️ Timer: '+esc(x.timer||'Default (MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open)+')')+'</span><br><button class="btn-small" style="background:#ff5252;margin-top:6px" onclick="deleteOneQuestion(\''+key+'\')">🗑️ Delete</button></div>'; }).join(''); }
 async function deleteOneQuestion(key){ var x=questionIndex[key]; if(!x) return; if(!confirm('Move this question to Recycle Bin?')) return; addToRecycle('Questions', x); var card=document.getElementById('qcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:'Questions',id:x.id||'',timestamp:x.timestamp||'',name:x.question||x.q||'',phone:''}); setTimeout(function(){ loadAll(); },800); }
 async function clearQuestionsByTopic(){ var ft=document.getElementById('filterTopic').value; if(!ft) return alert('Select a Topic first to delete it'); var count=D.questions.filter(function(x){ return cleanTopic(String(x.topic||''))===ft; }).length; if(!count) return alert('No questions in '+ft); if(!confirm('Delete ALL '+count+' questions in '+ft+' ? They go to Recycle Bin.')) return; D.questions.filter(function(x){ return cleanTopic(String(x.topic||''))===ft; }).forEach(function(x){ addToRecycle('Questions', x); }); await postToSheet({type:'clearTopic',sheet:'Questions',topic:ft}); loadAll(); }
 function renderNotify(){ var el=document.getElementById('notifyList'); if(!D.notify.length){ el.innerHTML='<p class="small">No notifications yet.</p>'; return; } el.innerHTML=D.notify.slice().reverse().map(function(x){ return '<div class="item"><b>'+esc(x.title||'')+'</b><br>'+esc(x.body||'')+'<br><span class="small">'+esc(x.timestamp||'')+'</span></div>'; }).join(''); }
 async function createPost(){ var title=document.getElementById('postTitle').value.trim(); var caption=document.getElementById('postCaption').value.trim(); if(!title || !caption){ alert('Enter title + caption'); return; } document.getElementById('postMsg').textContent='⏳ Saving...'; await postToSheet({type:'post',title:title,caption:caption,postType:document.getElementById('postType').value,media:document.getElementById('postMedia').value.trim(),link:document.getElementById('postLink').value.trim(),linkText:document.getElementById('postLinkText').value.trim()}); document.getElementById('postMsg').textContent=''; document.getElementById('postTitle').value=''; document.getElementById('postCaption').value=''; loadAll(); }
-async function createQuestion(){ var q=document.getElementById('qText').value.trim(); var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim(); if(!q || !a || !b || !c || !d){ alert('Fill question + all 4 options'); return; } var tRaw=document.getElementById('qTimer').value.trim(); var timer=tRaw==='' ? 0 : parseInt(tRaw); if(tRaw!=='' && (isNaN(timer)||timer<5||timer>180)){ alert('Timer must be 5 to 180 seconds (max 3 mins) or leave blank for default'); return; } document.getElementById('qMsg').textContent='⏳ Saving...'; await postToSheet({type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:'mcq',options:JSON.stringify([a,b,c,d]),answer:parseInt(document.getElementById('qAnswer').value),explanation:document.getElementById('qExplain').value.trim(),timer:timer}); document.getElementById('qMsg').textContent='✅ Saved! Timer: '+(timer? timer+'s' : 'Default MCQ '+getTimeSettings().mcq+'s'); ['qText','qA','qB','qC','qD','qExplain'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('qTimer').value=''; loadAll(); }
-function parseBulkQuestions(text){ var lines=String(text||'').split(/\r?\n/); var blocks=[]; var cur=[]; function flush(){ if(cur.join(' ').trim()) blocks.push(cur.join('\n')); cur=[]; } lines.forEach(function(line){ var t=line.trim(); if(/^(Q\s*)?\d+[\.\)\:\-]\s+\S/.test(t) && cur.length>0){ if(cur.join('\n').match(/Answer\s*:/i) || cur.join('\n').match(/^[A-D][\)\.\:]/m)) flush(); } cur.push(line); }); flush(); var out=[]; blocks.forEach(function(block){ var bLines=block.split('\n').map(function(s){return s.trim();}).filter(Boolean); if(!bLines.length) return; var qLine=bLines[0].replace(/^(Q\s*)?\d+[\.\)\:\-]\s*/,'').replace(/^Q\s*:\s*/i,'').trim(); if(/^topic\s*:/i.test(qLine)) qLine=bLines[1]||''; var opts={A:'',B:'',C:'',D:''}; var answer=''; var expl=''; var qtype='open'; var explicitType=''; bLines.slice(1).forEach(function(l){ var m=l.match(/^([A-D])\s*[\)\.\:\-]\s*(.+)$/); if(m){ opts[m[1]]=m[2].trim(); qtype='mcq'; return; } var am=l.match(/^Answer\s*[:\-]\s*(.+)$/i); if(am){ answer=am[1].trim(); return; } var cm=l.match(/^Correct\s*(Answer)?\s*[:\-]\s*(.+)$/i); if(cm){ answer=cm[2].trim(); return; } var em=l.match(/^Explanation\s*[:\-]\s*(.+)$/i); if(em){ expl=em[1].trim(); return; } var tm=l.match(/^Type\s*[:\-]\s*(.+)$/i); if(tm){ explicitType=tm[1].toLowerCase(); return; } if(!answer && qtype==='open' && l!==qLine){ qLine+=' '+l; } }); if(explicitType.includes('open')) qtype='open'; else if(explicitType.includes('mcq')||explicitType.includes('multiple')) qtype='mcq'; else if(opts.A && opts.B) qtype='mcq'; else qtype='open'; if(qtype==='mcq'){ var arr=[opts.A,opts.B,opts.C,opts.D].filter(function(x){return x;}); var ansIdx=0; var aUpper=String(answer).toUpperCase().trim(); if(/^[A-D]$/.test(aUpper)){ ansIdx=['A','B','C','D'].indexOf(aUpper); } else { var found=arr.findIndex(function(o){ return o.toLowerCase()===aUpper.toLowerCase(); }); if(found>=0) ansIdx=found; else ansIdx=0; } if(qLine && arr.length>=2) out.push({question:qLine,qtype:'mcq',options:arr,answer:ansIdx,explanation:expl}); } else { var openAns=answer||''; if(!openAns && expl){ openAns=expl; expl=''; } if(qLine && openAns) out.push({question:qLine,qtype:'open',options:[],answer:openAns,explanation:expl}); } }); return out; }
+// ===== FIXED: CREATE QUESTION - MCQ CORRECT + OPEN KEYWORDS + LANGUAGES =====
+async function createQuestion(){
+  var q=document.getElementById('qText').value.trim();
+  var qtype=document.getElementById('qTypeSel').value;
+  if(!q){ alert('Enter question'); return; }
+  var tRaw=document.getElementById('qTimer').value.trim();
+  var timer=tRaw==='' ? 0 : parseInt(tRaw);
+  if(tRaw!=='' && (isNaN(timer)||timer<5||timer>180)){ alert('Timer must be 5 to 180 seconds (max 3 mins) or leave blank for default'); return; }
+  var payload={type:'question',topic:document.getElementById('qTopic').value,question:q,qtype:qtype,explanation:document.getElementById('qExplain').value.trim(),timer:timer,translations_sw:document.getElementById('qTransSW').value.trim(),translations_fr:document.getElementById('qTransFR').value.trim(),translations_la:document.getElementById('qTransLA').value.trim(),translations_opts_sw:document.getElementById('qTransOptsSW').value.trim(),translations_opts_fr:document.getElementById('qTransOptsFR').value.trim(),translations_opts_la:document.getElementById('qTransOptsLA').value.trim()};
+  if(qtype==='mcq'){
+    var a=document.getElementById('qA').value.trim(), b=document.getElementById('qB').value.trim(), c=document.getElementById('qC').value.trim(), d=document.getElementById('qD').value.trim();
+    if(!a||!b||!c||!d){ alert('Fill all 4 options for MCQ'); return; }
+    var opts=[a,b,c,d];
+    var ansIdx=parseInt(document.getElementById('qAnswer').value);
+    // FIXED MCQ: Validate correct index is in range
+    if(isNaN(ansIdx)||ansIdx<0||ansIdx>3){ alert('Select correct answer A-D'); return; }
+    payload.options=JSON.stringify(opts); payload.answer=ansIdx; payload.keywords=JSON.stringify([]);
+  } else {
+    var openAns=document.getElementById('qOpenAnswer').value.trim();
+    if(!openAns){ alert('Enter correct answer for Open question'); return; }
+    var kwRaw=document.getElementById('qKeywords').value.trim();
+    var kws = kwRaw ? kwRaw.split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean) : [];
+    payload.options=JSON.stringify([]); payload.answer=openAns; payload.keywords=JSON.stringify(kws);
+  }
+  document.getElementById('qMsg').textContent='⏳ Saving...';
+  await postToSheet(payload);
+  document.getElementById('qMsg').textContent='✅ Saved! '+(qtype==='mcq'?'MCQ Correct = ' + ['A','B','C','D'][payload.answer] : 'Open Keywords: '+(JSON.parse(payload.keywords).join(', ')||'auto'))+' | Timer: '+(timer? timer+'s' : 'Default');
+  ['qText','qA','qB','qC','qD','qExplain','qOpenAnswer','qKeywords','qTransSW','qTransFR','qTransLA','qTransOptsSW','qTransOptsFR','qTransOptsLA'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('qTimer').value=''; loadAll();
+}
+function parseBulkQuestions(text){ var lines=String(text||'').split(/\r?\n/); var blocks=[]; var cur=[]; function flush(){ if(cur.join(' ').trim()) blocks.push(cur.join('\n')); cur=[]; } lines.forEach(function(line){ var t=line.trim(); if(/^(Q\s*)?\d+[\.\)\:\-]\s+\S/.test(t) && cur.length>0){ if(cur.join('\n').match(/Answer\s*:/i) || cur.join('\n').match(/^[A-D][\)\.\:]/m)) flush(); } cur.push(line); }); flush(); var out=[]; blocks.forEach(function(block){ var bLines=block.split('\n').map(function(s){return s.trim();}).filter(Boolean); if(!bLines.length) return; var qLine=bLines[0].replace(/^(Q\s*)?\d+[\.\)\:\-]\s*/,'').replace(/^Q\s*:\s*/i,'').trim(); if(/^topic\s*:/i.test(qLine)) qLine=bLines[1]||''; var opts={A:'',B:'',C:'',D:''}; var answer=''; var expl=''; var qtype='open'; var explicitType=''; var keywords=[]; bLines.slice(1).forEach(function(l){ var m=l.match(/^([A-D])\s*[\)\.\:\-]\s*(.+)$/); if(m){ opts[m[1]]=m[2].trim(); qtype='mcq'; return; } var am=l.match(/^Answer\s*[:\-]\s*(.+)$/i); if(am){ answer=am[1].trim(); return; } var cm=l.match(/^Correct\s*(Answer)?\s*[:\-]\s*(.+)$/i); if(cm){ answer=cm[2].trim(); return; } var em=l.match(/^Explanation\s*[:\-]\s*(.+)$/i); if(em){ expl=em[1].trim(); return; } var km=l.match(/^Keywords?\s*[:\-]\s*(.+)$/i); if(km){ keywords=km[1].split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean); return; } var tm=l.match(/^Type\s*[:\-]\s*(.+)$/i); if(tm){ explicitType=tm[1].toLowerCase(); return; } }); if(explicitType.includes('open')) qtype='open'; else if(explicitType.includes('mcq')||explicitType.includes('multiple')) qtype='mcq'; else if(opts.A && opts.B) qtype='mcq'; else qtype='open'; if(qtype==='mcq'){ var arr=[opts.A,opts.B,opts.C,opts.D].filter(function(x){return x;}); var ansIdx=0; var aUpper=String(answer).toUpperCase().trim(); if(/^[A-D]$/.test(aUpper)){ ansIdx=['A','B','C','D'].indexOf(aUpper); } else { var found=arr.findIndex(function(o){ return o.toLowerCase()===aUpper.toLowerCase(); }); if(found>=0) ansIdx=found; else ansIdx=0; } if(qLine && arr.length>=2) out.push({question:qLine,qtype:'mcq',options:arr,answer:ansIdx,explanation:expl,keywords:[]}); } else { var openAns=answer||''; if(!openAns && expl){ openAns=expl; expl=''; } if(qLine && openAns) out.push({question:qLine,qtype:'open',options:[],answer:openAns,explanation:expl,keywords:keywords}); } }); return out; }
 let parsedBulk=[];
 function getBulkTopic(){ var bt=document.getElementById('bulkTopic').value; if(bt==='__USE_MAIN__') return document.getElementById('qTopic').value; return bt; }
-function previewBulk(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ document.getElementById('bulkMsg').textContent='⚠️ Paste questions first'; return; } parsedBulk=parseBulkQuestions(text); var mcq=parsedBulk.filter(function(x){return x.qtype==='mcq';}).length; var open=parsedBulk.filter(function(x){return x.qtype==='open';}).length; document.getElementById('bulkMsg').textContent='✅ Found '+parsedBulk.length+' questions: '+mcq+' MCQ + '+open+' Open | Topic: '+getBulkTopic()+' | Timer: MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open); document.getElementById('bulkPreview').innerHTML=parsedBulk.slice(0,10).map(function(x,i){ return '<div class="item"><b>'+(i+1)+'. '+esc(x.question)+'</b> <span class="pill '+(x.qtype==='open'?'pill-open':'pill-mcq')+'">'+(x.qtype==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+(x.qtype==='mcq'? x.options.map(function(o,j){return (j===x.answer?'✅ ':'')+esc(o)+'<br>';}).join('') : 'Answer: <b>'+esc(x.answer)+'</b>')+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'</div>'; }).join('') + (parsedBulk.length>10?'<p class="small">... + '+(parsedBulk.length-10)+' more (will all be added)</p>':''); }
-function useSample(){ document.getElementById('bulkText').value=`1. What does CPU stand for?\nA) Central Processing Unit\nB) Computer Personal Unit\nC) Central Program Unit\nD) Central Printer Unit\nAnswer: A\nExplanation: CPU is the brain of computer\n\n2. What is the full form of RAM?\nAnswer: Random Access Memory\nType: Open\n\n3. Which is an input device?\nA) Monitor\nB) Keyboard\nC) Printer\nD) Speaker\nAnswer: B`; previewBulk(); }
+function previewBulk(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ document.getElementById('bulkMsg').textContent='⚠️ Paste questions first'; return; } parsedBulk=parseBulkQuestions(text); var mcq=parsedBulk.filter(function(x){return x.qtype==='mcq';}).length; var open=parsedBulk.filter(function(x){return x.qtype==='open';}).length; document.getElementById('bulkMsg').textContent='✅ Found '+parsedBulk.length+' questions: '+mcq+' MCQ + '+open+' Open | Topic: '+getBulkTopic()+' | Timer: MCQ '+getTimeSettings().mcq+'s / Open '+fmtTimeAdmin(getTimeSettings().open); document.getElementById('bulkPreview').innerHTML=parsedBulk.slice(0,10).map(function(x,i){ return '<div class="item"><b>'+(i+1)+'. '+esc(x.question)+'</b> <span class="pill '+(x.qtype==='open'?'pill-open':'pill-mcq')+'">'+(x.qtype==='open'?'✍️ OPEN':'🔘 MCQ')+'</span><br>'+(x.qtype==='mcq'? x.options.map(function(o,j){return (j===x.answer?'✅ ':'')+esc(o)+'<br>';}).join('') : 'Answer: <b>'+esc(x.answer)+'</b>' + (x.keywords.length? '<br>🔑 Keywords: '+x.keywords.join(', ') : ''))+(x.explanation?'<br><span class="small">💡 '+esc(x.explanation)+'</span>':'')+'</div>'; }).join('') + (parsedBulk.length>10?'<p class="small">... + '+(parsedBulk.length-10)+' more (will all be added)</p>':''); }
+function useSample(){ document.getElementById('bulkText').value=`1. What does CPU stand for?\nA) Central Processing Unit\nB) Computer Personal Unit\nC) Central Program Unit\nD) Central Printer Unit\nAnswer: A\nExplanation: CPU is the brain of computer\nKeywords: central, processing, unit\n\n2. What is the full form of RAM?\nAnswer: Random Access Memory\nType: Open\nKeywords: random, access, memory\n\n3. Which is an input device?\nA) Monitor\nB) Keyboard\nC) Printer\nD) Speaker\nAnswer: B`; previewBulk(); }
 function clearBulk(){ document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; document.getElementById('bulkMsg').textContent=''; parsedBulk=[]; }
-async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var s=getTimeSettings(); var timer=0; if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ? Timer will be Default: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open))) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; var qTimer = q.qtype==='mcq' ? s.mcq : s.open; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',timer:qTimer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'! Timer: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open); document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
+async function addBulkQuestions(){ var text=document.getElementById('bulkText').value; if(!text.trim()){ alert('Paste questions first'); return; } parsedBulk=parseBulkQuestions(text); if(!parsedBulk.length){ alert('Could not parse. Check format. Tap Load Sample to see correct format.'); return; } var topic=getBulkTopic(); var s=getTimeSettings(); if(!confirm('Add '+parsedBulk.length+' questions to topic: '+topic+' ? Timer will be Default: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open))) return; document.getElementById('bulkMsg').textContent='⏳ Adding 0 / '+parsedBulk.length+'... Please wait, do not close.'; var done=0; for(var i=0;i<parsedBulk.length;i++){ var q=parsedBulk[i]; var qTimer = q.qtype==='mcq' ? s.mcq : s.open; await postToSheet({type:'question',topic:topic,question:q.question,qtype:q.qtype,options: q.qtype==='mcq'? JSON.stringify(q.options) : JSON.stringify([]),answer:q.answer,explanation:q.explanation||'',keywords:JSON.stringify(q.keywords||[]),timer:qTimer}); done++; document.getElementById('bulkMsg').textContent='⏳ Adding '+done+' / '+parsedBulk.length+'...'; await new Promise(function(r){ setTimeout(r,300); }); } document.getElementById('bulkMsg').textContent='✅ Added '+done+' questions to '+topic+'! Timer: MCQ '+s.mcq+'s / Open '+fmtTimeAdmin(s.open); document.getElementById('bulkText').value=''; document.getElementById('bulkPreview').innerHTML=''; parsedBulk=[]; loadAll(); }
 function renderAnalytics(){
   var topicFilter=document.getElementById('analyticsTopic') ? document.getElementById('analyticsTopic').value : '';
+  var langFilter=document.getElementById('analyticsLang') ? document.getElementById('analyticsLang').value : '';
   var all=D.quiz||[];
   var valid=all.filter(function(r){ return parseInt(r.total||0)>0; });
-  var filtered=topicFilter? valid.filter(function(r){ return cleanTopic(r.topic||'')===topicFilter; }) : valid;
+  var filtered=valid.filter(function(r){ if(topicFilter && cleanTopic(r.topic||'')!==topicFilter) return false; if(langFilter && String(r.language||'en').toLowerCase()!==langFilter) return false; return true; });
   var el=document.getElementById('analyticsContent');
   if(!valid.length){ el.innerHTML='<div class="card"><p class="small">No valid quiz results yet.</p></div>'; return; }
-  // ===== OVERALL ANALYSIS - Best / Least / All Students / By Topic NEVER use topic filter =====
   var overallStudents=computeStudentStats(valid);
   var students=overallStudents;
   var byAvgDesc=overallStudents.slice().sort(function(a,b){ return b.avg-a.avg || b.attempts-a.attempts; });
@@ -411,40 +462,35 @@ function renderAnalytics(){
   var best=byAvgDesc[0];
   var least=null;
   if(overallStudents.length>1){ least=byAvgAsc.find(function(u){ return studentKey({phone:u.phone, name:u.name})!==studentKey({phone:best.phone, name:best.name}); })||byAvgAsc[0]; }
-  // By Topic - OVERALL
   var byTopic={};
-  valid.forEach(function(r){
-    var t=cleanTopic(r.topic||'');
-    if(!isValidTopic(t)) return;
-    if(!byTopic[t]) byTopic[t]={attempts:0,totalScore:0,totalQs:0,best:0};
-    byTopic[t].attempts++; byTopic[t].totalScore+=parseInt(r.score||0); byTopic[t].totalQs+=parseInt(r.total||0);
-    var p=getPerc(r); if(p>byTopic[t].best) byTopic[t].best=p;
-  });
+  valid.forEach(function(r){ var t=cleanTopic(r.topic||''); if(!isValidTopic(t)) return; if(!byTopic[t]) byTopic[t]={attempts:0,totalScore:0,totalQs:0,best:0}; byTopic[t].attempts++; byTopic[t].totalScore+=parseInt(r.score||0); byTopic[t].totalQs+=parseInt(r.total||0); var p=getPerc(r); if(p>byTopic[t].best) byTopic[t].best=p; });
   var topicRows=Object.keys(byTopic).map(function(t){ var b=byTopic[t]; return {topic:t, attempts:b.attempts, avg:b.totalQs? Math.round((b.totalScore/b.totalQs)*100):0, best:b.best}; }).sort(function(a,b){ return b.avg-a.avg; });
-  // Overall Avg - OVERALL
+  var byLang={};
+  valid.forEach(function(r){ var l=String(r.language||'en').toLowerCase(); if(!byLang[l]) byLang[l]={attempts:0,totalScore:0,totalQs:0}; byLang[l].attempts++; byLang[l].totalScore+=parseInt(r.score||0); byLang[l].totalQs+=parseInt(r.total||0); });
+  var langRows=Object.keys(byLang).map(function(l){ var b=byLang[l]; return {lang:l, attempts:b.attempts, avg:b.totalQs? Math.round((b.totalScore/b.totalQs)*100):0}; });
   var totS=valid.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
   var totQ=valid.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
   var overallAvg=totQ? Math.round((totS/totQ)*100):0;
-  // Filtered list only for Attempts table at bottom
   var filteredTotS=filtered.reduce(function(s,r){ return s+parseInt(r.score||0); },0);
   var filteredTotQ=filtered.reduce(function(s,r){ return s+parseInt(r.total||0); },0);
   var filteredAvg=filteredTotQ? Math.round((filteredTotS/filteredTotQ)*100):0;
   var brokenCount=all.length-valid.length;
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
-  var leastHtml=least
-    ? '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone||'No phone')+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Worst: '+least.worst+'% • Days: '+least.days+'<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help. Based on ALL topics, not just '+(topicFilter||'All')+'</span></div>'
-    : '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL</h3><p class="small">Only 1 student so far — no least performer yet. Best = '+esc(best.name)+'</p></div>';
+  var sTime=getTimeSettings();
+  var leastHtml=least ? '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL (Needs Help)</h3><b style="font-size:18px">'+esc(least.name)+' • '+esc(least.phone||'No phone')+'</b><br>Attempts: '+least.attempts+' • Avg: '+least.avg+'% • Best: '+least.best+'% • Worst: '+least.worst+'% • Days: '+least.days+'<br><span class="small">Recommendation: Send WhatsApp encouragement + Book ICT Help.</span></div>' : '<div class="card" style="border:2px solid #ff5252"><h3 style="color:#ff8fa8">📉 LEAST PERFORMER — OVERALL</h3><p class="small">Only 1 student so far — no least performer yet. Best = '+esc(best.name)+'</p></div>';
   el.innerHTML=
-  '<div class="card"><h3 style="color:#0a1931">SmartTech LTD — Quiz Analytics Report — OVERALL</h3><p class="small">Generated: '+esc(dateStr)+' • Overall: Valid Attempts: '+valid.length+' • Students: '+overallStudents.length+' • Overall Avg: '+overallAvg+'% (Total Correct '+totS+' / Total Questions '+totQ+')'+(brokenCount? ' • '+brokenCount+' broken old row(s) excluded':'')+'<br>Attempts list below is filtered to: '+(topicFilter||'All Topics')+' ('+filtered.length+' attempts • Avg '+filteredAvg+'%)</p></div>'+
+  '<div class="card"><h3>SmartTech LTD — Quiz Analytics Report — OVERALL</h3><p class="small">Generated: '+esc(dateStr)+' • Overall: Valid Attempts: '+valid.length+' • Students: '+overallStudents.length+' • Overall Avg: '+overallAvg+'% (Total Correct '+totS+' / Total Questions '+totQ+') • Time: MCQ '+sTime.mcq+'s / Open '+fmtTimeAdmin(sTime.open)+' • Lang Filter: '+(langFilter||'All')+(brokenCount? ' • '+brokenCount+' broken old row(s) excluded':'')+'<br>Attempts list below is filtered to: '+(topicFilter||'All Topics')+' / '+(langFilter||'All Languages')+' ('+filtered.length+' attempts • Avg '+filteredAvg+'%)</p></div>'+
   '<div class="card" style="border:2px solid #00c853"><h3 style="color:#00e676">🏆 BEST PERFORMER — OVERALL</h3><b style="font-size:18px">'+esc(best.name)+' • '+esc(best.phone||'No phone')+'</b><br>Attempts: '+best.attempts+' • Avg: '+best.avg+'% • Best: '+best.best+'% • Worst: '+best.worst+'% • Days: '+best.days+'<br>'+best.badges.map(function(b){ return '<span class="badge-chip">'+b.emoji+' '+b.name+'</span>'; }).join('')+'</div>'+
   leastHtml+
-  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic — OVERALL (Real Topics Only)</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+(topicRows.length? topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('') : '<tr><td colspan="4">No valid topic data — old rows had Topic = 5/6, now excluded</td></tr>')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — OVERALL, All Fields, Consistency + Performance</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Worst</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone||'No phone')+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.worst+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
-  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt — '+(topicFilter||'All Topics')+' (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(cleanTopic(r.topic||''))+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
+  '<div class="card"><h3 style="color:#facc15">📚 Performance By Topic — OVERALL</h3><table><tr><th>Topic</th><th>Attempts</th><th>Avg</th><th>Best</th></tr>'+(topicRows.length? topicRows.map(function(t){ return '<tr><td>'+esc(t.topic)+'</td><td>'+t.attempts+'</td><td>'+t.avg+'%</td><td>'+t.best+'%</td></tr>'; }).join('') : '<tr><td colspan="4">No valid topic data</td></tr>')+'</table></div>'+
+  '<div class="card"><h3 style="color:#00e5ff">🌍 Performance By Language</h3><table><tr><th>Language</th><th>Attempts</th><th>Avg</th></tr>'+langRows.map(function(l){ return '<tr><td>'+esc(l.lang.toUpperCase())+'</td><td>'+l.attempts+'</td><td>'+l.avg+'%</td></tr>'; }).join('')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">👥 All Students — OVERALL</h3><table><tr><th>#</th><th>Name / Phone</th><th>Attempts</th><th>Avg</th><th>Best</th><th>Worst</th><th>Days</th><th>Badges</th></tr>'+students.map(function(u,i){ return '<tr><td>'+(i+1)+'</td><td><b>'+esc(u.name)+'</b><br><span class="small">'+esc(u.phone||'No phone')+'</span></td><td>'+u.attempts+'</td><td>'+u.avg+'%</td><td>'+u.best+'%</td><td>'+u.worst+'%</td><td>'+u.days+'</td><td>'+u.badges.map(function(b){ return b.emoji; }).join(' ')+' '+u.badges.length+'</td></tr>'; }).join('')+'</table></div>'+
+  '<div class="card"><h3 style="color:#5ee1ff">📝 Every Quiz Attempt — '+(topicFilter||'All Topics')+' / '+(langFilter||'All Languages')+' (Latest First)</h3><table><tr><th>Date</th><th>Name</th><th>Topic</th><th>Lang</th><th>Score</th><th>%</th></tr>'+filtered.slice().reverse().map(function(r){ return '<tr><td>'+esc(r.timestamp||'')+'</td><td>'+esc(r.name||'')+'</td><td>'+esc(cleanTopic(r.topic||''))+'</td><td>'+esc(String(r.language||'en').toUpperCase())+'</td><td>'+esc(r.score||'')+'/'+esc(r.total||'')+'</td><td>'+getPerc(r)+'%</td></tr>'; }).join('')+'</table></div>';
 }
 function downloadAnalyticsPDF(){ showTab('analytics', document.querySelectorAll('.tab')[6]); setTimeout(function(){ window.print(); }, 400); }
 async function deleteGeneric(sheet,key){ if(!confirm('Move this to Recycle Bin?')) return; var x=postIndex[key]; if(!x) return; addToRecycle(sheet, x); var card=document.getElementById('postcard-'+key); if(card) card.style.display='none'; await postToSheet({type:'delete',sheet:sheet,id:x.id||'',timestamp:x.timestamp||'',name:x.name||x.title||'',phone:x.phone||''}); loadAll(); }
 async function clearSheet(sheet){ if(!confirm('Move ALL '+sheet+' to Recycle Bin?')) return; if(sheet==='Quiz'){ D.quiz.forEach(function(b){ addToRecycle('Quiz', b); }); } if(sheet==='Notify'){ D.notify.forEach(function(b){ addToRecycle('Notify', b); }); } await postToSheet({type:'clear',sheet:sheet}); loadAll(); }
+setAdminLang(adminLang);
 loadTimeSettingsUI();
 loadAll();
 </script>
