@@ -1,77 +1,119 @@
-const CACHE_NAME = 'smarttech-v2';
-const urlsToCache = [
+const CACHE_NAME = 'smarttech-v3';
+const CORE_URLS = [
+  '/',
   '/index.html',
   '/quiz.html',
   '/booking.html',
   '/updates.html',
   '/admin.html',
-  '/admin-dashboard.html',
-  '/admin-notify.html',
   '/logo.png',
+  '/logo-192.png',
+  '/logo-512.png',
   '/manifest.json'
 ];
 
-// Install - cache all pages
-self.addEventListener('install', e => {
+// Install - cache one by one so 1 missing file doesn't break all
+self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
-      .catch(err => console.log('SW install cache failed:', err))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      for (const url of CORE_URLS) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.log('SW: skip cache (missing):', url);
+        }
+      }
+      await self.skipWaiting();
+    })()
   );
 });
 
-// Activate - delete old caches (v1 -> v2)
-self.addEventListener('activate', e => {
+// Activate - delete old caches (v1, v2 -> v3)
+self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
-    }).then(() => self.clients.claim())
+      await self.clients.claim();
+    })()
   );
 });
 
-// Fetch - Cache first for static, Network first for pages
-self.addEventListener('fetch', e => {
-  // Skip non-GET and external requests (WhatsApp, Google, EmailJS)
+// Fetch - Smart caching
+self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return;
+
+  // Skip external: WhatsApp, Google Sheets, EmailJS, Drive, CDN
+  if (url.origin !== self.location.origin) return;
+
+  // Skip API / Apps Script calls - always network
+  if (url.pathname.includes('script.google.com')) return;
 
   // For HTML pages: Network first, fallback to cache
   if (e.request.mode === 'navigate' || e.request.destination === 'document') {
     e.respondWith(
-      fetch(e.request)
-        .then(res => {
+      (async () => {
+        try {
+          const res = await fetch(e.request);
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          const cache = await caches.open(CACHE_NAME);
+          // Don't cache URLs with ?utm_source=pwa as separate - cache as index
+          cache.put(e.request, clone).catch(()=>{});
           return res;
-        })
-        .catch(() => caches.match(e.request).then(cached => cached || caches.match('/index.html')))
+        } catch (err) {
+          const cached = await caches.match(e.request);
+          if (cached) return cached;
+          // Offline fallback: try index.html
+          const fallback = await caches.match('/index.html');
+          if (fallback) return fallback;
+          return new Response('<h1 style="text-align:center;font-family:sans-serif;padding:40px">📶 You are offline<br><br>SmartTech needs internet for first load.<br>Please reconnect.</h1>', { headers: { 'Content-Type': 'text/html' } });
+        }
+      })()
     );
     return;
   }
 
-  // For images / CSS / JS / logo: Cache first
+  // For images / CSS / JS / manifest / icons: Cache first, then network + update cache
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+    (async () => {
+      const cached = await caches.match(e.request, { ignoreSearch: true });
+      if (cached) {
+        // Update in background (stale-while-revalidate)
+        fetch(e.request).then(async (res) => {
+          if (res && res.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(e.request, res.clone()).catch(()=>{});
+          }
+        }).catch(()=>{});
+        return cached;
+      }
+      try {
+        const res = await fetch(e.request);
+        if (res && res.status === 200) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(e.request, res.clone()).catch(()=>{});
+        }
         return res;
-      }).catch(() => cached);
-    })
+      } catch (err) {
+        // If image fails offline, return logo placeholder
+        if (e.request.destination === 'image') {
+          const logo = await caches.match('/logo-192.png');
+          if (logo) return logo;
+        }
+        throw err;
+      }
+    })()
   );
 });
 
 // Push - from server / Admin (handles both text and JSON)
-self.addEventListener('push', e => {
+self.addEventListener('push', (e) => {
   let data = { title: 'SmartTech LTD', body: 'New update from SmartTech!', link: '/updates.html' };
   try {
     if (e.data) {
@@ -86,8 +128,8 @@ self.addEventListener('push', e => {
 
   const options = {
     body: data.body,
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/logo-192.png',
+    badge: '/logo-192.png',
     image: data.image || undefined,
     vibrate: [200, 100, 200],
     tag: 'smarttech-notify',
@@ -103,8 +145,8 @@ self.addEventListener('push', e => {
 
   // Also tell open tabs to show toast + bell
   e.waitUntil(
-    self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
-      clients.forEach(client => {
+    self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+      clients.forEach((client) => {
         client.postMessage({ type: 'notify', title: data.title, body: data.body, link: data.link || data.url || '/updates.html' });
       });
     })
@@ -112,7 +154,7 @@ self.addEventListener('push', e => {
 });
 
 // Notification click - FIXED: opens the link Admin chose, not just /
-self.addEventListener('notificationclick', e => {
+self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const action = e.action;
   if (action === 'close') return;
@@ -121,33 +163,29 @@ self.addEventListener('notificationclick', e => {
   if (e.notification.data && e.notification.data.url) {
     url = e.notification.data.url;
   }
-  // If it's external (WhatsApp Channel), open as-is, else make it absolute
   const fullUrl = url.startsWith('http') ? url : new URL(url, self.location.origin).href;
 
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // If SmartTech already open, focus it and navigate
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.postMessage({ type: 'notify-click', url: fullUrl });
           return client.focus();
         }
       }
-      // Otherwise open new window
       if (clients.openWindow) return clients.openWindow(fullUrl);
     })
   );
 });
 
 // Allow pages to tell SW to skip waiting (for instant update)
-self.addEventListener('message', e => {
+self.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
   if (e.data && e.data.type === 'notify') {
-    // Forward notification from admin-notify.html to all tabs
-    self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
-      clients.forEach(c => c.postMessage(e.data));
+    self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+      clients.forEach((c) => c.postMessage(e.data));
     });
   }
 });
