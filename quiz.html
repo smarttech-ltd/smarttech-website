@@ -14,6 +14,7 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .wrap{max-width:520px;margin:0 auto;padding:14px}
 .card{background:rgba(13,35,90,.92);border:1px solid #2a5ab0;border-radius:18px;padding:16px;margin-bottom:12px}
 .input{width:100%;padding:12px;border-radius:12px;border:1px solid #1e3a5a;background:rgba(0,0,0,.35);color:#fff;font-size:14px;outline:none;margin-bottom:10px}
+select.input{cursor:pointer}
 .btn{width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;cursor:pointer;font-size:14px;background:#00e5ff;color:#0a1931}
 .btn-green{background:#00c853;color:#fff}.btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid #2a5ab0}.btn-orange{background:#ff9800;color:#fff}
 .btn:disabled{opacity:.6;cursor:not-allowed}
@@ -45,7 +46,10 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 .pill-btn.active{background:#00e5ff;color:#0a1931;border-color:#00e5ff}
 .pill-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .pdf-watermark{display:none}
-.pdf-watermark img{width:100%;height:auto;filter:blur(1.5px)}
+.lang-select{background:rgba(255,255,255,.1);border:1px solid #2a5ab0;color:#fff;padding:6px 8px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;outline:none}
+.lang-select option{color:#000}
+.time-badge{background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:10px;padding:8px;text-align:center;font-size:12px;color:#facc15;font-weight:700;margin:8px 0}
+.keyword-hint{background:rgba(0,229,255,.1);border:1px dashed #00e5ff;border-radius:10px;padding:8px;font-size:11px;color:#c8e6ff;margin-top:6px;text-align:center}
 @media print{
   @page{margin:14mm}
   body{background:#fff!important;color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -69,25 +73,30 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 </head>
 <body>
 <div class="pdf-watermark"><img src="logo.png" alt=""></div>
-<div class="header" id="mainHeader"><a href="index.html">← Home</a><b>🧠 SmartTech Quiz</b><span style="margin-left:auto;font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
+<div class="header" id="mainHeader"><a href="index.html">← <span data-i18n="home">Home</span></a><b>🧠 SmartTech Quiz</b>
+<select id="langSelect" class="lang-select" onchange="setLanguage(this.value)" style="margin-left:auto">
+<option value="en">🌍 English</option><option value="sw">🇰🇪 Kiswahili</option><option value="fr">🇫🇷 Français</option><option value="la">🏛️ Latina</option>
+</select>
+<span style="font-size:11px;color:#8ec8ff" id="conn">🔄 Loading...</span></div>
 <div class="wrap">
 <div class="card" id="startCard">
-<h2 style="color:#5ee1ff;text-align:center">🧠 FREE ICT Quiz</h2>
-<p class="small" style="text-align:center;margin:8px 0">Computer Basics • MS Word • MS Excel • Internet Safety<br>MCQ + Open Questions • Earn Badges!</p>
-<label class="small">Your Name *</label><input id="userName" class="input" placeholder="e.g. Gideon">
-<label class="small">Phone *</label><input id="userPhone" class="input" placeholder="e.g. 0712345678" oninput="checkBadgesLive()">
-<label class="small">Email (optional - only if you want results emailed)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
+<h2 style="color:#5ee1ff;text-align:center" data-i18n="title">🧠 FREE ICT Quiz</h2>
+<p class="small" style="text-align:center;margin:8px 0" data-i18n="subtitle">Computer Basics • MS Word • MS Excel • Internet Safety<br>MCQ + Open Questions • Earn Badges!</p>
+<div class="time-badge" id="timeBadge">⏱️ MCQ: 45s • Open: 90s • Default Time</div>
+<label class="small" data-i18n="nameLabel">Your Name *</label><input id="userName" class="input" placeholder="e.g. Gideon">
+<label class="small" data-i18n="phoneLabel">Phone *</label><input id="userPhone" class="input" placeholder="e.g. 0712345678" oninput="checkBadgesLive()">
+<label class="small" data-i18n="emailLabel">Email (optional - only if you want results emailed)</label><input id="userEmail" class="input" placeholder="e.g. you@gmail.com">
 <div id="myBadgesBox" style="background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.4);border-radius:14px;padding:12px;margin-bottom:10px">
-<div style="text-align:center;font-weight:800;color:#facc15">🏆 MY BADGES</div>
+<div style="text-align:center;font-weight:800;color:#facc15" data-i18n="myBadges">🏆 MY BADGES</div>
 <div id="myBadgesStats" class="small" style="text-align:center">Enter phone to see your badges</div>
 <div id="myBadgesGrid" class="badge-grid"></div>
 <div id="nextBadgeHint" class="small" style="text-align:center;color:#c8d6ff"></div>
 </div>
-<label class="small">Choose Topic — Tap any button</label>
+<label class="small" data-i18n="chooseTopic">Choose Topic — Tap any button</label>
 <div id="topicPills" class="pill-wrap"></div>
 <select id="topic" class="input"><option>Computer Basics</option><option>MS Word</option><option>MS Excel</option><option>Internet Safety</option><option>Computer Packages</option><option>ICT Basics</option><option>All Topics</option></select>
 <div id="topicCounts" class="small" style="text-align:center;margin-bottom:10px">Loading question counts...</div>
-<label class="small">How many questions? — Tap any button</label>
+<label class="small" data-i18n="howMany">How many questions? — Tap any button</label>
 <div id="countPills" class="pill-wrap">
 <button type="button" class="pill-btn active" data-count="10" onclick="setCount(10,this)">10</button>
 <button type="button" class="pill-btn" data-count="20" onclick="setCount(20,this)">20</button>
@@ -95,10 +104,10 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <button type="button" class="pill-btn" data-count="0" onclick="setCount(0,this)">All</button>
 </div>
 <select id="qCountSel" class="input"><option value="10">10 Questions</option><option value="20">20 Questions</option><option value="50">50 Questions</option><option value="0">All Questions</option></select>
-<button class="btn" id="startBtn" type="button" onclick="startQuiz()">▶️ Start Quiz</button>
+<button class="btn" id="startBtn" type="button" onclick="startQuiz()" data-i18n="startBtn">▶️ Start Quiz</button>
 <p class="small" id="startMsg" style="margin-top:8px;text-align:center"></p>
 <div style="margin-top:14px">
-<div style="text-align:center;font-weight:800;color:#facc15;margin-bottom:8px">🏆 TOP CONSISTENT LEARNERS</div>
+<div style="text-align:center;font-weight:800;color:#facc15;margin-bottom:8px" data-i18n="topLearners">🏆 TOP CONSISTENT LEARNERS</div>
 <div id="leaderboard"><p class="small" style="text-align:center">Loading leaderboard...</p></div>
 </div>
 </div>
@@ -109,52 +118,83 @@ body{background:#0a1931;color:#fff;min-height:100vh}
 <div id="options"></div>
 <div id="openBox" class="hidden">
 <input id="openAnswer" class="open-input" placeholder="Type your answer here..." autocomplete="off">
+<div class="keyword-hint" data-i18n="openHint">💡 Tip: Use key words. Your answer is marked on keywords, not exact spelling.</div>
 </div>
 <div id="openFeedback" class="feedback"></div>
 </div>
 <div class="card hidden" id="submitCard">
-<h2 style="text-align:center;color:#5ee1ff">✅ All Questions Done!</h2>
+<h2 style="text-align:center;color:#5ee1ff" data-i18n="allDone">✅ All Questions Done!</h2>
 <p class="small" style="text-align:center;margin:10px 0" id="submitSummary">You answered all questions.</p>
 <div style="background:rgba(250,204,21,.15);border:1px solid #facc15;border-radius:12px;padding:12px;text-align:center;font-weight:800;color:#facc15;margin:10px 0;font-size:16px" id="autoSubmitCountdown">Quiz submits in: 5</div>
 <div id="submitList" style="margin:10px 0"></div>
-<button class="btn btn-green" id="finalSubmitBtn" onclick="finishQuiz()">📤 Submit Quiz & See Results</button>
+<button class="btn btn-green" id="finalSubmitBtn" onclick="finishQuiz()" data-i18n="submitBtn">📤 Submit Quiz & See Results</button>
 </div>
 <div class="card hidden" id="resultCard">
-<h2 style="text-align:center;color:#5ee1ff">🎉 Quiz Complete!</h2>
+<h2 style="text-align:center;color:#5ee1ff" data-i18n="complete">🎉 Quiz Complete!</h2>
 <div id="pdfHeader" style="display:none;text-align:center;margin-bottom:10px"><b style="font-size:18px">SmartTech LTD — Quiz Result</b><br><span id="pdfMeta" style="font-size:12px;color:#333"></span><br><span style="font-size:11px;color:#666">Your trusted ICT Partner • WhatsApp 0183465547</span></div>
-<div class="scorebox"><div>YOUR SCORE</div><b id="finalScore">0/0</b><div id="finalPerc" style="font-size:20px;font-weight:800;color:#fff;margin-top:4px">0%</div><div id="finalMsg" style="font-size:13px;margin-top:6px;color:#c8d6ff"></div></div>
+<div class="scorebox"><div data-i18n="yourScore">YOUR SCORE</div><b id="finalScore">0/0</b><div id="finalPerc" style="font-size:20px;font-weight:800;color:#fff;margin-top:4px">0%</div><div id="finalMsg" style="font-size:13px;margin-top:6px;color:#c8d6ff"></div></div>
 <div id="newBadgesBox"></div>
 <div id="myBadgesAfter" class="badge-grid"></div>
 <div id="myStatsAfter" class="small" style="text-align:center;margin-bottom:10px"></div>
 <div id="uploadStatus" class="small" style="text-align:center;margin:8px 0;color:#8ec8ff"></div>
 <div id="review"></div>
-<button class="btn no-print" style="background:#facc15;color:#0a1931;margin-top:10px" onclick="downloadMyPDF()">📄 Download My Result as PDF</button>
-<button class="btn no-print" id="emailBtn" style="background:#4aa3ff;color:#fff;margin-top:10px" onclick="sendResultsEmail()">📧 Send Results via Email</button>
+<button class="btn no-print" style="background:#facc15;color:#0a1931;margin-top:10px" onclick="downloadMyPDF()" data-i18n="downloadPDF">📄 Download My Result as PDF</button>
+<button class="btn no-print" id="emailBtn" style="background:#4aa3ff;color:#fff;margin-top:10px" onclick="sendResultsEmail()" data-i18n="sendEmail">📧 Send Results via Email</button>
 <p class="small no-print" id="emailMsg" style="text-align:center;margin-top:6px">Email is sent ONLY if you tap this button.</p>
-<button class="btn btn-green no-print" onclick="location.reload()">🔄 Retake Quiz</button>
-<a href="booking.html" class="no-print" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px">📅 Book ICT Help</a>
+<button class="btn btn-green no-print" onclick="location.reload()" data-i18n="retake">🔄 Retake Quiz</button>
+<a href="booking.html" class="no-print" style="display:block;background:#ff9800;color:#fff;padding:13px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;margin-top:10px" data-i18n="bookHelp">📅 Book ICT Help</a>
 </div>
 </div>
 <script>
+// ===== CONFIG: QUIZ TIME - MODIFY OR USE DEFAULT =====
+// Change these numbers to change time for ALL quizzes. Admin Dashboard can override via localStorage.
+// If you don't change, DEFAULT is used.
+const QUIZ_TIME_CONFIG = { MCQ: 45, OPEN: 90, AUTO_SUBMIT: 5, MIN: 5, MAX: 180 };
 const SHEET_URL="https://script.google.com/macros/s/AKfycbxx0rGRbYRhdHscGD_sCpXetpyPgc57op21OGdfICoV4ZNp6Y4WKoVBDHjUkAFEdXk/exec";
 const EMAILJS_PUBLIC_KEY="lMu3eDCbvkF716c8I";
 const EMAILJS_SERVICE_ID="service_84v01bj";
 const EMAILJS_TEMPLATE_ID="template_3zncmwh";
 if(window.emailjs){ emailjs.init(EMAILJS_PUBLIC_KEY); }
+
+// ===== I18N: 4 LANGUAGES - CLIENT CHOOSES =====
+const I18N = {
+en:{home:"Home",title:"🧠 FREE ICT Quiz",subtitle:"Computer Basics • MS Word • MS Excel • Internet Safety<br>MCQ + Open Questions • Earn Badges!",nameLabel:"Your Name *",phoneLabel:"Phone *",emailLabel:"Email (optional - only if you want results emailed)",myBadges:"🏆 MY BADGES",chooseTopic:"Choose Topic — Tap any button",howMany:"How many questions? — Tap any button",startBtn:"▶️ Start Quiz",topLearners:"🏆 TOP CONSISTENT LEARNERS",openHint:"💡 Tip: Use key words. Your answer is marked on keywords, not exact spelling.",allDone:"✅ All Questions Done!",submitBtn:"📤 Submit Quiz & See Results",complete:"🎉 Quiz Complete!",yourScore:"YOUR SCORE",downloadPDF:"📄 Download My Result as PDF",sendEmail:"📧 Send Results via Email",retake:"🔄 Retake Quiz",bookHelp:"📅 Book ICT Help"},
+sw:{home:"Nyumbani",title:"🧠 Jaribio la ICT BURE",subtitle:"Misingi ya Kompyuta • MS Word • MS Excel • Usalama wa Mtandao<br>Maswali ya Kuchagua + Maswali ya Wazi • Pata Medali!",nameLabel:"Jina Lako *",phoneLabel:"Simu *",emailLabel:"Barua pepe (hiari - ukitaka matokeo yatumwe)",myBadges:"🏆 MEDALI ZANGU",chooseTopic:"Chagua Mada — Gusa kitufe chochote",howMany:"Maswali mangapi? — Gusa kitufe chochote",startBtn:"▶️ Anza Jaribio",topLearners:"🏆 WANAFUNZI BORA",openHint:"💡 Kidokezo: Tumia maneno muhimu. Jibu lako linahukumiwa kwa maneno muhimu.",allDone:"✅ Maswali Yote Yamekwisha!",submitBtn:"📤 Wasilisha Jaribio & Ona Matokeo",complete:"🎉 Jaribio Limekwisha!",yourScore:"ALAMA YAKO",downloadPDF:"📄 Pakua Matokeo kama PDF",sendEmail:"📧 Tuma Matokeo kwa Barua Pepe",retake:"🔄 Rudia Jaribio",bookHelp:"📅 Weka Nafasi ya Msaada wa ICT"},
+fr:{home:"Accueil",title:"🧠 Quiz ICT GRATUIT",subtitle:"Bases Informatiques • MS Word • MS Excel • Sécurité Internet<br>QCM + Questions Ouvertes • Gagnez des Badges !",nameLabel:"Votre Nom *",phoneLabel:"Téléphone *",emailLabel:"Email (facultatif - si vous voulez les résultats par email)",myBadges:"🏆 MES BADGES",chooseTopic:"Choisir un Sujet — Touchez un bouton",howMany:"Combien de questions ? — Touchez un bouton",startBtn:"▶️ Commencer le Quiz",topLearners:"🏆 MEILLEURS APPRENANTS",openHint:"💡 Astuce : Utilisez des mots-clés. Votre réponse est notée sur les mots-clés.",allDone:"✅ Toutes les Questions Terminées !",submitBtn:"📤 Soumettre & Voir les Résultats",complete:"🎉 Quiz Terminé !",yourScore:"VOTRE SCORE",downloadPDF:"📄 Télécharger le Résultat en PDF",sendEmail:"📧 Envoyer les Résultats par Email",retake:"🔄 Refaire le Quiz",bookHelp:"📅 Réserver une Aide ICT"},
+la:{home:"Domus",title:"🧠 Probatio ICT GRATIS",subtitle:"Fundamenta Computatralia • MS Word • MS Excel • Securitas Interretialis<br>Quaestiones Electivae + Apertae • Insignia Mere!",nameLabel:"Nomen Tuum *",phoneLabel:"Telephonum *",emailLabel:"Epistula Electronica (optionale)",myBadges:"🏆 INSIGNIA MEA",chooseTopic:"Elige Argumentum — Tange Bullam",howMany:"Quot Quaestiones? — Tange Bullam",startBtn:"▶️ Incipe Probationem",topLearners:"🏆 OPTIMI DISCENTES",openHint:"💡 Consilium: Verbis clavibus utere. Responsum tuum verbis clavibus iudicatur.",allDone:"✅ Omnes Quaestiones Perfectae!",submitBtn:"📤 Submitte & Vide Eventus",complete:"🎉 Probatio Perfecta!",yourScore:"PUNCTUM TUUM",downloadPDF:"📄 Depone Eventum ut PDF",sendEmail:"📧 Mitte Eventus per Epistulam",retake:"🔄 Repete Probationem",bookHelp:"📅 Reserva Auxilium ICT"}
+};
+let currentLang = localStorage.getItem('smarttech_lang') || 'en';
+function setLanguage(lang){
+  currentLang = lang; localStorage.setItem('smarttech_lang', lang);
+  document.getElementById('langSelect').value = lang;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    let key = el.getAttribute('data-i18n');
+    if(I18N[lang] && I18N[lang][key]) el.innerHTML = I18N[lang][key];
+  });
+  updateTimeBadge();
+}
+function updateTimeBadge(){
+  let el=document.getElementById('timeBadge'); if(!el) return;
+  let src = localStorage.getItem('smarttech_time_settings') ? 'Custom (Admin)' : 'Default';
+  let labels={en:'MCQ',sw:'Chaguo',fr:'QCM',la:'Electiva'};
+  el.textContent = `⏱️ ${labels[currentLang]||'MCQ'}: ${TIME_SETTINGS.mcq}s • Open: ${TIME_SETTINGS.open}s • ${src} Time`;
+}
 let allQuestions=[], quizQuestions=[], current=0, score=0, answers=[], timerInt=null, timeLeft=45, answered=false;
 let allQuizResults=[];
-let TIME_SETTINGS={mcq:45, open:90};
+let TIME_SETTINGS={mcq:QUIZ_TIME_CONFIG.MCQ, open:QUIZ_TIME_CONFIG.OPEN};
 let emailAlreadySent=false;
 let selectedMcq=-1;
 let finalSubmitInt=null, finalSubmitted=false;
 let questionsLoading=false;
+// FIXED DEFAULT QUESTIONS - with translations + keywords
 const DEFAULT_Q=[
-{topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],answer:0,explanation:"CPU = Central Processing Unit"},
-{topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",options:["Monitor","Keyboard","Printer","Speaker"],answer:1,explanation:"Keyboard is for typing"},
-{topic:"Computer Basics",qtype:"open",question:"What is the full form of RAM?",options:[],answer:"Random Access Memory",explanation:"RAM = Random Access Memory"},
-{topic:"MS Word",qtype:"mcq",question:"Which shortcut saves a document?",options:["Ctrl+P","Ctrl+S","Ctrl+C","Ctrl+V"],answer:1,explanation:"Ctrl+S = Save"},
-{topic:"MS Excel",qtype:"mcq",question:"What is the intersection of a row and column called?",options:["Table","Cell","Sheet","Range"],answer:1,explanation:"Cell"},
-{topic:"Internet Safety",qtype:"open",question:"What is a strong password?",options:[],answer:"Mix of letters numbers and symbols",explanation:"Strong password mixes letters, numbers, symbols"}
+{topic:"Computer Basics",qtype:"mcq",question:"What does CPU stand for?",translations:{sw:"CPU inasimama kwa nini?",fr:"Que signifie CPU ?",la:"Quid significat CPU?"},options:["Central Processing Unit","Computer Personal Unit","Central Program Unit","Control Processing Unit"],options_translations:{sw:["Kitengo Kikuu cha Uchakataji","Kitengo cha Kompyuta Binafsi","Kitengo Kikuu cha Programu","Kitengo cha Kudhibiti Uchakataji"],fr:["Unité Centrale de Traitement","Unité Personnelle d'Ordinateur","Unité Centrale de Programme","Unité de Contrôle de Traitement"],la:["Unitas Centralis Processus","Unitas Personalis Computatri","Unitas Centralis Programmatis","Unitas Moderationis Processus"]},answer:0,explanation:"CPU = Central Processing Unit",keywords:["central","processing","unit"]},
+{topic:"Computer Basics",qtype:"mcq",question:"Which device is used to type?",translations:{sw:"Kifaa gani kinatumika kuandika?",fr:"Quel appareil sert à taper ?",la:"Quo instrumento scribitur?"},options:["Monitor","Keyboard","Printer","Speaker"],options_translations:{sw:["Kichunguzi","Kibodi","Printa","Spika"],fr:["Écran","Clavier","Imprimante","Haut-parleur"],la:["Monitor","Claviatura","Typographus","Loquens"]},answer:1,explanation:"Keyboard is for typing",keywords:["keyboard"]},
+{topic:"Computer Basics",qtype:"open",question:"What is the full form of RAM?",translations:{sw:"RAM inasimama kwa nini?",fr:"Que signifie RAM ?",la:"Quid significat RAM?"},options:[],answer:"Random Access Memory",explanation:"RAM = Random Access Memory",keywords:["random","access","memory"]},
+{topic:"MS Word",qtype:"mcq",question:"Which shortcut saves a document?",translations:{sw:"Njia gani ya mkato huhifadhi hati?",fr:"Quel raccourci enregistre un document ?",la:"Quo compendio documentum servatur?"},options:["Ctrl+P","Ctrl+S","Ctrl+C","Ctrl+V"],answer:1,explanation:"Ctrl+S = Save",keywords:["ctrl","s"]},
+{topic:"MS Excel",qtype:"mcq",question:"What is the intersection of a row and column called?",translations:{sw:"Makutano ya safu na safu wima huitwaje?",fr:"Comment appelle-t-on l'intersection d'une ligne et d'une colonne ?",la:"Quomodo vocatur intersectio ordinis et columnae?"},options:["Table","Cell","Sheet","Range"],options_translations:{sw:["Jedwali","Seli","Karatasi","Masafa"],fr:["Tableau","Cellule","Feuille","Plage"],la:["Tabula","Cellula","Folium","Ambitus"]},answer:1,explanation:"Cell",keywords:["cell"]},
+{topic:"Internet Safety",qtype:"open",question:"What is a strong password?",translations:{sw:"Nenosiri imara ni nini?",fr:"Qu'est-ce qu'un mot de passe fort ?",la:"Quid est tessera valida?"},options:[],answer:"Mix of letters numbers and symbols",explanation:"Strong password mixes letters, numbers, symbols",keywords:["letters","numbers","symbols","mix"]}
 ];
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function lowerKeys(r){var o={};Object.keys(r||{}).forEach(function(k){o[String(k).toLowerCase().trim()]=r[k];});return o;}
@@ -180,7 +220,6 @@ function normTopic(t){
   var found=KNOWN_TOPICS.find(function(k){ return k.toLowerCase()===s; });
   return found || String(t||'').trim() || 'Computer Basics';
 }
-// FIX: Always return an ARRAY for options - string, JSON string, or broken value
 function parseOptions(raw){
   if(Array.isArray(raw)) return raw.map(function(x){ return String(x==null?'':x); });
   if(raw==null || raw==='') return [];
@@ -193,10 +232,8 @@ function parseOptions(raw){
     if(typeof j==='object' && j!==null) return Object.values(j).map(function(x){ return String(x==null?'':x); });
     return [String(j)];
   }catch(e){}
-  // Not JSON: "A | B | C" or "A;B;C" or "A,B,C"
   if(s.indexOf('|')>=0) return s.split('|').map(function(x){ return x.trim(); }).filter(Boolean);
   if(s.indexOf(';')>=0) return s.split(';').map(function(x){ return x.trim(); }).filter(Boolean);
-  // Single string with newlines
   if(s.indexOf('\n')>=0) return s.split('\n').map(function(x){ return x.trim(); }).filter(Boolean);
   return [s];
 }
@@ -214,18 +251,29 @@ function getKeywords(text){
   var stop=['a','an','the','is','are','was','were','be','been','of','to','in','on','for','and','or','with','by','as','at','it','its','this','that','what','how','why','when','where','which','who'];
   return normalizeText(text).split(' ').filter(function(w){ return w.length>2 && stop.indexOf(w)===-1; });
 }
-function checkOpenAnswer(user, correct){
+// ===== FIXED: OPEN-ENDED KEYWORD MARKING =====
+// Returns {correct, matched, total, matchedWords}
+// Correct if >=60% keywords found OR exact match OR contains full answer
+function checkOpenAnswerDetailed(user, correct, explicitKeywords){
   var u=normalizeText(user), c=normalizeText(correct);
-  if(!u || !c) return false;
-  if(u===c) return true;
-  if(u.includes(c) || c.includes(u)) return true;
-  if(/^\d+$/.test(c)) return u===c;
-  var kws=getKeywords(correct);
-  if(!kws.length) return u===c;
-  var matched=kws.filter(function(w){ return u.includes(w); }).length;
-  if(matched / kws.length >= 0.7) return true;
-  return false;
+  if(!u || !c) return {correct:false, matched:[], total:0, score:0};
+  if(u===c) return {correct:true, matched:[c], total:1, score:100};
+  if(u.includes(c) || c.includes(u)) return {correct:true, matched:[c], total:1, score:100};
+  if(/^\d+$/.test(c)) return {correct: u===c, matched: u===c?[c]:[], total:1, score: u===c?100:0};
+  var kws = explicitKeywords && explicitKeywords.length ? explicitKeywords.map(function(w){return normalizeText(w);}) : getKeywords(correct);
+  if(!kws.length) return {correct: u===c, matched:[], total:0, score:0};
+  // Synonym map for 4 languages
+  var synonyms = { "central":["central","kuu","centrale","centralis"], "processing":["processing","uchakataji","traitement","processus"], "unit":["unit","kitengo","unité","unitas"], "random":["random","nasibu","aléatoire","fortuitus"], "access":["access","ufikiaji","accès","accessus"], "memory":["memory","kumbukumbu","mémoire","memoria"], "letters":["letters","herufi","lettres","litterae"], "numbers":["numbers","nambari","chiffres","numeri"], "symbols":["symbols","alama","symboles","signa"] };
+  var matched=[];
+  kws.forEach(function(kw){
+    var variants = synonyms[kw] || [kw];
+    if(variants.some(function(v){ return u.includes(v); })) matched.push(kw);
+    else if(u.includes(kw)) matched.push(kw);
+  });
+  var ratio = matched.length / kws.length;
+  return {correct: ratio >= 0.6, matched: matched, total: kws.length, score: Math.round(ratio*100)};
 }
+function checkOpenAnswer(user, correct, keywords){ return checkOpenAnswerDetailed(user, correct, keywords).correct; }
 function fmtTime(s){ if(s>=60){ var m=Math.floor(s/60), sec=s%60; return sec? m+' min '+sec+'s' : m+' min'; } return s+'s'; }
 function shuffleArray(arr){
   var a = arr.slice();
@@ -235,7 +283,7 @@ function shuffleArray(arr){
   }
   return a;
 }
-function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,options:parseOptions(q.options),answer:q.answer,explanation:q.explanation,timer:0}; }); }
+function getDefaultQuestions(){ return DEFAULT_Q.map(function(q){ return {topic:normTopic(q.topic),qtype:q.qtype,question:q.question,translations:q.translations||{},options:parseOptions(q.options),options_translations:q.options_translations||{},answer:q.answer,explanation:q.explanation,keywords:q.keywords||[],timer:0}; }); }
 async function postToSheet(payload){
   try{ await fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return true; }
   catch(e){ console.log('Sheet upload fail', e); return false; }
@@ -249,7 +297,7 @@ function downloadMyPDF(){
   var dateStr=new Date().toLocaleString('en-KE',{timeZone:'Africa/Nairobi'});
   var hdr=document.getElementById('pdfHeader');
   hdr.style.display='block';
-  document.getElementById('pdfMeta').textContent='Name: '+name+' • Phone: '+phone+' • Topic: '+topic+' • Score: '+scoreText+' • '+percText+' • Date: '+dateStr+' • SmartTech LTD';
+  document.getElementById('pdfMeta').textContent='Name: '+name+' • Phone: '+phone+' • Topic: '+topic+' • Score: '+scoreText+' • '+percText+' • Date: '+dateStr+' • Lang: '+currentLang.toUpperCase()+' • SmartTech LTD';
   document.getElementById('startCard').classList.add('hidden');
   document.getElementById('quizCard').classList.add('hidden');
   document.getElementById('submitCard').classList.add('hidden');
@@ -272,7 +320,7 @@ async function sendResultsEmail(){
   var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
   var wrongCount=answers.length-correctCount;
   var reviewText=answers.map(function(a,i){ return 'Q'+(i+1)+'. '+a.q+'\nYour Answer: '+a.yourAnswer+' - '+(a.isCorrect?'CORRECT':'WRONG')+'\nCorrect Answer: '+a.correctAnswer+'\n'+(a.explanation?'Explanation: '+a.explanation+'\n':''); }).join('\n');
-  var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
+  var message='Hello '+name+',\n\nThank you for taking SmartTech LTD Quiz.\n\nTopic: '+topic+'\nScore: '+scoreText+'\nPercentage: '+percText+'\nCorrect: '+correctCount+' | Wrong: '+wrongCount+'\nLanguage: '+currentLang.toUpperCase()+'\nDate: '+dateStr+'\nPhone: '+phone+'\n\n--- DETAILED REVIEW ---\n'+reviewText+'\n\nKeep learning with SmartTech LTD!\nWhatsApp: 0183465547';
   try{
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, to_name: name, from_name: 'SmartTech LTD', reply_to: email, name: name, phone: phone, email: email, topic: topic, score: scoreText, percentage: percText, correct: correctCount, wrong: wrongCount, date: dateStr, message: message, review: reviewText });
     emailAlreadySent=true;
@@ -400,21 +448,35 @@ function parseQuestionRow(r){
   var opts=parseOptions(r.options);
   var qt=String(r.qtype||r.type||'').toLowerCase();
   var isOpen = qt.includes('open') || opts.length<2;
+  // FIXED MCQ: validate answer is a valid index
   var ans = isOpen ? String(r.answer||'') : parseInt(r.answer||0);
-  if(!isOpen && isNaN(ans)){
-    var idx=opts.findIndex(function(o){ return String(o).toLowerCase()===String(r.answer||'').toLowerCase(); });
-    ans = idx>=0 ? idx : 0;
+  if(!isOpen){
+    if(isNaN(ans)) {
+      var idx=opts.findIndex(function(o){ return String(o).toLowerCase()===String(r.answer||'').toLowerCase(); });
+      ans = idx>=0 ? idx : 0;
+    }
+    // Clamp to valid range
+    if(ans<0 || ans>=opts.length) ans=0;
   }
-  return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',options:opts,answer:ans,explanation:r.explanation||'',timer:parseInt(r.timer||0)||0};
+  var keywords = r.keywords ? parseOptions(r.keywords) : getKeywords(String(r.answer||''));
+  return {topic:normTopic(r.topic||'Computer Basics'),qtype:isOpen?'open':'mcq',question:r.question||r.q||'',translations:{},options:opts,answer:ans,explanation:r.explanation||'',keywords:keywords,timer:parseInt(r.timer||0)||0};
 }
 function applyTimeSettings(data){
+  // Priority: 1) Admin localStorage 2) Sheet settings 3) DEFAULT QUIZ_TIME_CONFIG
+  let fromAdmin = null;
+  try{ let ls = JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); if(ls.mcq) fromAdmin = ls; }catch(e){}
+  if(fromAdmin){
+    if(fromAdmin.mcq>=QUIZ_TIME_CONFIG.MIN && fromAdmin.mcq<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.mcq=fromAdmin.mcq;
+    if(fromAdmin.open>=QUIZ_TIME_CONFIG.MIN && fromAdmin.open<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.open=fromAdmin.open;
+    updateTimeBadge(); return;
+  }
   try{
     var s=data ? (data.settings||data.timeSettings||null) : null;
     if(Array.isArray(s)) s=s[0];
-    if(s){ var m=parseInt(s.mcq||s.mcqTime||s.multipleChoice||0); var o=parseInt(s.open||s.openTime||s.openEnded||0); if(m>=5 && m<=180) TIME_SETTINGS.mcq=m; if(o>=5 && o<=180) TIME_SETTINGS.open=o; }
-    else if(data && (data.mcqTime || data.openTime)){ var mm=parseInt(data.mcqTime||0), oo=parseInt(data.openTime||0); if(mm>=5&&mm<=180) TIME_SETTINGS.mcq=mm; if(oo>=5&&oo<=180) TIME_SETTINGS.open=oo; }
+    if(s){ var m=parseInt(s.mcq||s.mcqTime||s.multipleChoice||0); var o=parseInt(s.open||s.openTime||s.openEnded||0); if(m>=QUIZ_TIME_CONFIG.MIN && m<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.mcq=m; if(o>=QUIZ_TIME_CONFIG.MIN && o<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.open=o; }
+    else if(data && (data.mcqTime || data.openTime)){ var mm=parseInt(data.mcqTime||0), oo=parseInt(data.openTime||0); if(mm>=QUIZ_TIME_CONFIG.MIN&&mm<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.mcq=mm; if(oo>=QUIZ_TIME_CONFIG.MIN&&oo<=QUIZ_TIME_CONFIG.MAX) TIME_SETTINGS.open=oo; }
   }catch(e){}
-  try{ var localS=JSON.parse(localStorage.getItem('smarttech_time_settings')||'{}'); if(localS.mcq>=5&&localS.mcq<=180) TIME_SETTINGS.mcq=localS.mcq; if(localS.open>=5&&localS.open<=180) TIME_SETTINGS.open=localS.open; }catch(e){}
+  updateTimeBadge();
 }
 async function loadQuestions(){
   if(questionsLoading) return; questionsLoading=true;
@@ -449,8 +511,8 @@ async function loadQuestions(){
   questionsLoading=false;
 }
 loadQuestions();
+setLanguage(currentLang);
 function startQuiz(){
-  // COLLAPSE HEADER FIRST - before any work, so it always hides on tap
   try{ var _h=document.getElementById('mainHeader'); if(_h) _h.classList.add('collapsed'); }catch(e){}
   var msg=document.getElementById('startMsg');
   try{
@@ -480,12 +542,14 @@ function startQuiz(){
       pool=allQuestions.slice(0, want>0 ? want : 10);
     }
     if(msg) msg.textContent='Loaded '+pool.length+' / '+availBeforeShuffle+' questions for '+topic+(want>0 && availBeforeShuffle<want ? ' (only '+availBeforeShuffle+' exist)' : '');
+    // ===== FIXED MCQ SHUFFLE: Preserve correct answer =====
     quizQuestions = pool.map(function(orig){
       var safeOpts=parseOptions(orig.options);
       var isOpen = orig.qtype==='open' || safeOpts.length < 2;
       if(isOpen){
-        return {topic:normTopic(orig.topic), qtype:orig.qtype, question:orig.question, options:[], answer:orig.answer, explanation:orig.explanation||'', timer:orig.timer||0};
+        return {topic:normTopic(orig.topic), qtype:'open', question:orig.question, translations:orig.translations||{}, options:[], answer:String(orig.answer||''), explanation:orig.explanation||'', keywords:orig.keywords||getKeywords(String(orig.answer||'')), timer:orig.timer||0};
       }
+      // Create index map, shuffle indices, then map correct index correctly
       var idx = shuffleArray(safeOpts.map(function(_,i){ return i; }));
       var newOptions = idx.map(function(i){ return safeOpts[i]; });
       var oldCorrect = parseInt(orig.answer);
@@ -493,7 +557,13 @@ function startQuiz(){
       if(oldCorrect<0 || oldCorrect>=safeOpts.length) oldCorrect=0;
       var newCorrect = idx.indexOf(oldCorrect);
       if(newCorrect < 0) newCorrect = 0;
-      return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, options:newOptions, answer:newCorrect, explanation:orig.explanation||'', timer:orig.timer||0};
+      // Also shuffle translated options if present, using same idx
+      var newOptionsTrans = null;
+      if(orig.options_translations && orig.options_translations[currentLang]){
+        var transOpts = orig.options_translations[currentLang];
+        if(transOpts.length===safeOpts.length) newOptionsTrans = idx.map(function(i){ return transOpts[i]; });
+      }
+      return {topic:normTopic(orig.topic), qtype:'mcq', question:orig.question, translations:orig.translations||{}, options:newOptions, options_translations: newOptionsTrans ? {[currentLang]: newOptionsTrans} : {}, answer:newCorrect, explanation:orig.explanation||'', keywords:orig.keywords||[], timer:orig.timer||0};
     });
     current=0; score=0; answers=[]; emailAlreadySent=false; selectedMcq=-1; finalSubmitted=false;
     try{ clearInterval(finalSubmitInt); }catch(e){}
@@ -514,6 +584,14 @@ function startQuiz(){
   var b=document.getElementById('startBtn');
   if(b) b.addEventListener('click', function(e){ e.preventDefault(); startQuiz(); });
 })();
+function getDisplayQuestion(q){
+  if(q.translations && q.translations[currentLang]) return q.translations[currentLang];
+  return q.question;
+}
+function getDisplayOptions(q){
+  if(q.options_translations && q.options_translations[currentLang]) return q.options_translations[currentLang];
+  return parseOptions(q.options);
+}
 function showQ(){
   if(!quizQuestions || !quizQuestions.length || !quizQuestions[current]){
     var m=document.getElementById('startMsg'); if(m) m.textContent='No questions to show. Tap Start again.';
@@ -524,7 +602,7 @@ function showQ(){
   var q=quizQuestions[current];
   document.getElementById('qCount').textContent='Q '+(current+1)+'/'+quizQuestions.length;
   document.getElementById('prog').style.width=((current/quizQuestions.length)*100)+'%';
-  document.getElementById('qText').textContent=q.question;
+  document.getElementById('qText').textContent=getDisplayQuestion(q);
   document.getElementById('openFeedback').classList.remove('show');
   var opts=document.getElementById('options');
   var openBox=document.getElementById('openBox');
@@ -533,12 +611,12 @@ function showQ(){
     openBox.classList.remove('hidden');
     var oa=document.getElementById('openAnswer'); oa.value='';
     try{ oa.focus(); }catch(e){}
-    timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.open;
+    timeLeft=(q.timer>0 && q.timer<=QUIZ_TIME_CONFIG.MAX) ? q.timer : TIME_SETTINGS.open;
   } else {
     openBox.classList.add('hidden');
-    var safeOpts2=parseOptions(q.options);
+    var safeOpts2=getDisplayOptions(q);
     opts.innerHTML=safeOpts2.map(function(o,i){return '<button class="opt" type="button" onclick="pick('+i+',this)">'+esc(o)+'</button>';}).join('');
-    timeLeft=(q.timer>0 && q.timer<=180) ? q.timer : TIME_SETTINGS.mcq;
+    timeLeft=(q.timer>0 && q.timer<=QUIZ_TIME_CONFIG.MAX) ? q.timer : TIME_SETTINGS.mcq;
   }
   document.getElementById('timer').textContent='⏱️ '+fmtTime(timeLeft);
   clearInterval(timerInt);
@@ -553,20 +631,28 @@ function pick(idx,btn){
 function autoSubmitCurrent(){
   if(answered) return; answered=true; clearInterval(timerInt);
   var q=quizQuestions[current];
-  var isCorrect=false, your='', correct='';
+  var isCorrect=false, your='', correct='', keywordInfo='';
   if(q.qtype==='open'){
     var userAns=document.getElementById('openAnswer').value.trim();
     if(!userAns) userAns='No Answer (Time Up)';
     your=userAns; correct=String(q.answer||'');
-    isCorrect=checkOpenAnswer(userAns, correct);
+    var detail = checkOpenAnswerDetailed(userAns, correct, q.keywords);
+    isCorrect = detail.correct;
+    keywordInfo = detail.total>0 ? ' | Keywords: '+detail.matched.join(', ')+' ('+detail.matched.length+'/'+detail.total+')' : '';
+    var fb=document.getElementById('openFeedback');
+    if(userAns!=='No Answer (Time Up)'){
+      fb.textContent = isCorrect ? '✅ Correct! Matched: '+detail.matched.join(', ') : '❌ Keywords matched: '+(detail.matched.length+'/'+detail.total)+' — '+detail.matched.join(', ');
+      fb.className='feedback show '+(isCorrect?'ok':'bad');
+    }
   } else {
-    var so=parseOptions(q.options);
+    var so=getDisplayOptions(q);
     your = selectedMcq>=0 ? so[selectedMcq] : 'No Answer (Time Up)';
     correct = so[q.answer];
-    isCorrect = selectedMcq===q.answer;
+    // FIXED MCQ CHECK: Strict equality of index, not text
+    isCorrect = (selectedMcq !== -1 && selectedMcq === parseInt(q.answer));
   }
   if(isCorrect) score++;
-  answers.push({q:q.question,qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||''});
+  answers.push({q:getDisplayQuestion(q),qtype:q.qtype,yourAnswer:your,correctAnswer:correct,isCorrect:isCorrect,explanation:q.explanation||'',keywordInfo:keywordInfo});
   setTimeout(function(){
     current++;
     if(current>=quizQuestions.length){ showFinalSubmit(); }
@@ -579,9 +665,9 @@ function showFinalSubmit(){
   document.getElementById('submitSummary').innerHTML='You answered <b>'+answers.length+' / '+quizQuestions.length+'</b> questions.';
   document.getElementById('submitList').innerHTML=answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:8px;border-radius:10px;margin-bottom:6px;font-size:12px">Q'+(i+1)+'. '+esc(a.q)+'<br><span class="small" style="color:#c8d6ff">Your: '+esc(a.yourAnswer)+'</span></div>';}).join('');
   window.scrollTo({top:0,behavior:'smooth'});
-  var left=5;
+  var left=QUIZ_TIME_CONFIG.AUTO_SUBMIT;
   var cd=document.getElementById('autoSubmitCountdown');
-  cd.textContent='Quiz submits in: 5';
+  cd.textContent='Quiz submits in: '+left;
   clearInterval(finalSubmitInt);
   finalSubmitInt=setInterval(function(){
     left--;
@@ -619,7 +705,7 @@ async function finishQuiz(){
   document.getElementById('myStatsAfter').textContent='Total Attempts: '+afterStats.attempts+' • Avg: '+afterStats.avg+'% • Best: '+afterStats.best+'% • Days: '+afterStats.days+' • '+nextBadgeHint(afterStats);
   var correctCount=answers.filter(function(a){return a.isCorrect;}).length;
   var wrongCount=answers.length-correctCount;
-  document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b><br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
+  document.getElementById('review').innerHTML='<div style="background:rgba(0,0,0,.35);padding:12px;border-radius:12px;margin-bottom:10px;text-align:center;font-weight:800">✅ Correct: '+correctCount+' • ❌ Wrong: '+wrongCount+' • Total: '+answers.length+'</div>'+answers.map(function(a,i){return '<div style="background:rgba(0,0,0,.3);padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.6;border:2px solid '+(a.isCorrect?'#00c853':'#ff5252')+'"><b>Q'+(i+1)+'. '+esc(a.q)+'</b><br><b style="color:'+(a.isCorrect?'#00e676':'#ff8fa8')+'">'+(a.isCorrect?'✅ CORRECT':'❌ WRONG')+'</b><br>Your Answer: '+esc(a.yourAnswer)+'<br><b>Correct Answer: '+esc(a.correctAnswer)+'</b>'+(a.keywordInfo?'<br><span style="color:#facc15;font-size:11px">'+esc(a.keywordInfo)+'</span>':'')+'<br><span style="color:#8ec8ff">'+esc(a.explanation)+'</span></div>';}).join('');
   var topic=normTopic(document.getElementById('topic').value);
   var badgeNames=afterBadges.map(function(b){return b.name;}).join(', ');
   document.getElementById('uploadStatus').textContent='Saving to Google Sheet...';
@@ -635,12 +721,13 @@ async function finishQuiz(){
     correct:correctCount,
     wrong:wrongCount,
     badges:badgeNames,
+    language:currentLang,
     answers:JSON.stringify(answers)
   };
   var ok=await postToSheet(payload);
   if(!ok){ ok=await postToSheet(payload); }
   document.getElementById('uploadStatus').textContent= ok ? 'Saved — Admin can see it in 🧠 Quiz tab' : 'Could not save — check internet, tap Retake and try again';
-  try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
+  try{ var bk=JSON.parse(localStorage.getItem('smarttech_quiz_backup')||'[]'); bk.push({name:name,phone:phone,topic:topic,score:score,total:total,percentage:percText,language:currentLang,timestamp:new Date().toISOString(),answers:answers}); localStorage.setItem('smarttech_quiz_backup', JSON.stringify(bk)); }catch(e){}
   allQuizResults.push(newAttempt);
   renderLeaderboard();
 }
