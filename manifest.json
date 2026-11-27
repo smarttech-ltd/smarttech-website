@@ -2,11 +2,10 @@
   "name": "SmartTech LTD - Your Trusted ICT Partner",
   "short_name": "SmartTech",
   "description": "SmartTech LTD - ICT Services in Kenya. Windows Installation & Activation, Microsoft Office, KRA, KUCCPS & HELB, SHA, Poster & Flyer Design, Photo Editing, Laptop Formatting & Phone Reset. Prices KES 50-1500 Negotiable. Online ICT Platform. Book Free on WhatsApp 0183465547.",
-  "id": "/index.html",
-  "start_url": "/index.html",
+  "id": "/",
+  "start_url": "/index.html?utm_source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",
   "lang": "en",
   "dir": "ltr",
@@ -15,25 +14,25 @@
   "theme_color": "#0a1931",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "/logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
+      "src": "/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "logo.png",
+      "src": "/logo-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "logo.png",
+      "src": "/logo-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -41,11 +40,18 @@
   ],
   "screenshots": [
     {
-      "src": "logo.png",
-      "sizes": "512x512",
+      "src": "/screenshot-1.png",
+      "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "SmartTech LTD - Home"
+      "label": "SmartTech LTD - Home - Book Free ICT Services"
+    },
+    {
+      "src": "/screenshot-2.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "SmartTech LTD - FREE Quiz & Updates"
     }
   ],
   "shortcuts": [
@@ -54,39 +60,21 @@
       "short_name": "Book Free",
       "description": "Book Free ICT Service - Windows, Office, KRA, HELB, Poster Design",
       "url": "/booking.html",
-      "icons": [
-        {
-          "src": "logo.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{ "src": "/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Take FREE Quiz",
       "short_name": "Quiz",
       "description": "FREE Quick Check Quiz - Computer Basics, Word, Excel, Internet Safety",
       "url": "/quiz.html",
-      "icons": [
-        {
-          "src": "logo.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{ "src": "/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Latest Updates",
       "short_name": "Updates",
       "description": "Latest SmartTech Updates & Offers",
       "url": "/updates.html",
-      "icons": [
-        {
-          "src": "logo.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{ "src": "/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "protocol_handlers": [],
