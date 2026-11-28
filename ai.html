@@ -52,6 +52,8 @@ label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
 .topnav{display:flex;gap:8px;padding:0 14px 10px;background:#020617;flex-wrap:wrap}
 .topnav a{font-size:12px;padding:7px 10px;border:1px solid #334155;border-radius:20px;background:#1e293b;color:#fff}
 .notice{background:#fef3c7;color:#92400e;padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.5}
+.adbreak{background:#f59e0b;color:#000;padding:12px;border-radius:12px;font-size:13px;line-height:1.5;margin-top:10px;font-weight:700}
+.chunklabel{background:#2563eb;color:#fff;display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;margin-bottom:8px}
 @media(min-width:700px){.top,.controls,.tabs,.topnav{max-width:860px;margin:0 auto}}
 </style>
 </head>
@@ -85,7 +87,6 @@ label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
 
 <div class="wrap">
 
-<!-- CHAT TAB -->
 <div id="paneChat">
   <div class="card">
     <h3>👋 Karibu! Ask me anything — I research then explain.</h3>
@@ -99,12 +100,10 @@ label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
       <div class="q" onclick="ask('How to make a poster in Canva?')">🎨 Poster</div>
     </div>
   </div>
-
   <div class="card">
     <div id="chat"></div>
     <div id="typing" class="hidden" style="font-size:13px;color:#94a3b8;padding:6px">🤖 SmartTech AI is researching from relevant sources...</div>
   </div>
-
   <div class="card">
     <h3>📤 Upload / Scanner</h3>
     <p>Take photo of homework, notes, or textbook. AI reads it and explains. Files stay on your phone, only text is sent to AI.</p>
@@ -118,48 +117,50 @@ label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
   </div>
 </div>
 
-<!-- VIDEO TAB -->
 <div id="paneVideo" class="hidden">
   <div class="card">
     <h3>🎥 SmartTech Video Studio — Free 5 Mins</h3>
     <p>AI writes script + slides + voice. You watch, download & share to WhatsApp.</p>
-    <div class="notice">🆓 <b>FREE:</b> Up to 5 mins, 3 videos/day. <b>Want longer?</b> Watch a free Ad to unlock 10 mins, or watch 2nd Ad / Pay small fee to unlock 15 mins + Voice Choice + No Watermark. Free is always available — pay is optional.</div>
+    <div class="notice">🆓 <b>FREE:</b> Up to 5 mins, 3 videos/day. <b>Longer videos?</b> Watch an Ad every 10 mins to keep going — up to 30 mins FREE with Ads. <b>Want NO Ads + No Watermark?</b> Pay KES 50 (optional) once per video. Free is always available — pay is optional.<br><br>📺 <b>How Ads Work:</b> 5 mins = 0 Ads • 10 mins = 1 Ad • 15 mins = 1 Ad + 1 Ad after 10 mins • 20 mins = 3 Ads • 30 mins = 3 Ads. Ad appears automatically after every 10 mins of production.</div>
     <label>Video Topic</label>
     <input type="text" id="videoTopic" placeholder="e.g. Photosynthesis for Grade 7, How to use Excel, Fasihi: Ushairi">
     <label>Video Length</label>
     <select id="videoLength" onchange="checkLength()">
       <option value="5">🆓 5 mins — FREE (No Ad)</option>
-      <option value="10">🎬 10 mins — Watch 1 Ad to Unlock</option>
-      <option value="15">⭐ 15 mins — Watch 2 Ads / Pay to Unlock</option>
+      <option value="10">🎬 10 mins — Watch 1 Ad to Start</option>
+      <option value="15">🎬 15 mins — 1 Ad to Start + 1 Ad after 10 mins</option>
+      <option value="20">🎬 20 mins — 1 Ad to Start + 1 Ad after 10 mins + 1 Ad after 20 mins? No — 2 Ads total</option>
+      <option value="25">🎬 25 mins — 3 Ads total (every 10 mins)</option>
+      <option value="30">⭐ 30 mins — 3 Ads total (every 10 mins) — Max Free</option>
     </select>
+    <div id="adInfo" style="font-size:13px;margin-top:8px;color:#fde68a"></div>
     <label>Voice</label>
-    <select id="voiceChoice"><option value="female">Female Voice (Free)</option><option value="male">Male Voice (Unlock 15-min)</option><option value="sheng">Sheng Voice (Unlock 15-min)</option></select>
+    <select id="voiceChoice"><option value="female">Female Voice (Free)</option><option value="male">Male Voice (Unlock 15-min+)</option><option value="sheng">Sheng Voice (Unlock 15-min+)</option></select>
     <div class="row">
       <button class="btn btn-blue" onclick="makeVideo()">🎥 Create Video</button>
       <button class="btn btn-orange" id="adBtn" onclick="watchAd()" style="display:none">▶️ Watch Ad to Unlock</button>
-      <button class="btn btn-green" id="payBtn" onclick="payUnlock()" style="display:none">💳 Pay via M-Pesa (KES 50) — Optional</button>
+      <button class="btn btn-green" id="payBtn" onclick="payUnlock()" style="display:none">💳 Pay via M-Pesa (KES 50) — Skip ALL Ads + No Watermark</button>
     </div>
     <div id="unlockMsg" style="font-size:13px;margin-top:8px;color:#86efac"></div>
     <div class="progress"><div id="vProgress"></div></div>
     <div id="videoOut"></div>
   </div>
 
-  <!-- AD SLOT - PASTE YOUR MONETAG / ADSTERRA CODE HERE -->
   <div class="card" id="adSlotCard" style="display:none">
-    <h3>📺 Ad — Thanks for supporting free education</h3>
-    <!-- PASTE YOUR MONETAG / ADSTERRA REWARDED AD CODE BELOW -->
-    <!-- Example: <script src="https://your-ad-network.com/..."></script> -->
+    <h3 id="adTitle">📺 Ad — Thanks for supporting free education</h3>
+    <p id="adDesc" style="font-size:13px;color:#cbd5e1;margin:6px 0">Watch this short ad to continue your video. Your video will continue automatically after the ad.</p>
     <div id="adSlot" style="min-height:120px;background:#0f172a;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px">
       <div>
         <p style="font-size:14px">🎬 Ad Playing... <span id="adTimer">20</span>s</p>
         <p style="font-size:12px;color:#94a3b8">Demo Ad — Replace with your real Monetag/Adsterra code</p>
-        <button class="btn btn-green" onclick="finishAd()" style="margin-top:10px">✅ Ad Finished — Unlock Now (Demo)</button>
+        <!-- PASTE YOUR MONETAG / ADSTERRA REWARDED AD CODE BELOW -->
+        <!-- <script src="https://your-ad-network.com/..."></script> -->
+        <button class="btn btn-green" id="adFinishBtn" onclick="finishAd()" style="margin-top:10px">✅ Ad Finished — Continue Video</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- LIBRARY TAB -->
 <div id="paneLib" class="hidden">
   <div class="card"><h3>📚 My Library</h3><p>Your saved chats and videos are stored on this device. No account needed.</p>
   <div class="row"><button class="btn btn-dark" onclick="loadLibrary()">🔄 Refresh</button><button class="btn btn-dark" onclick="clearLibrary()">🗑️ Clear</button></div>
@@ -184,15 +185,56 @@ label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
 </div>
 
 <script>
-// ===== CONFIG - PASTE YOUR WORKER URL HERE AFTER DEPLOY =====
-const WORKER_URL = "https://smarttech-ai.YOUR-NAME.workers.dev"; // <-- Replace with your real Worker URL
-const MPESA_TILL = "0183465547"; // Pochi la Biashara - for optional paid unlock
+// ===== CONFIG - LIVE WORKER =====
+const WORKER_URL = "https://smarttech-ai.smarttech-ltd-co-ke.workers.dev";
+const MPESA_TILL = "0183465547";
 
 let safeMode = true;
 let unlockedMinutes = 5;
 let adsWatched = 0;
+let paidUnlock = false;
 let chatHistory = JSON.parse(localStorage.getItem('st_ai_chat')||'[]');
 let videoCountToday = parseInt(localStorage.getItem('st_video_count')||'0');
+
+// ===== AD LOGIC: 1 Ad per 10-min chunk beyond first 5 mins =====
+// 5 mins = 0 ads, 10 mins = 1 ad, 15 mins = 2 ads, 20 mins = 2 ads, 25 mins = 3 ads, 30 mins = 3 ads
+function adsNeededFor(len){
+  if(paidUnlock) return 0;
+  if(len<=5) return 0;
+  return Math.ceil((len-5)/10);
+}
+function adBreaksFor(len){
+  // Returns minutes where ad break happens, e.g. 20 mins -> [10] if start ad already counted, 30 mins -> [10,20]
+  // We use: Start Ad counts as first, then mid-roll after each 10 mins produced
+  if(len<=10) return [];
+  if(len<=20) return [10];
+  if(len<=30) return [10,20];
+  return [10,20];
+}
+
+let adPromiseResolve = null;
+let adTimerInterval = null;
+
+function showAdCard(title, desc){
+  document.getElementById('adTitle').textContent = title;
+  document.getElementById('adDesc').textContent = desc;
+  document.getElementById('adSlotCard').style.display='block';
+  document.getElementById('adSlotCard').scrollIntoView({behavior:'smooth'});
+  let t=20; const timer=document.getElementById('adTimer'); timer.textContent=t;
+  clearInterval(adTimerInterval);
+  adTimerInterval=setInterval(()=>{ t--; timer.textContent=t; if(t<=0) clearInterval(adTimerInterval); },1000);
+  return new Promise(res=>{ adPromiseResolve=res; });
+}
+function finishAd(){
+  adsWatched++;
+  document.getElementById('adSlotCard').style.display='none';
+  clearInterval(adTimerInterval);
+  // Update unlocked minutes: each ad unlocks +10 mins beyond 5
+  unlockedMinutes = Math.max(unlockedMinutes, 5 + adsWatched*10);
+  checkLength();
+  if(adPromiseResolve){ const r=adPromiseResolve; adPromiseResolve=null; r(); }
+  else { alert('✅ Ad watched! You unlocked up to '+unlockedMinutes+' mins. Now tap Create Video.'); }
+}
 
 function showTab(t){
   ['chat','video','lib'].forEach(x=>{
@@ -203,9 +245,11 @@ function showTab(t){
 }
 function toggleSafe(){ safeMode=!safeMode; document.getElementById('safeBtn').textContent = safeMode ? '🛡️ Safe Mode: ON' : '🛡️ Safe Mode: OFF'; }
 function saveChat(){ localStorage.setItem('st_ai_chat', JSON.stringify(chatHistory.slice(-30))); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function addMsg(text, who, sources){
-  const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+who; d.textContent=text;
-  if(sources){ const s=document.createElement('div'); s.className='sources'; s.innerHTML = sources.map(s=>`<a href="${s.url}" target="_blank">🔗 ${s.title}</a>`).join(''); d.appendChild(s); }
+  const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+who;
+  const t=document.createElement('div'); t.style.whiteSpace='pre-wrap'; t.textContent=text; d.appendChild(t);
+  if(sources && sources.length){ const s=document.createElement('div'); s.className='sources'; s.innerHTML = '<div class="src">🔗 Sources:</div>' + sources.map(s=>`<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(s.title||s.url)}</a>`).join(''); d.appendChild(s); }
   c.appendChild(d); c.scrollTop=c.scrollHeight;
   chatHistory.push({text,who}); saveChat();
 }
@@ -217,26 +261,16 @@ async function sendMsg(){
   }
   addMsg(msg,'user'); document.getElementById('typing').classList.remove('hidden');
   const lang=document.getElementById('lang').value; const level=document.getElementById('level').value;
-  // Try Worker, fallback to offline smart answers if Worker not set yet
   try{
-    if(WORKER_URL.includes('YOUR-NAME')) throw new Error('Worker not set');
     const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,lang,level,safeMode})});
     const data=await res.json();
     document.getElementById('typing').classList.add('hidden');
-    addMsg(data.reply||'Sorry, try again.','ai', data.sources);
+    if(data.reply){ addMsg(data.reply,'ai', data.sources); }
+    else { addMsg('Sorry, Worker returned no reply. Error: '+(data.error||'unknown')+' — Check Worker Logs in Cloudflare.','ai'); }
   }catch(e){
     document.getElementById('typing').classList.add('hidden');
-    addMsg(getOfflineAnswer(msg,lang,level),'ai');
+    addMsg('Connection error: '+e.message+'\n\nCheck: 1) Worker is deployed 2) Internet is on 3) WORKER_URL is correct. Try again in 10 seconds.','ai');
   }
-}
-function getOfflineAnswer(msg,lang,level){
-  // Offline fallback - works even before Worker is connected
-  const m=msg.toLowerCase();
-  if(m.includes('photosynthesis')) return "PHOTOSYNTHESIS (KCSE / CBC)\n\nDefinition: Process by which green plants make food using sunlight, water and carbon dioxide.\n\nEquation: 6CO2 + 6H2O + Light → C6H12O6 + 6O2\n\nSteps:\n1. Light stage: In grana, light splits water → Oxygen released\n2. Dark stage: In stroma, CO2 fixed to make glucose\n\nFactors: Light intensity, CO2 concentration, Temperature, Water\n\nExample: Maize plant in sunlight makes starch - test with iodine.\n\nWant me to make a 5-min video on this? Go to Video Studio tab.";
-  if(m.includes('2x')) return "SOLVE: 2x + 5 = 17\n\nStep 1: Move 5 to other side: 2x = 17 - 5\nStep 2: 2x = 12\nStep 3: Divide by 2: x = 6\n\nCheck: 2(6)+5 = 12+5 = 17 ✅\n\nTry: Solve 3x - 4 = 11 (Answer x=5). Ask me to check your answer.";
-  if(m.includes('shortcut')||m.includes('windows')) return "WINDOWS SHORTCUTS EVERY STUDENT MUST KNOW:\n\nCtrl + C = Copy | Ctrl + V = Paste | Ctrl + X = Cut\nCtrl + Z = Undo | Ctrl + S = Save | Ctrl + P = Print\nWindows + Shift + S = Screenshot\nAlt + Tab = Switch apps | Ctrl + T = New tab in Chrome\n\nHack: Press Windows + . (dot) for emojis 😀\n\nWant more? Ask: 'Excel shortcuts' or 'Word shortcuts'";
-  if(m.includes('insha')||m.includes('elimu')) return "INSHA: UMUHIMU WA ELIMU\n\nUtangulizi: Elimu ni ufunguo wa maisha...\n\nMwili:\n1. Elimu inampa mtu maarifa na ujuzi\n2. Inasaidia kupata kazi na kujitegemea\n3. Inajenga tabia njema na uzalendo\n4. Inasaidia jamii kuendelea\n\nHitimisho: Kila mwanafunzi anapaswa kuthamini elimu...\n\nNitakuandikia insha kamili? Niambie mada na urefu.";
-  return `Great question about: "${msg}"\n\nI'm still connecting to live research (Worker not connected yet). Once you add your Worker URL, I will research from Wikipedia, Khan Academy, BBC Bitesize and other relevant sources and explain step-by-step in ${lang} for ${level}.\n\nFor now, try quick buttons above: Photosynthesis, Maths, Windows Shortcuts, Insha.`;
 }
 function startVoice(){
   if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('Voice not supported on this browser. Type your question.'); return; }
@@ -244,77 +278,108 @@ function startVoice(){
 }
 function handleFile(el,type){
   const f=el.files[0]; if(!f) return;
-  const prev=document.getElementById('preview'); prev.innerHTML=`<div style="margin-top:10px;padding:10px;background:#0f172a;border-radius:12px;font-size:13px">📎 ${f.name} (${Math.round(f.size/1024)} KB) — Uploaded. Ask: "Explain this" or "Solve this homework"</div>`;
+  const prev=document.getElementById('preview'); prev.innerHTML=`<div style="margin-top:10px;padding:10px;background:#0f172a;border-radius:12px;font-size:13px">📎 ${escapeHtml(f.name)} (${Math.round(f.size/1024)} KB) — Uploaded. Ask: "Explain this" or "Solve this homework"</div>`;
   document.getElementById('input').value = type==='scan' ? 'I scanned this document. Please extract the text and explain it step by step.' : 'I uploaded this file/photo. Please read it and explain / solve it step by step.';
-  // In full version, file is sent to Worker Vision API. For now, user can also type question.
 }
 function checkLength(){
   const len=parseInt(document.getElementById('videoLength').value);
   const adBtn=document.getElementById('adBtn'); const payBtn=document.getElementById('payBtn');
-  if(len<=5){ adBtn.style.display='none'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent='✅ Free 5 mins ready — No ad needed.'; }
-  else if(len===10){ adBtn.style.display='inline-block'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent = unlockedMinutes>=10 ? '✅ 10 mins unlocked!' : '🔒 Watch 1 Ad to unlock 10 mins (or stay with 5-min free).'; }
-  else{ adBtn.style.display='inline-block'; payBtn.style.display='inline-block'; document.getElementById('unlockMsg').textContent = unlockedMinutes>=15 ? '✅ 15 mins unlocked!' : '🔒 Watch 2 Ads OR Pay KES 50 (optional) to unlock 15 mins.'; }
+  const needed=adsNeededFor(len);
+  const breaks=adBreaksFor(len);
+  document.getElementById('adInfo').innerHTML = paidUnlock ? '✅ <b>PAID:</b> No Ads — All lengths unlocked, No Watermark.' :
+    len<=5 ? '✅ Free 5 mins — No Ad needed.' :
+    `📺 This video needs <b>${needed} Ad(s)</b> total. ${breaks.length?`Ad breaks at: ${breaks.map(b=>b+' mins').join(', ')}.`:' Ad at start only.'} You have watched ${adsWatched} Ad(s). You can unlock up to ${unlockedMinutes} mins now.`;
+  if(paidUnlock){ adBtn.style.display='none'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent='✅ Paid Unlock Active — No Ads, No Watermark, Up to 30 mins.'; }
+  else if(len<=5){ adBtn.style.display='none'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent='✅ Free 5 mins ready — No ad needed.'; }
+  else if(len<=unlockedMinutes){ adBtn.style.display='none'; payBtn.style.display='inline-block'; document.getElementById('unlockMsg').textContent = `✅ ${len} mins unlocked! Tap Create Video. Or Pay KES 50 to skip remaining Mid-roll Ads.`; }
+  else { adBtn.style.display='inline-block'; payBtn.style.display='inline-block'; document.getElementById('unlockMsg').textContent = `🔒 Watch ${needed-adsWatched} more Ad(s) to unlock ${len} mins, or Pay KES 50 to skip all Ads.`; }
 }
 function watchAd(){
-  document.getElementById('adSlotCard').style.display='block';
-  document.getElementById('adSlotCard').scrollIntoView({behavior:'smooth'});
-  let t=20; const timer=document.getElementById('adTimer'); const iv=setInterval(()=>{ t--; timer.textContent=t; if(t<=0) clearInterval(iv); },1000);
-  // TODO: Replace with real Monetag/Adsterra Rewarded Ad. When ad finishes, call finishAd()
-}
-function finishAd(){
-  adsWatched++; if(adsWatched===1){ unlockedMinutes=10; alert('✅ Unlocked! You can now make up to 10 mins.'); } else if(adsWatched>=2){ unlockedMinutes=15; alert('✅ Unlocked! You can now make up to 15 mins + Voice Choice + No Watermark for this video.'); }
-  document.getElementById('adSlotCard').style.display='none'; checkLength();
+  // Manual ad button — for pre-unlock
+  showAdCard('📺 Ad — Thanks for supporting free education', 'Watch this short ad to unlock more video minutes.');
+  // finishAd() will be called by button, it resolves promise and updates unlockedMinutes
 }
 function payUnlock(){
   const topic=document.getElementById('videoTopic').value||'SmartTech Video';
-  const url=`https://wa.me/254183465547?text=${encodeURIComponent('Hi SmartTech! I want to pay KES 50 to unlock 15-min Video (No Watermark) for: '+topic)}`;
-  if(confirm('Optional Pay: KES 50 via M-Pesa Pochi '+MPESA_TILL+' to unlock 15 mins + No Watermark?\n\nYou can also Watch Ads for FREE instead. Continue to WhatsApp to pay?')){ unlockedMinutes=15; window.open(url,'_blank'); }
+  const url=`https://wa.me/254183465547?text=${encodeURIComponent('Hi SmartTech! I want to pay KES 50 to unlock 30-min Video (No Ads, No Watermark) for: '+topic)}`;
+  if(confirm('Optional Pay: KES 50 via M-Pesa Pochi '+MPESA_TILL+' to unlock 30 mins + No Ads + No Watermark?\n\nYou can also Watch Ads for FREE instead. Continue to WhatsApp to pay?')){ paidUnlock=true; unlockedMinutes=30; window.open(url,'_blank'); checkLength(); }
 }
+
+// ===== VIDEO GENERATION WITH MID-ROLL ADS =====
 async function makeVideo(){
   const topic=document.getElementById('videoTopic').value.trim(); if(!topic){ alert('Type a video topic first, e.g. Photosynthesis'); return; }
   const len=parseInt(document.getElementById('videoLength').value);
-  if(len>unlockedMinutes){ alert(`This length needs unlock. Watch Ad to unlock ${len} mins, or choose 5 mins Free.`); checkLength(); return; }
-  if(videoCountToday>=3 && len===5){ if(!confirm('You have made 3 free videos today. Watch an Ad to continue, or continue anyway?')) return; }
   const out=document.getElementById('videoOut'); const prog=document.getElementById('vProgress');
-  out.innerHTML=`<p style="font-size:13px">🤖 AI is writing script + slides for "${topic}" (${len} mins)...</p>`; prog.style.width='20%';
-  // Try Worker for script, fallback to offline template
-  let slides=[];
-  try{
-    if(!WORKER_URL.includes('YOUR-NAME')){
-      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Create a ${len}-minute educational video script about: ${topic}. Give 6-10 slides with title and 2-3 sentences each. Level: ${document.getElementById('level').value}, Language: ${document.getElementById('lang').value}`,mode:'video'})});
+
+  // 1. If paid, no ads at all
+  // 2. If not paid and len > unlockedMinutes, need to watch start ad(s) first
+  if(!paidUnlock && len>unlockedMinutes){
+    const need = adsNeededFor(len) - adsWatched;
+    if(need>0){
+      out.innerHTML=`<div class="adbreak">📺 You need ${need} Ad(s) to unlock ${len} mins. Watch Ad #${adsWatched+1} now — then your video will start automatically.</div>`;
+      await showAdCard(`📺 Ad ${adsWatched+1} of ${adsNeededFor(len)} — Unlock ${len} mins`, `Watch this ad to unlock your ${len}-min video. After this, production starts.`);
+      // After 1 ad, if still not enough, loop will ask again in next check, but we allow production to start in chunks and show mid-roll ads
+    }
+  }
+  if(videoCountToday>=3 && len===5){ if(!confirm('You have made 3 free videos today. Watch an Ad to continue, or continue anyway?')) return; }
+
+  out.innerHTML=`<p style="font-size:13px">🤖 AI is writing script + slides for "${escapeHtml(topic)}" (${len} mins)...</p><p style="font-size:12px;color:#94a3b8">Chunk 1: 0-10 mins...</p>`; prog.style.width='10%';
+  let allSlides=[];
+  // Split video into 10-min chunks: [0-10], [10-20], [20-30]
+  const chunks=[]; let start=0;
+  while(start<len){ const end=Math.min(start+10, len); chunks.push({start, end}); start=end; }
+
+  for(let ci=0; ci<chunks.length; ci++){
+    const chunk=chunks[ci];
+    // MID-ROLL AD: Before chunk 2 and 3, if not paid, show ad
+    if(ci>0 && !paidUnlock){
+      out.innerHTML += `<div class="adbreak">⏸️ ${chunk.start} mins DONE! 🎉<br>Your video is still longer (${len} mins). Watch 1 short Ad to continue to ${chunk.end} mins.</div>`;
+      prog.style.width = Math.round((chunk.start/len)*100)+'%';
+      await showAdCard(`📺 Mid-roll Ad — Continue to ${chunk.end} mins`, `You finished ${chunk.start} mins. Watch this ad to continue production to ${chunk.end} mins.`);
+      out.innerHTML += `<p style="font-size:13px;color:#86efac">✅ Ad finished — Continuing to ${chunk.start}-${chunk.end} mins...</p>`;
+    }
+    // Generate this chunk via Worker
+    let slides=[];
+    try{
+      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Create part ${ci+1} of a ${len}-minute educational video script about: ${topic}. This part covers minutes ${chunk.start} to ${chunk.end}. Give 5-7 slides with title and 2-3 sentences each. Keep it continuous from previous parts. Level: ${document.getElementById('level').value}, Language: ${document.getElementById('lang').value}`,mode:'video'})});
       const d=await res.json(); slides=parseSlides(d.reply,topic);
-    } else throw new Error('no worker');
-  }catch(e){ slides=offlineSlides(topic,len); }
-  prog.style.width='60%';
-  setTimeout(()=>{
-    prog.style.width='100%';
-    out.innerHTML = slides.map((s,i)=>`<div class="slide"><h4>Slide ${i+1}: ${s.title}</h4><p>${s.text}</p><button class="btn btn-dark" onclick="speakSlide('${s.title} ${s.text}'.replace(/'/g,''))">🔊 Play Voice</button></div>`).join('') + `<div class="row"><button class="btn btn-green" onclick="playAllSlides()">▶️ Play Full Video (${len} mins)</button><button class="btn btn-blue" onclick="shareVideo()">📤 Share to WhatsApp</button></div><p style="font-size:11px;color:#94a3b8;margin-top:8px">${len>=15?'No Watermark (Unlocked)':'Watermark: Made with SmartTech AI'}</p>`;
-    videoCountToday++; localStorage.setItem('st_video_count',videoCountToday);
-    let lib=JSON.parse(localStorage.getItem('st_ai_videos')||'[]'); lib.push({topic,len,date:new Date().toLocaleString()}); localStorage.setItem('st_ai_videos',JSON.stringify(lib));
-  },1200);
+    }catch(e){ slides=offlineSlides(topic,len,ci,chunk); }
+    allSlides = allSlides.concat(slides.map(s=>({...s, chunk: ci+1})));
+    prog.style.width = Math.round((chunk.end/len)*100)+'%';
+    // Show progress
+    out.innerHTML = `<p style="font-size:13px">✅ Produced up to ${chunk.end} / ${len} mins — ${allSlides.length} slides ready.</p>` + allSlides.map((s,i)=>`<div class="slide"><span class="chunklabel">Part ${s.chunk} • Slide ${i+1}</span><h4>${escapeHtml(s.title)}</h4><p>${escapeHtml(s.text)}</p><button class="btn btn-dark" onclick="speakSlide(this.dataset.txt)" data-txt="${escapeHtml(s.title+' '+s.text)}">🔊 Play Voice</button></div>`).join('');
+    if(ci < chunks.length-1){
+      // Small pause so user sees the ad break coming
+      await new Promise(r=>setTimeout(r,600));
+    }
+  }
+
+  prog.style.width='100%';
+  out.innerHTML += `<div class="row"><button class="btn btn-green" onclick="playAllSlides()">▶️ Play Full Video (${len} mins)</button><button class="btn btn-blue" onclick="shareVideo()">📤 Share to WhatsApp</button></div><p style="font-size:11px;color:#94a3b8;margin-top:8px">${paidUnlock||len>=15?'No Watermark (Unlocked)':'Watermark: Made with SmartTech AI — Pay KES 50 to remove'}</p>`;
+  videoCountToday++; localStorage.setItem('st_video_count',videoCountToday);
+  let lib=JSON.parse(localStorage.getItem('st_ai_videos')||'[]'); lib.push({topic,len,date:new Date().toLocaleString()}); localStorage.setItem('st_ai_videos',JSON.stringify(lib));
 }
-function parseSlides(text,topic){ if(!text) return offlineSlides(topic,5); const parts=text.split('\n').filter(l=>l.trim().length>20); return parts.slice(0,8).map((p,i)=>({title:`Part ${i+1}`,text:p})); }
-function offlineSlides(topic,len){
-  return [
-    {title:`What is ${topic}?`, text:`In this video we will learn ${topic} in simple steps, with examples you can understand and remember for exams and real life.`},
+function parseSlides(text,topic){ if(!text) return offlineSlides(topic,5,0,{start:0,end:5}); const parts=text.split('\n').filter(l=>l.trim().length>20); return parts.slice(0,7).map((p,i)=>({title:`Part ${i+1}`,text:p})); }
+function offlineSlides(topic,len,ci=0,chunk={start:0,end:5}){
+  const base=[
+    {title:`What is ${topic}? (Part ${ci+1})`, text:`In this part (${chunk.start}-${chunk.end} mins) we will learn ${topic} in simple steps, with examples you can understand and remember for exams and real life.`},
     {title:`Why is it Important?`, text:`${topic} is important because it helps us understand the world, solve problems, and pass exams. It is used in school, at home, and in jobs.`},
-    {title:`Key Idea 1 - Definition`, text:`Let's start with the definition. ${topic} means the main idea we are studying. We will break it into small parts so it's easy.`},
-    {title:`Key Idea 2 - Examples`, text:`Example 1: Think of a daily life example. Example 2: Think of a school example. Examples help you remember for a long time.`},
-    {title:`Key Idea 3 - Steps / Process`, text:`Step 1: Understand the question. Step 2: Recall the formula or rule. Step 3: Apply it. Step 4: Check your answer.`},
+    {title:`Key Idea - Definition`, text:`Let's start with the definition. ${topic} means the main idea we are studying. We will break it into small parts so it's easy.`},
+    {title:`Key Idea - Examples`, text:`Example 1: Think of a daily life example. Example 2: Think of a school example. Examples help you remember for a long time.`},
+    {title:`Steps / Process`, text:`Step 1: Understand the question. Step 2: Recall the formula or rule. Step 3: Apply it. Step 4: Check your answer.`},
     {title:`Common Mistakes`, text:`Many students forget to show steps, or mix up definitions. Always write steps, label diagrams, and check units.`},
-    {title:`Quick Quiz`, text:`Question 1: What is ${topic}? Question 2: Give one example. Question 3: Why is it important? Pause and try to answer.`},
-    {title:`Summary`, text:`Today we learned ${topic}: definition, examples, steps, and mistakes to avoid. Practice 3 questions tonight and you will master it. Follow SmartTech AI for more.`}
+    {title:`Quick Quiz + Summary`, text:`Question: What is ${topic}? Give one example. Why is it important? Today we learned ${topic}: definition, examples, steps, and mistakes to avoid. Practice 3 questions tonight and you will master it.`}
   ];
+  return base;
 }
 function speakSlide(text){ const u=new SpeechSynthesisUtterance(text); u.lang='en-KE'; u.rate=0.95; speechSynthesis.speak(u); }
 function playAllSlides(){ const slides=document.querySelectorAll('.slide p'); let i=0; const next=()=>{ if(i>=slides.length) return; speakSlide(slides[i].textContent); i++; setTimeout(next,4000); }; next(); }
 function shareVideo(){ const t=document.getElementById('videoTopic').value||'SmartTech AI Video'; window.open(`https://wa.me/?text=${encodeURIComponent('🎥 I made this video with SmartTech AI: '+t+' — Try it free: https://smarttech-ltd.netlify.app/ai.html')}`,'_blank'); }
 function loadLibrary(){
   const chats=JSON.parse(localStorage.getItem('st_ai_chat')||'[]'); const vids=JSON.parse(localStorage.getItem('st_ai_videos')||'[]');
-  document.getElementById('libOut').innerHTML = `<b>💬 Recent Chats (${chats.length})</b><br>${chats.slice(-5).map(c=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">${c.who==='user'?'🧑 You: ':'🤖 AI: '}${c.text.slice(0,120)}</div>`).join('')||'No chats yet'}<br><b>🎥 Videos (${vids.length})</b><br>${vids.map(v=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">🎥 ${v.topic} — ${v.len} mins — ${v.date}</div>`).join('')||'No videos yet'}`;
+  document.getElementById('libOut').innerHTML = `<b>💬 Recent Chats (${chats.length})</b><br>${chats.slice(-5).map(c=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">${c.who==='user'?'🧑 You: ':'🤖 AI: '}${escapeHtml(c.text.slice(0,120))}</div>`).join('')||'No chats yet'}<br><b>🎥 Videos (${vids.length})</b><br>${vids.map(v=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">🎥 ${escapeHtml(v.topic)} — ${v.len} mins — ${escapeHtml(v.date)}</div>`).join('')||'No videos yet'}`;
 }
 function clearLibrary(){ localStorage.removeItem('st_ai_chat'); localStorage.removeItem('st_ai_videos'); loadLibrary(); }
-// Restore chats
 chatHistory.forEach(c=>{ const div=document.createElement('div'); div.className='msg '+c.who; div.textContent=c.text; document.getElementById('chat').appendChild(div); });
 if(chatHistory.length===0) addMsg("Hi! I'm SmartTech AI 🤖\n\nI can help with:\n📚 All subjects - Primary to University\n💻 ICT, Shortcuts, Hacks & Tips\n📷 Upload homework photo - I solve + explain\n🎥 Make 5-min educational video FREE\n\nAsk me anything, or try a quick button above!",'ai');
 checkLength();
