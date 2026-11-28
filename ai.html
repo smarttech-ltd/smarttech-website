@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartTech AI - Learn Anything | SmartTech LTD</title>
+<meta name="description" content="SmartTech AI - Free Education + ICT Assistant. Maths, Science, Fasihi, ICT, Homework, Video Maker. Primary to University.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+body{background:#0f172a;color:#fff;min-height:100vh}
+a{color:#38bdf8;text-decoration:none}
+.top{position:sticky;top:0;z-index:10;background:#0f172a;border-bottom:1px solid #1e293b;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.logo{width:42px;height:42px;border-radius:12px;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:22px}
+.top h1{font-size:18px;line-height:1.1}.top p{font-size:11px;color:#94a3b8}
+.badge{background:#16a34a;color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;margin-left:auto;white-space:nowrap}
+.controls{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;background:#020617}
+select,.pill{padding:9px 10px;border-radius:20px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:13px;outline:none}
+.pill{cursor:pointer}.pill.active{background:#2563eb;border-color:#2563eb}
+.tabs{display:flex;gap:8px;padding:0 14px 12px;background:#020617}
+.tab{flex:1;padding:11px;border-radius:14px;border:1px solid #334155;background:#1e293b;color:#fff;cursor:pointer;font-weight:700;font-size:13px;text-align:center}
+.tab.active{background:#fff;color:#0f172a}
+.wrap{max-width:860px;margin:0 auto;padding:14px;padding-bottom:110px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:18px;padding:14px;margin-bottom:12px}
+.card h3{font-size:15px;margin-bottom:6px}.card p{font-size:13px;color:#cbd5e1;line-height:1.5}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.q{padding:8px 11px;border-radius:20px;background:#0f172a;border:1px solid #334155;font-size:12px;cursor:pointer}
+.q:hover{border-color:#38bdf8}
+#chat{height:340px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px}
+.msg{max-width:88%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.msg.user{background:#2563eb;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.ai{background:#0f172a;border:1px solid #334155;align-self:flex-start;border-bottom-left-radius:4px}
+.msg.ai b{color:#fff}.src{font-size:11px;color:#94a3b8;margin-top:8px}
+.sources a{display:block;font-size:12px;margin-top:4px}
+.inputbar{position:fixed;left:0;right:0;bottom:0;background:#020617;border-top:1px solid #334155;padding:10px;z-index:20}
+.inputwrap{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center}
+#input{flex:1;padding:13px 14px;border-radius:24px;border:1px solid #334155;background:#1e293b;color:#fff;outline:none;font-size:14px}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:none;background:#334155;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0}
+.send{background:#2563eb;font-size:20px}
+.hint{max-width:860px;margin:6px auto 0;text-align:center;font-size:11px;color:#94a3b8}
+.hidden{display:none!important}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{padding:12px 14px;border-radius:12px;border:none;font-weight:800;cursor:pointer;font-size:14px}
+.btn-blue{background:#2563eb;color:#fff}.btn-green{background:#16a34a;color:#fff}.btn-dark{background:#0f172a;color:#fff;border:1px solid #334155}.btn-orange{background:#f59e0b;color:#000}.btn-purple{background:#7c3aed;color:#fff}
+input[type=text],textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#fff;outline:none;font-size:14px}
+textarea{min-height:90px;resize:vertical}
+label{font-size:12px;color:#94a3b8;display:block;margin:10px 0 5px}
+.progress{height:10px;background:#0f172a;border-radius:20px;overflow:hidden;margin:10px 0}.progress div{height:100%;width:0%;background:#22c55e;transition:.3s}
+.slide{border:1px solid #334155;border-radius:14px;padding:14px;background:#0f172a;margin-top:10px}
+.slide h4{font-size:16px;margin-bottom:6px}.slide p{font-size:14px;color:#e2e8f0;line-height:1.6}
+.topnav{display:flex;gap:8px;padding:0 14px 10px;background:#020617;flex-wrap:wrap}
+.topnav a{font-size:12px;padding:7px 10px;border:1px solid #334155;border-radius:20px;background:#1e293b;color:#fff}
+.notice{background:#fef3c7;color:#92400e;padding:10px 12px;border-radius:12px;font-size:12px;line-height:1.5}
+@media(min-width:700px){.top,.controls,.tabs,.topnav{max-width:860px;margin:0 auto}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">🤖</div>
+  <div><h1>SmartTech AI</h1><p>Learn Anything • Primary → University • Free</p></div>
+  <div class="badge">● FREE FOR ALL</div>
+</div>
+
+<div class="topnav">
+  <a href="index.html">🏠 Home</a>
+  <a href="booking.html">📅 Booking</a>
+  <a href="quiz.html">🧠 Quiz</a>
+  <a href="ai.html">🤖 AI</a>
+  <a href="https://wa.me/254183465547" target="_blank">💬 WhatsApp</a>
+</div>
+
+<div class="controls">
+  <select id="lang"><option value="English">🌍 English</option><option value="Kiswahili">🇹🇿 Kiswahili</option><option value="Sheng">🔥 Sheng</option><option value="Auto">🤖 Auto Detect</option></select>
+  <select id="level"><option>Primary (Grade 1-6)</option><option>Junior School (Grade 7-9)</option><option selected>KCSE (Form 1-4)</option><option>College / University</option><option>Teacher / Adult</option></select>
+  <button class="pill active" id="safeBtn" onclick="toggleSafe()">🛡️ Safe Mode: ON</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tabChat" onclick="showTab('chat')">💬 Chat AI</div>
+  <div class="tab" id="tabVideo" onclick="showTab('video')">🎥 Video Studio</div>
+  <div class="tab" id="tabLib" onclick="showTab('lib')">📚 My Library</div>
+</div>
+
+<div class="wrap">
+
+<!-- CHAT TAB -->
+<div id="paneChat">
+  <div class="card">
+    <h3>👋 Karibu! Ask me anything — I research then explain.</h3>
+    <p>Maths, Science, Social, Fasihi, Lugha, Literature, Humanities, ICT, Homework, Exams. Upload a photo of homework and I will solve + explain.</p>
+    <div class="quick">
+      <div class="q" onclick="ask('Explain Photosynthesis for KCSE with examples')">🔬 Photosynthesis</div>
+      <div class="q" onclick="ask('Solve: 2x + 5 = 17 step by step')">🧮 Solve 2x+5=17</div>
+      <div class="q" onclick="ask('Give me Windows shortcuts every student must know')">💻 Windows Shortcuts</div>
+      <div class="q" onclick="ask('Andika insha: Umuhimu wa Elimu')">✍️ Insha: Elimu</div>
+      <div class="q" onclick="ask('What is HELB and how to apply?')">🎓 HELB</div>
+      <div class="q" onclick="ask('How to make a poster in Canva?')">🎨 Poster</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="chat"></div>
+    <div id="typing" class="hidden" style="font-size:13px;color:#94a3b8;padding:6px">🤖 SmartTech AI is researching from relevant sources...</div>
+  </div>
+
+  <div class="card">
+    <h3>📤 Upload / Scanner</h3>
+    <p>Take photo of homework, notes, or textbook. AI reads it and explains. Files stay on your phone, only text is sent to AI.</p>
+    <div class="row">
+      <label class="btn btn-dark" style="cursor:pointer">📷 Take Photo / Upload <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handleFile(this,'photo')"></label>
+      <label class="btn btn-dark" style="cursor:pointer">📄 Upload File (PDF/TXT/DOC) <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx" style="display:none" onchange="handleFile(this,'file')"></label>
+      <label class="btn btn-dark" style="cursor:pointer">📷 Scanner (Camera) <input type="file" id="scanInput" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this,'scan')"></label>
+      <button class="btn btn-dark" onclick="startVoice()">🎤 Speak</button>
+    </div>
+    <div id="preview"></div>
+  </div>
+</div>
+
+<!-- VIDEO TAB -->
+<div id="paneVideo" class="hidden">
+  <div class="card">
+    <h3>🎥 SmartTech Video Studio — Free 5 Mins</h3>
+    <p>AI writes script + slides + voice. You watch, download & share to WhatsApp.</p>
+    <div class="notice">🆓 <b>FREE:</b> Up to 5 mins, 3 videos/day. <b>Want longer?</b> Watch a free Ad to unlock 10 mins, or watch 2nd Ad / Pay small fee to unlock 15 mins + Voice Choice + No Watermark. Free is always available — pay is optional.</div>
+    <label>Video Topic</label>
+    <input type="text" id="videoTopic" placeholder="e.g. Photosynthesis for Grade 7, How to use Excel, Fasihi: Ushairi">
+    <label>Video Length</label>
+    <select id="videoLength" onchange="checkLength()">
+      <option value="5">🆓 5 mins — FREE (No Ad)</option>
+      <option value="10">🎬 10 mins — Watch 1 Ad to Unlock</option>
+      <option value="15">⭐ 15 mins — Watch 2 Ads / Pay to Unlock</option>
+    </select>
+    <label>Voice</label>
+    <select id="voiceChoice"><option value="female">Female Voice (Free)</option><option value="male">Male Voice (Unlock 15-min)</option><option value="sheng">Sheng Voice (Unlock 15-min)</option></select>
+    <div class="row">
+      <button class="btn btn-blue" onclick="makeVideo()">🎥 Create Video</button>
+      <button class="btn btn-orange" id="adBtn" onclick="watchAd()" style="display:none">▶️ Watch Ad to Unlock</button>
+      <button class="btn btn-green" id="payBtn" onclick="payUnlock()" style="display:none">💳 Pay via M-Pesa (KES 50) — Optional</button>
+    </div>
+    <div id="unlockMsg" style="font-size:13px;margin-top:8px;color:#86efac"></div>
+    <div class="progress"><div id="vProgress"></div></div>
+    <div id="videoOut"></div>
+  </div>
+
+  <!-- AD SLOT - PASTE YOUR MONETAG / ADSTERRA CODE HERE -->
+  <div class="card" id="adSlotCard" style="display:none">
+    <h3>📺 Ad — Thanks for supporting free education</h3>
+    <!-- PASTE YOUR MONETAG / ADSTERRA REWARDED AD CODE BELOW -->
+    <!-- Example: <script src="https://your-ad-network.com/..."></script> -->
+    <div id="adSlot" style="min-height:120px;background:#0f172a;border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px">
+      <div>
+        <p style="font-size:14px">🎬 Ad Playing... <span id="adTimer">20</span>s</p>
+        <p style="font-size:12px;color:#94a3b8">Demo Ad — Replace with your real Monetag/Adsterra code</p>
+        <button class="btn btn-green" onclick="finishAd()" style="margin-top:10px">✅ Ad Finished — Unlock Now (Demo)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARY TAB -->
+<div id="paneLib" class="hidden">
+  <div class="card"><h3>📚 My Library</h3><p>Your saved chats and videos are stored on this device. No account needed.</p>
+  <div class="row"><button class="btn btn-dark" onclick="loadLibrary()">🔄 Refresh</button><button class="btn btn-dark" onclick="clearLibrary()">🗑️ Clear</button></div>
+  <div id="libOut" style="margin-top:12px"></div></div>
+  <div class="card"><h3>🛡️ Cyber Ethics & Safety</h3><p>SmartTech AI: No nude content, no hacking to steal, no fake documents, no exam leakage, no hate. We teach, explain and guide. Always cite sources. If you need help with cyber safety, ask: "How to stay safe online?"</p></div>
+</div>
+
+<div class="card" style="text-align:center">
+  <p style="font-size:12px">Made with ❤️ by <b>SmartTech LTD</b> • Online All Kenya • WhatsApp 0183465547<br>Free for everyone. Pay only if you want extra time / no watermark.</p>
+</div>
+
+</div>
+
+<div class="inputbar">
+  <div class="inputwrap">
+    <button class="iconbtn" onclick="document.getElementById('photoInput').click()">📷</button>
+    <input id="input" placeholder="Ask anything... e.g. Solve maths, Explain science, Fasihi, ICT tips..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="iconbtn" onclick="startVoice()">🎤</button>
+    <button class="iconbtn send" onclick="sendMsg()">➤</button>
+  </div>
+  <div class="hint">SmartTech AI researches from relevant sources • Safe Mode ON • Free for all</div>
+</div>
+
+<script>
+// ===== CONFIG - PASTE YOUR WORKER URL HERE AFTER DEPLOY =====
+const WORKER_URL = "https://smarttech-ai.YOUR-NAME.workers.dev"; // <-- Replace with your real Worker URL
+const MPESA_TILL = "0183465547"; // Pochi la Biashara - for optional paid unlock
+
+let safeMode = true;
+let unlockedMinutes = 5;
+let adsWatched = 0;
+let chatHistory = JSON.parse(localStorage.getItem('st_ai_chat')||'[]');
+let videoCountToday = parseInt(localStorage.getItem('st_video_count')||'0');
+
+function showTab(t){
+  ['chat','video','lib'].forEach(x=>{
+    document.getElementById('pane'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('hidden', x!==t);
+    document.getElementById('tab'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active', x===t);
+  });
+  if(t==='lib') loadLibrary();
+}
+function toggleSafe(){ safeMode=!safeMode; document.getElementById('safeBtn').textContent = safeMode ? '🛡️ Safe Mode: ON' : '🛡️ Safe Mode: OFF'; }
+function saveChat(){ localStorage.setItem('st_ai_chat', JSON.stringify(chatHistory.slice(-30))); }
+function addMsg(text, who, sources){
+  const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+who; d.textContent=text;
+  if(sources){ const s=document.createElement('div'); s.className='sources'; s.innerHTML = sources.map(s=>`<a href="${s.url}" target="_blank">🔗 ${s.title}</a>`).join(''); d.appendChild(s); }
+  c.appendChild(d); c.scrollTop=c.scrollHeight;
+  chatHistory.push({text,who}); saveChat();
+}
+function ask(q){ document.getElementById('input').value=q; sendMsg(); }
+async function sendMsg(){
+  const inp=document.getElementById('input'); const msg=inp.value.trim(); if(!msg) return; inp.value='';
+  if(safeMode && /(nude|porn|sex video|hack.*password|fake.*id|exam leak|kcse leak)/i.test(msg)){
+    addMsg(msg,'user'); addMsg("I can't help with that — SmartTech AI follows cyber ethics and keeps learning safe. I can help you with study, ICT tips, homework explanation, and safe internet use. Try asking: 'How to stay safe online?' or 'Explain Photosynthesis'.",'ai'); return;
+  }
+  addMsg(msg,'user'); document.getElementById('typing').classList.remove('hidden');
+  const lang=document.getElementById('lang').value; const level=document.getElementById('level').value;
+  // Try Worker, fallback to offline smart answers if Worker not set yet
+  try{
+    if(WORKER_URL.includes('YOUR-NAME')) throw new Error('Worker not set');
+    const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,lang,level,safeMode})});
+    const data=await res.json();
+    document.getElementById('typing').classList.add('hidden');
+    addMsg(data.reply||'Sorry, try again.','ai', data.sources);
+  }catch(e){
+    document.getElementById('typing').classList.add('hidden');
+    addMsg(getOfflineAnswer(msg,lang,level),'ai');
+  }
+}
+function getOfflineAnswer(msg,lang,level){
+  // Offline fallback - works even before Worker is connected
+  const m=msg.toLowerCase();
+  if(m.includes('photosynthesis')) return "PHOTOSYNTHESIS (KCSE / CBC)\n\nDefinition: Process by which green plants make food using sunlight, water and carbon dioxide.\n\nEquation: 6CO2 + 6H2O + Light → C6H12O6 + 6O2\n\nSteps:\n1. Light stage: In grana, light splits water → Oxygen released\n2. Dark stage: In stroma, CO2 fixed to make glucose\n\nFactors: Light intensity, CO2 concentration, Temperature, Water\n\nExample: Maize plant in sunlight makes starch - test with iodine.\n\nWant me to make a 5-min video on this? Go to Video Studio tab.";
+  if(m.includes('2x')) return "SOLVE: 2x + 5 = 17\n\nStep 1: Move 5 to other side: 2x = 17 - 5\nStep 2: 2x = 12\nStep 3: Divide by 2: x = 6\n\nCheck: 2(6)+5 = 12+5 = 17 ✅\n\nTry: Solve 3x - 4 = 11 (Answer x=5). Ask me to check your answer.";
+  if(m.includes('shortcut')||m.includes('windows')) return "WINDOWS SHORTCUTS EVERY STUDENT MUST KNOW:\n\nCtrl + C = Copy | Ctrl + V = Paste | Ctrl + X = Cut\nCtrl + Z = Undo | Ctrl + S = Save | Ctrl + P = Print\nWindows + Shift + S = Screenshot\nAlt + Tab = Switch apps | Ctrl + T = New tab in Chrome\n\nHack: Press Windows + . (dot) for emojis 😀\n\nWant more? Ask: 'Excel shortcuts' or 'Word shortcuts'";
+  if(m.includes('insha')||m.includes('elimu')) return "INSHA: UMUHIMU WA ELIMU\n\nUtangulizi: Elimu ni ufunguo wa maisha...\n\nMwili:\n1. Elimu inampa mtu maarifa na ujuzi\n2. Inasaidia kupata kazi na kujitegemea\n3. Inajenga tabia njema na uzalendo\n4. Inasaidia jamii kuendelea\n\nHitimisho: Kila mwanafunzi anapaswa kuthamini elimu...\n\nNitakuandikia insha kamili? Niambie mada na urefu.";
+  return `Great question about: "${msg}"\n\nI'm still connecting to live research (Worker not connected yet). Once you add your Worker URL, I will research from Wikipedia, Khan Academy, BBC Bitesize and other relevant sources and explain step-by-step in ${lang} for ${level}.\n\nFor now, try quick buttons above: Photosynthesis, Maths, Windows Shortcuts, Insha.`;
+}
+function startVoice(){
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)){ alert('Voice not supported on this browser. Type your question.'); return; }
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition; const r=new Rec(); r.lang='en-KE'; r.onresult=e=>{ document.getElementById('input').value=e.results[0][0].transcript; sendMsg(); }; r.start();
+}
+function handleFile(el,type){
+  const f=el.files[0]; if(!f) return;
+  const prev=document.getElementById('preview'); prev.innerHTML=`<div style="margin-top:10px;padding:10px;background:#0f172a;border-radius:12px;font-size:13px">📎 ${f.name} (${Math.round(f.size/1024)} KB) — Uploaded. Ask: "Explain this" or "Solve this homework"</div>`;
+  document.getElementById('input').value = type==='scan' ? 'I scanned this document. Please extract the text and explain it step by step.' : 'I uploaded this file/photo. Please read it and explain / solve it step by step.';
+  // In full version, file is sent to Worker Vision API. For now, user can also type question.
+}
+function checkLength(){
+  const len=parseInt(document.getElementById('videoLength').value);
+  const adBtn=document.getElementById('adBtn'); const payBtn=document.getElementById('payBtn');
+  if(len<=5){ adBtn.style.display='none'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent='✅ Free 5 mins ready — No ad needed.'; }
+  else if(len===10){ adBtn.style.display='inline-block'; payBtn.style.display='none'; document.getElementById('unlockMsg').textContent = unlockedMinutes>=10 ? '✅ 10 mins unlocked!' : '🔒 Watch 1 Ad to unlock 10 mins (or stay with 5-min free).'; }
+  else{ adBtn.style.display='inline-block'; payBtn.style.display='inline-block'; document.getElementById('unlockMsg').textContent = unlockedMinutes>=15 ? '✅ 15 mins unlocked!' : '🔒 Watch 2 Ads OR Pay KES 50 (optional) to unlock 15 mins.'; }
+}
+function watchAd(){
+  document.getElementById('adSlotCard').style.display='block';
+  document.getElementById('adSlotCard').scrollIntoView({behavior:'smooth'});
+  let t=20; const timer=document.getElementById('adTimer'); const iv=setInterval(()=>{ t--; timer.textContent=t; if(t<=0) clearInterval(iv); },1000);
+  // TODO: Replace with real Monetag/Adsterra Rewarded Ad. When ad finishes, call finishAd()
+}
+function finishAd(){
+  adsWatched++; if(adsWatched===1){ unlockedMinutes=10; alert('✅ Unlocked! You can now make up to 10 mins.'); } else if(adsWatched>=2){ unlockedMinutes=15; alert('✅ Unlocked! You can now make up to 15 mins + Voice Choice + No Watermark for this video.'); }
+  document.getElementById('adSlotCard').style.display='none'; checkLength();
+}
+function payUnlock(){
+  const topic=document.getElementById('videoTopic').value||'SmartTech Video';
+  const url=`https://wa.me/254183465547?text=${encodeURIComponent('Hi SmartTech! I want to pay KES 50 to unlock 15-min Video (No Watermark) for: '+topic)}`;
+  if(confirm('Optional Pay: KES 50 via M-Pesa Pochi '+MPESA_TILL+' to unlock 15 mins + No Watermark?\n\nYou can also Watch Ads for FREE instead. Continue to WhatsApp to pay?')){ unlockedMinutes=15; window.open(url,'_blank'); }
+}
+async function makeVideo(){
+  const topic=document.getElementById('videoTopic').value.trim(); if(!topic){ alert('Type a video topic first, e.g. Photosynthesis'); return; }
+  const len=parseInt(document.getElementById('videoLength').value);
+  if(len>unlockedMinutes){ alert(`This length needs unlock. Watch Ad to unlock ${len} mins, or choose 5 mins Free.`); checkLength(); return; }
+  if(videoCountToday>=3 && len===5){ if(!confirm('You have made 3 free videos today. Watch an Ad to continue, or continue anyway?')) return; }
+  const out=document.getElementById('videoOut'); const prog=document.getElementById('vProgress');
+  out.innerHTML=`<p style="font-size:13px">🤖 AI is writing script + slides for "${topic}" (${len} mins)...</p>`; prog.style.width='20%';
+  // Try Worker for script, fallback to offline template
+  let slides=[];
+  try{
+    if(!WORKER_URL.includes('YOUR-NAME')){
+      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:`Create a ${len}-minute educational video script about: ${topic}. Give 6-10 slides with title and 2-3 sentences each. Level: ${document.getElementById('level').value}, Language: ${document.getElementById('lang').value}`,mode:'video'})});
+      const d=await res.json(); slides=parseSlides(d.reply,topic);
+    } else throw new Error('no worker');
+  }catch(e){ slides=offlineSlides(topic,len); }
+  prog.style.width='60%';
+  setTimeout(()=>{
+    prog.style.width='100%';
+    out.innerHTML = slides.map((s,i)=>`<div class="slide"><h4>Slide ${i+1}: ${s.title}</h4><p>${s.text}</p><button class="btn btn-dark" onclick="speakSlide('${s.title} ${s.text}'.replace(/'/g,''))">🔊 Play Voice</button></div>`).join('') + `<div class="row"><button class="btn btn-green" onclick="playAllSlides()">▶️ Play Full Video (${len} mins)</button><button class="btn btn-blue" onclick="shareVideo()">📤 Share to WhatsApp</button></div><p style="font-size:11px;color:#94a3b8;margin-top:8px">${len>=15?'No Watermark (Unlocked)':'Watermark: Made with SmartTech AI'}</p>`;
+    videoCountToday++; localStorage.setItem('st_video_count',videoCountToday);
+    let lib=JSON.parse(localStorage.getItem('st_ai_videos')||'[]'); lib.push({topic,len,date:new Date().toLocaleString()}); localStorage.setItem('st_ai_videos',JSON.stringify(lib));
+  },1200);
+}
+function parseSlides(text,topic){ if(!text) return offlineSlides(topic,5); const parts=text.split('\n').filter(l=>l.trim().length>20); return parts.slice(0,8).map((p,i)=>({title:`Part ${i+1}`,text:p})); }
+function offlineSlides(topic,len){
+  return [
+    {title:`What is ${topic}?`, text:`In this video we will learn ${topic} in simple steps, with examples you can understand and remember for exams and real life.`},
+    {title:`Why is it Important?`, text:`${topic} is important because it helps us understand the world, solve problems, and pass exams. It is used in school, at home, and in jobs.`},
+    {title:`Key Idea 1 - Definition`, text:`Let's start with the definition. ${topic} means the main idea we are studying. We will break it into small parts so it's easy.`},
+    {title:`Key Idea 2 - Examples`, text:`Example 1: Think of a daily life example. Example 2: Think of a school example. Examples help you remember for a long time.`},
+    {title:`Key Idea 3 - Steps / Process`, text:`Step 1: Understand the question. Step 2: Recall the formula or rule. Step 3: Apply it. Step 4: Check your answer.`},
+    {title:`Common Mistakes`, text:`Many students forget to show steps, or mix up definitions. Always write steps, label diagrams, and check units.`},
+    {title:`Quick Quiz`, text:`Question 1: What is ${topic}? Question 2: Give one example. Question 3: Why is it important? Pause and try to answer.`},
+    {title:`Summary`, text:`Today we learned ${topic}: definition, examples, steps, and mistakes to avoid. Practice 3 questions tonight and you will master it. Follow SmartTech AI for more.`}
+  ];
+}
+function speakSlide(text){ const u=new SpeechSynthesisUtterance(text); u.lang='en-KE'; u.rate=0.95; speechSynthesis.speak(u); }
+function playAllSlides(){ const slides=document.querySelectorAll('.slide p'); let i=0; const next=()=>{ if(i>=slides.length) return; speakSlide(slides[i].textContent); i++; setTimeout(next,4000); }; next(); }
+function shareVideo(){ const t=document.getElementById('videoTopic').value||'SmartTech AI Video'; window.open(`https://wa.me/?text=${encodeURIComponent('🎥 I made this video with SmartTech AI: '+t+' — Try it free: https://smarttech-ltd.netlify.app/ai.html')}`,'_blank'); }
+function loadLibrary(){
+  const chats=JSON.parse(localStorage.getItem('st_ai_chat')||'[]'); const vids=JSON.parse(localStorage.getItem('st_ai_videos')||'[]');
+  document.getElementById('libOut').innerHTML = `<b>💬 Recent Chats (${chats.length})</b><br>${chats.slice(-5).map(c=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">${c.who==='user'?'🧑 You: ':'🤖 AI: '}${c.text.slice(0,120)}</div>`).join('')||'No chats yet'}<br><b>🎥 Videos (${vids.length})</b><br>${vids.map(v=>`<div style="font-size:13px;background:#0f172a;padding:8px;border-radius:10px;margin:6px 0">🎥 ${v.topic} — ${v.len} mins — ${v.date}</div>`).join('')||'No videos yet'}`;
+}
+function clearLibrary(){ localStorage.removeItem('st_ai_chat'); localStorage.removeItem('st_ai_videos'); loadLibrary(); }
+// Restore chats
+chatHistory.forEach(c=>{ const div=document.createElement('div'); div.className='msg '+c.who; div.textContent=c.text; document.getElementById('chat').appendChild(div); });
+if(chatHistory.length===0) addMsg("Hi! I'm SmartTech AI 🤖\n\nI can help with:\n📚 All subjects - Primary to University\n💻 ICT, Shortcuts, Hacks & Tips\n📷 Upload homework photo - I solve + explain\n🎥 Make 5-min educational video FREE\n\nAsk me anything, or try a quick button above!",'ai');
+checkLength();
+</script>
+</body>
+</html>
